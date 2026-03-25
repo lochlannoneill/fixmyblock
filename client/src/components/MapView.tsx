@@ -231,7 +231,7 @@ export default function MapView({
 
       const popup = new maplibregl.Popup({
         offset: 25,
-        closeOnClick: false,
+        closeOnClick: true,
         maxWidth: "320px",
       })
         .setLngLat([complaint.longitude, complaint.latitude])
