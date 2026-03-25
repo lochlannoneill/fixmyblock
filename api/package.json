@@ -1,0 +1,24 @@
+{
+  "name": "fixmyblock-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/functions/complaints.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "func start",
+    "dev": "npm run build && func start"
+  },
+  "dependencies": {
+    "@azure/cosmos": "^4.2.0",
+    "@azure/functions": "^4.6.0",
+    "@azure/storage-blob": "^12.26.0",
+    "multipart-formdata": "^1.0.1",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/uuid": "^10.0.0",
+    "typescript": "^5.7.0"
+  }
+}
