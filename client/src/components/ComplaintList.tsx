@@ -1,4 +1,5 @@
-import type { Complaint } from "../types/complaint";
+import { useState } from "react";
+import type { Complaint, ComplaintCategory, ComplaintStatus } from "../types/complaint";
 import { CATEGORY_LABELS, STATUS_COLORS } from "../types/complaint";
 
 interface ComplaintListProps {
@@ -18,6 +19,41 @@ export default function ComplaintList({
   selectedId,
   showingForm,
 }: ComplaintListProps) {
+  const [filterCategory, setFilterCategory] = useState<ComplaintCategory | "">("");
+  const [filterStatus, setFilterStatus] = useState<ComplaintStatus | "">("");
+
+  const filtered = complaints.filter((c) => {
+    if (filterCategory && c.category !== filterCategory) return false;
+    if (filterStatus && c.status !== filterStatus) return false;
+    return true;
+  });
+
+  const filterBar = (
+    <div className="filter-bar">
+      <span className="filter-label">Filter by</span>
+      <select
+        className="filter-select"
+        value={filterCategory}
+        onChange={(e) => setFilterCategory(e.target.value as ComplaintCategory | "")}
+      >
+        <option value="">All Categories</option>
+        {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+          <option key={key} value={key}>{label}</option>
+        ))}
+      </select>
+      <select
+        className="filter-select"
+        value={filterStatus}
+        onChange={(e) => setFilterStatus(e.target.value as ComplaintStatus | "")}
+      >
+        <option value="">All Statuses</option>
+        <option value="open">Open</option>
+        <option value="in-progress">In Progress</option>
+        <option value="resolved">Resolved</option>
+      </select>
+    </div>
+  );
+
   if (complaints.length === 0) {
     return (
       <div className="complaint-list-empty">
@@ -43,10 +79,11 @@ export default function ComplaintList({
           <span>New Request</span>
         </div>
       )}
+      {filterBar}
       <div className="list-header">
-        <span className="report-count">{complaints.length} reports</span>
+        <span className="report-count">{filtered.length} of {complaints.length} reports</span>
       </div>
-      {complaints.map((c) => (
+      {filtered.map((c) => (
         <div
           key={c.id}
           className={`complaint-card ${c.id === selectedId ? "selected" : ""}`}
