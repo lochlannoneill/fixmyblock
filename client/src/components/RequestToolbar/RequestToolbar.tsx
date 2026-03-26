@@ -3,8 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSliders, faArrowDownUpAcrossLine } from "@fortawesome/free-solid-svg-icons";
 import type { RequestCategory, RequestStatus } from "../../types/request";
 import { CATEGORY_LABELS } from "../../types/request";
-
-export type SortBy = "newest" | "oldest" | "upvotes";
+import type { SortBy } from "../../hooks/useRequestFilters";
 
 interface RequestToolbarProps {
   onNewRequest: () => void;
