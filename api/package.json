@@ -2,7 +2,6 @@
   "name": "fixmyblock-api",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
   "main": "dist/functions/requests.js",
   "scripts": {
     "build": "tsc",
