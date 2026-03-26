@@ -3,10 +3,10 @@ import Header from "./components/Header";
 import MapView from "./components/MapView";
 import ReportForm from "./components/ReportForm";
 import ComplaintList from "./components/ComplaintList";
-import SidebarToolbar from "./components/SidebarToolbar";
+import Toolbar from "./components/Toolbar";
 import type { Complaint, NewComplaint, ComplaintCategory, ComplaintStatus } from "./types/complaint";
 import { fetchComplaints, createComplaint, upvoteComplaint, deleteComplaint } from "./services/api";
-import type { SortBy } from "./components/SidebarToolbar";
+import type { SortBy } from "./components/Toolbar";
 import "./App.css";
 
 export default function App() {
@@ -144,7 +144,7 @@ export default function App() {
             />
           ) : (
             <>
-              <SidebarToolbar
+              <Toolbar
                 onNewRequest={handleStartReport}
                 showingForm={showForm}
                 totalCount={complaints.length}

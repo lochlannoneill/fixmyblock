@@ -6,7 +6,7 @@ import { CATEGORY_LABELS } from "../../types/complaint";
 
 export type SortBy = "newest" | "oldest" | "upvotes";
 
-interface SidebarToolbarProps {
+interface ToolbarProps {
   onNewRequest: () => void;
   showingForm: boolean;
   totalCount: number;
@@ -19,7 +19,7 @@ interface SidebarToolbarProps {
   onSortBy: (v: SortBy) => void;
 }
 
-export default function SidebarToolbar({
+export default function Toolbar({
   onNewRequest,
   showingForm,
   totalCount,
@@ -30,7 +30,7 @@ export default function SidebarToolbar({
   onFilterCategory,
   onFilterStatus,
   onSortBy,
-}: SidebarToolbarProps) {
+}: ToolbarProps) {
   const [showFilter, setShowFilter] = useState(false);
   const [showSort, setShowSort] = useState(false);
   const isFiltering = filterCategory !== "" || filterStatus !== "";
