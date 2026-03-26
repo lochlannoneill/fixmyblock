@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronUp } from "@fortawesome/free-solid-svg-icons";
+import { faChevronUp, faSliders, faArrowDownUpAcrossLine } from "@fortawesome/free-solid-svg-icons";
 import type { Complaint, ComplaintCategory, ComplaintStatus } from "../types/complaint";
 import { CATEGORY_LABELS, STATUS_COLORS } from "../types/complaint";
 
@@ -23,6 +23,11 @@ export default function ComplaintList({
 }: ComplaintListProps) {
   const [filterCategory, setFilterCategory] = useState<ComplaintCategory | "">("");
   const [filterStatus, setFilterStatus] = useState<ComplaintStatus | "">("");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "upvotes">("newest");
+  const [showFilter, setShowFilter] = useState(false);
+  const [showSort, setShowSort] = useState(false);
+
+  const isFiltering = filterCategory !== "" || filterStatus !== "";
 
   const filtered = complaints.filter((c) => {
     if (filterCategory && c.category !== filterCategory) return false;
@@ -30,29 +35,68 @@ export default function ComplaintList({
     return true;
   });
 
-  const filterBar = (
-    <div className="filter-bar">
-      <span className="filter-label">Filter by</span>
-      <select
-        className="filter-select"
-        value={filterCategory}
-        onChange={(e) => setFilterCategory(e.target.value as ComplaintCategory | "")}
-      >
-        <option value="">All Categories</option>
-        {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-          <option key={key} value={key}>{label}</option>
-        ))}
-      </select>
-      <select
-        className="filter-select"
-        value={filterStatus}
-        onChange={(e) => setFilterStatus(e.target.value as ComplaintStatus | "")}
-      >
-        <option value="">All Statuses</option>
-        <option value="open">Open</option>
-        <option value="in-progress">In Progress</option>
-        <option value="resolved">Resolved</option>
-      </select>
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    if (sortBy === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    return b.upvotes - a.upvotes;
+  });
+
+  const toolbar = (
+    <div className="toolbar">
+      <div className="toolbar-icons">
+        <button
+          className={`toolbar-btn ${showFilter ? "active" : ""} ${isFiltering ? "has-filter" : ""}`}
+          onClick={() => { setShowFilter((v) => !v); setShowSort(false); }}
+          title="Filter"
+        >
+          <FontAwesomeIcon icon={faSliders} />
+        </button>
+        <button
+          className={`toolbar-btn ${showSort ? "active" : ""}`}
+          onClick={() => { setShowSort((v) => !v); setShowFilter(false); }}
+          title="Sort"
+        >
+          <FontAwesomeIcon icon={faArrowDownUpAcrossLine} />
+        </button>
+      </div>
+      {showFilter && (
+        <div className="toolbar-dropdown">
+          <select
+            className="filter-select"
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value as ComplaintCategory | "")}
+          >
+            <option value="">All Categories</option>
+            {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+          <select
+            className="filter-select"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value as ComplaintStatus | "")}
+          >
+            <option value="">All Statuses</option>
+            <option value="open">Open</option>
+            <option value="in-progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+          </select>
+        </div>
+      )}
+      {showSort && (
+        <div className="toolbar-dropdown">
+          <select
+            className="filter-select"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as "newest" | "oldest" | "upvotes")}
+          >
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="upvotes">Most Upvoted</option>
+          </select>
+        </div>
+      )}
+      <span className="report-count">{filtered.length} of {complaints.length} reports</span>
     </div>
   );
 
@@ -81,11 +125,8 @@ export default function ComplaintList({
           <span>New Request</span>
         </div>
       )}
-      {filterBar}
-      <div className="list-header">
-        <span className="report-count">{filtered.length} of {complaints.length} reports</span>
-      </div>
-      {filtered.map((c) => (
+      {toolbar}
+      {sorted.map((c) => (
         <div
           key={c.id}
           className={`complaint-card ${c.id === selectedId ? "selected" : ""}`}
