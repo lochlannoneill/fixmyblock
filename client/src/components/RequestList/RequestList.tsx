@@ -1,7 +1,7 @@
 ﻿import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronUp } from "@fortawesome/free-solid-svg-icons";
 import type { Request } from "../../types/request";
-import { CATEGORY_LABELS } from "../../types/request";
+import { CATEGORY_LABELS, STATUS_COLORS } from "../../types/request";
 
 interface RequestListProps {
   requests: Request[];
@@ -38,6 +38,12 @@ export default function RequestList({
         >
           <div className="flex items-center gap-2">
             <span className="flex-1 font-semibold text-sm text-slate-800 dark:text-zinc-200">{c.title}</span>
+            <span
+              className="text-[11px] font-semibold text-white px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: STATUS_COLORS[c.status] }}
+            >
+              {c.status === "in-progress" ? "In Progress" : c.status.charAt(0).toUpperCase() + c.status.slice(1)}
+            </span>
             <span className="text-xs text-slate-500 dark:text-[#8c8c96] flex items-center gap-1 transition-colors hover:text-blue-500">
               <FontAwesomeIcon icon={faChevronUp} /> {c.upvotes}
             </span>
