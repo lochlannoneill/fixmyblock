@@ -4,6 +4,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./MapView.css";
 import type { Request } from "../../types/request";
 import { STATUS_COLORS, CATEGORY_LABELS } from "../../types/request";
+import Layers from "../Layers";
+import type { MapLayer } from "../Layers";
 
 interface MapViewProps {
   requests: Request[];
@@ -13,6 +15,7 @@ interface MapViewProps {
   onUpvote: (id: string) => void;
   reportMode: boolean;
   dropPinLocation: { lng: number; lat: number } | null;
+  darkMode: boolean;
 }
 
 export default function MapView({
@@ -23,6 +26,7 @@ export default function MapView({
   onUpvote,
   reportMode,
   dropPinLocation,
+  darkMode,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -33,6 +37,7 @@ export default function MapView({
   const onMapClickRef = useRef(onMapClick);
   const reportModeRef = useRef(reportMode);
   const [mapReady, setMapReady] = useState(false);
+  const [activeLayer, setActiveLayer] = useState<MapLayer>("terrain");
 
   // Keep refs in sync so the map click handler always has latest values
   useEffect(() => { onMapClickRef.current = onMapClick; }, [onMapClick]);
@@ -45,9 +50,7 @@ export default function MapView({
     const azureMapsKey = import.meta.env.VITE_AZURE_MAPS_KEY || "";
 
     // Use Azure Maps tiles if key is available, otherwise use free OSM tiles
-    const styleUrl = azureMapsKey
-      ? `https://atlas.microsoft.com/map/style?api-version=2024-04-01&style=microsoft-imagery&subscription-key=${azureMapsKey}`
-      : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+    const defaultStyle = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
@@ -73,7 +76,7 @@ export default function MapView({
               },
             ],
           }
-        : styleUrl,
+        : defaultStyle,
       center: [-6.2603, 53.3498], // Default: Dublin
       zoom: 13,
       pitch: 45, // 3D tilt
@@ -140,6 +143,18 @@ export default function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Switch map style on dark mode toggle
+  useEffect(() => {
+    if (!map.current || !mapReady) return;
+    const azureMapsKey = import.meta.env.VITE_AZURE_MAPS_KEY || "";
+    if (azureMapsKey) return; // Azure Maps doesn't support style switching this way
+    if (activeLayer !== "default") return; // Don't override layer selection
+    const style = darkMode
+      ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+      : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+    map.current.setStyle(style);
+  }, [darkMode, mapReady, activeLayer]);
+
   // Sync markers with requests
   useEffect(() => {
     if (!map.current || !mapReady) return;
@@ -156,7 +171,6 @@ export default function MapView({
         height: 32px;
         border-radius: 50% 50% 50% 0;
         background: ${STATUS_COLORS[req.status]};
-        transform: rotate(-45deg);
         border: 2px solid white;
         cursor: pointer;
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
@@ -167,12 +181,11 @@ export default function MapView({
 
       const inner = document.createElement("div");
       inner.style.cssText = `
-        transform: rotate(45deg);
         font-size: 14px;
         color: white;
         font-weight: bold;
       `;
-      inner.textContent = req.upvotes > 0 ? `${req.upvotes}` : "!";
+      inner.textContent = `${req.upvotes}`;
       el.appendChild(inner);
 
       el.addEventListener("click", (e) => {
@@ -210,30 +223,34 @@ export default function MapView({
           </div>`
         : "";
 
+      const statusColors: Record<string, string> = { open: "#3b82f6", "in-progress": "#eab308", resolved: "#22c55e" };
+      const statusLabels: Record<string, string> = { open: "Open", "in-progress": "In Progress", resolved: "Resolved" };
+      const statusColor = statusColors[req.status] || "#3b82f6";
+      const statusLabel = statusLabels[req.status] || req.status;
+
       const html = `
-        <div class="popup-content">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${STATUS_COLORS[req.status]}"></span>
-            <strong class="popup-title">${req.title}</strong>
+        <div class="popup-content" style="position:relative;min-width:260px;min-height:120px">
+          <span style="position:absolute;top:0;right:0;display:flex;align-items:center;gap:6px">
+            <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px">${statusLabel}</span>
+            <button id="popup-upvote-${req.id}" class="popup-upvote-btn" style="margin:0">${req.upvotes} <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"/></svg></button>
+          </span>
+          <div class="popup-meta" style="margin-bottom:4px">
+            <div>${new Date(req.createdAt).toLocaleDateString()} · ${new Date(req.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+            <div>${CATEGORY_LABELS[req.category]}</div>
           </div>
-          <div class="popup-meta">
-            ${CATEGORY_LABELS[req.category]} · ${req.status} · ${new Date(req.createdAt).toLocaleDateString()}
+          <div style="display:flex;align-items:center;gap:8px;padding-right:80px">
+            <strong class="popup-title">${req.title}</strong>
           </div>
           ${thumbs}
           <p class="popup-desc">${req.description.slice(0, 150)}${req.description.length > 150 ? "..." : ""}</p>
-          <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
-            <button id="popup-upvote-${req.id}" class="popup-upvote-btn">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 512 512" fill="currentColor"><path d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"/></svg>
-              ${req.upvotes}
-            </button>
-            <span class="popup-reporter">Reported by ${req.reporterName}</span>
-          </div>
+          <span class="popup-reporter" style="display:block;margin-top:8px">Reported by ${req.reporterName}</span>
         </div>
       `;
 
       const popup = new maplibregl.Popup({
         offset: 25,
         closeOnClick: true,
+        closeButton: false,
         maxWidth: "320px",
       })
         .setLngLat([req.longitude, req.latitude])
@@ -258,15 +275,22 @@ export default function MapView({
     [onSelectRequest, onUpvote]
   );
 
+  const selectedIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (selectedRequest) {
+      const isNewSelection = selectedIdRef.current !== selectedRequest.id;
+      selectedIdRef.current = selectedRequest.id;
       showPopup(selectedRequest);
-      map.current?.flyTo({
-        center: [selectedRequest.longitude, selectedRequest.latitude],
-        zoom: 16,
-        pitch: 50,
-      });
+      if (isNewSelection) {
+        map.current?.flyTo({
+          center: [selectedRequest.longitude, selectedRequest.latitude],
+          zoom: 16,
+          pitch: 50,
+        });
+      }
     } else {
+      selectedIdRef.current = null;
       if (popupRef.current) {
         popupRef.current.off("close", popupCloseHandlerRef.current!);
         popupRef.current.remove();
@@ -315,10 +339,52 @@ export default function MapView({
     }
   }, [reportMode, dropPinLocation, mapReady]);
 
+  const handleLayerChange = useCallback((layer: MapLayer) => {
+    if (!map.current) return;
+    setActiveLayer(layer);
+
+    const styles: Record<MapLayer, string | object> = {
+      default: darkMode
+        ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+        : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+      satellite: {
+        version: 8,
+        sources: {
+          "esri-satellite": {
+            type: "raster",
+            tiles: [
+              "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            ],
+            tileSize: 256,
+            maxzoom: 19,
+          },
+        },
+        layers: [
+          { id: "esri-satellite-layer", type: "raster", source: "esri-satellite" },
+        ],
+      },
+      terrain: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
+      flat: darkMode
+        ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+        : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+    };
+
+    map.current.setStyle(styles[layer] as string);
+
+    if (layer === "flat") {
+      map.current.easeTo({ pitch: 0, bearing: 0, duration: 500 });
+    } else if (map.current.getPitch() === 0) {
+      map.current.easeTo({ pitch: 45, bearing: -17.6, duration: 500 });
+    }
+  }, [darkMode]);
+
   return (
-    <div
-      ref={mapContainer}
-      style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
-    />
+    <div style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}>
+      <div
+        ref={mapContainer}
+        style={{ width: "100%", height: "100%" }}
+      />
+      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} />
+    </div>
   );
 }
