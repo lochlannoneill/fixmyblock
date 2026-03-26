@@ -3,10 +3,10 @@ import Header from "./components/Header";
 import MapView from "./components/MapView";
 import RequestForm from "./components/RequestForm";
 import RequestList from "./components/RequestList";
-import Toolbar from "./components/Toolbar";
+import RequestToolbar from "./components/RequestToolbar";
 import type { Request, NewRequest, RequestCategory, RequestStatus } from "./types/request";
 import { fetchRequests, createRequest, upvoteRequest, deleteRequest } from "./services/api";
-import type { SortBy } from "./components/Toolbar";
+import type { SortBy } from "./components/RequestToolbar";
 import "./App.css";
 
 export default function App() {
@@ -144,7 +144,7 @@ export default function App() {
             />
           ) : (
             <>
-              <Toolbar
+              <RequestToolbar
                 onNewRequest={handleStartRequest}
                 showingForm={showForm}
                 totalCount={requests.length}

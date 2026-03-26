@@ -6,7 +6,7 @@ import { CATEGORY_LABELS } from "../../types/request";
 
 export type SortBy = "newest" | "oldest" | "upvotes";
 
-interface ToolbarProps {
+interface RequestToolbarProps {
   onNewRequest: () => void;
   showingForm: boolean;
   totalCount: number;
@@ -19,7 +19,7 @@ interface ToolbarProps {
   onSortBy: (v: SortBy) => void;
 }
 
-export default function Toolbar({
+export default function RequestToolbar({
   onNewRequest,
   showingForm,
   totalCount,
@@ -30,7 +30,7 @@ export default function Toolbar({
   onFilterCategory,
   onFilterStatus,
   onSortBy,
-}: ToolbarProps) {
+}: RequestToolbarProps) {
   const [showFilter, setShowFilter] = useState(false);
   const [showSort, setShowSort] = useState(false);
   const isFiltering = filterCategory !== "" || filterStatus !== "";
