@@ -1,6 +1,6 @@
 ﻿import { useState, useRef } from "react";
-import type { ComplaintCategory, NewComplaint } from "../types/complaint";
-import { CATEGORY_LABELS } from "../types/complaint";
+import type { ComplaintCategory, NewComplaint } from "../../types/complaint";
+import { CATEGORY_LABELS } from "../../types/complaint";
 
 interface ReportFormProps {
   selectedLocation: { lng: number; lat: number } | null;

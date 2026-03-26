@@ -1,8 +1,9 @@
 import { useRef, useEffect, useCallback, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { Complaint } from "../types/complaint";
-import { STATUS_COLORS, CATEGORY_LABELS } from "../types/complaint";
+import "./MapView.css";
+import type { Complaint } from "../../types/complaint";
+import { STATUS_COLORS, CATEGORY_LABELS } from "../../types/complaint";
 
 interface MapViewProps {
   complaints: Complaint[];

@@ -1,7 +1,7 @@
 ﻿import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronUp } from "@fortawesome/free-solid-svg-icons";
-import type { Complaint } from "../types/complaint";
-import { CATEGORY_LABELS } from "../types/complaint";
+import type { Complaint } from "../../types/complaint";
+import { CATEGORY_LABELS } from "../../types/complaint";
 
 interface ComplaintListProps {
   complaints: Complaint[];

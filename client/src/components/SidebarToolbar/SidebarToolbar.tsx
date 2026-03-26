@@ -1,8 +1,8 @@
 ﻿import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSliders, faArrowDownUpAcrossLine } from "@fortawesome/free-solid-svg-icons";
-import type { ComplaintCategory, ComplaintStatus } from "../types/complaint";
-import { CATEGORY_LABELS } from "../types/complaint";
+import type { ComplaintCategory, ComplaintStatus } from "../../types/complaint";
+import { CATEGORY_LABELS } from "../../types/complaint";
 
 export type SortBy = "newest" | "oldest" | "upvotes";
 
