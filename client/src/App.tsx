@@ -2,18 +2,15 @@ import { useState, useCallback } from "react";
 import Header from "./components/Header";
 import MapView from "./components/MapView";
 import RequestForm from "./components/RequestForm";
-import RequestList from "./components/RequestList";
 import RequestToolbar from "./components/RequestToolbar";
 import { useTheme } from "./hooks/useTheme";
 import { useRequests } from "./hooks/useRequests";
-import { useRequestFilters } from "./hooks/useRequestFilters";
 import type { Request, NewRequest } from "./types/request";
 import "./App.css";
 
 export default function App() {
   const { darkMode, toggleTheme } = useTheme();
   const { requests, selectedRequest, selectRequest, upvote, remove, create } = useRequests();
-  const { filterCategory, setFilterCategory, filterStatus, setFilterStatus, sortBy, setSortBy, filteredSorted } = useRequestFilters(requests);
 
   const [showForm, setShowForm] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -76,21 +73,11 @@ export default function App() {
           ) : (
             <>
               <RequestToolbar
+                requests={requests}
                 onNewRequest={handleStartRequest}
                 showingForm={showForm}
-                totalCount={requests.length}
-                filteredCount={filteredSorted.length}
-                filterCategory={filterCategory}
-                filterStatus={filterStatus}
-                sortBy={sortBy}
-                onFilterCategory={setFilterCategory}
-                onFilterStatus={setFilterStatus}
-                onSortBy={setSortBy}
-              />
-              <RequestList
-                requests={filteredSorted}
-                onSelect={handleSelectRequest}
-                onDelete={remove}
+                onSelectRequest={handleSelectRequest}
+                onDeleteRequest={remove}
                 selectedId={selectedRequest?.id ?? null}
               />
             </>

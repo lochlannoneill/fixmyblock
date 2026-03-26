@@ -1,38 +1,49 @@
-﻿import { useState } from "react";
+﻿import { useState, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSliders, faArrowDownUpAcrossLine } from "@fortawesome/free-solid-svg-icons";
-import type { RequestCategory, RequestStatus } from "../../types/request";
+import type { Request, RequestCategory, RequestStatus } from "../../types/request";
 import { CATEGORY_LABELS } from "../../types/request";
-import type { SortBy } from "../../hooks/useRequestFilters";
+import RequestList from "../RequestList";
+
+type SortBy = "newest" | "oldest" | "upvotes";
 
 interface RequestToolbarProps {
+  requests: Request[];
   onNewRequest: () => void;
   showingForm: boolean;
-  totalCount: number;
-  filteredCount: number;
-  filterCategory: RequestCategory | "";
-  filterStatus: RequestStatus | "";
-  sortBy: SortBy;
-  onFilterCategory: (v: RequestCategory | "") => void;
-  onFilterStatus: (v: RequestStatus | "") => void;
-  onSortBy: (v: SortBy) => void;
+  onSelectRequest: (c: Request) => void;
+  onDeleteRequest: (id: string) => void;
+  selectedId: string | null;
 }
 
 export default function RequestToolbar({
+  requests,
   onNewRequest,
   showingForm,
-  totalCount,
-  filteredCount,
-  filterCategory,
-  filterStatus,
-  sortBy,
-  onFilterCategory,
-  onFilterStatus,
-  onSortBy,
+  onSelectRequest,
+  onDeleteRequest,
+  selectedId,
 }: RequestToolbarProps) {
+  const [filterCategory, setFilterCategory] = useState<RequestCategory | "">("");
+  const [filterStatus, setFilterStatus] = useState<RequestStatus | "">("");
+  const [sortBy, setSortBy] = useState<SortBy>("newest");
   const [showFilter, setShowFilter] = useState(false);
   const [showSort, setShowSort] = useState(false);
+
   const isFiltering = filterCategory !== "" || filterStatus !== "";
+
+  const filteredSorted = useMemo(() => {
+    const filtered = requests.filter((c) => {
+      if (filterCategory && c.category !== filterCategory) return false;
+      if (filterStatus && c.status !== filterStatus) return false;
+      return true;
+    });
+    return [...filtered].sort((a, b) => {
+      if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (sortBy === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      return b.upvotes - a.upvotes;
+    });
+  }, [requests, filterCategory, filterStatus, sortBy]);
 
   const selectClasses =
     "w-full min-w-0 py-1.5 px-2 text-[13px] border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-[#2a2a2a] text-slate-800 dark:text-zinc-200 cursor-pointer transition-colors focus:outline-none focus:border-blue-500";
@@ -80,7 +91,7 @@ export default function RequestToolbar({
             <select
               className={selectClasses}
               value={filterCategory}
-              onChange={(e) => onFilterCategory(e.target.value as RequestCategory | "")}
+              onChange={(e) => setFilterCategory(e.target.value as RequestCategory | "")}
             >
               <option value="">All Categories</option>
               {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
@@ -90,7 +101,7 @@ export default function RequestToolbar({
             <select
               className={selectClasses}
               value={filterStatus}
-              onChange={(e) => onFilterStatus(e.target.value as RequestStatus | "")}
+              onChange={(e) => setFilterStatus(e.target.value as RequestStatus | "")}
             >
               <option value="">All Statuses</option>
               <option value="open">Open</option>
@@ -104,7 +115,7 @@ export default function RequestToolbar({
             <select
               className={selectClasses}
               value={sortBy}
-              onChange={(e) => onSortBy(e.target.value as SortBy)}
+              onChange={(e) => setSortBy(e.target.value as SortBy)}
             >
               <option value="newest">Newest</option>
               <option value="oldest">Oldest</option>
@@ -113,9 +124,15 @@ export default function RequestToolbar({
           </div>
         )}
         <span className="text-[13px] font-semibold text-slate-500 dark:text-[#8c8c96] mt-1.5">
-          {filteredCount} of {totalCount} requests
+          {filteredSorted.length} of {requests.length} requests
         </span>
       </div>
+      <RequestList
+        requests={filteredSorted}
+        onSelect={onSelectRequest}
+        onDelete={onDeleteRequest}
+        selectedId={selectedId}
+      />
     </>
   );
 }
