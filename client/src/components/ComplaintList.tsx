@@ -133,10 +133,6 @@ export default function ComplaintList({
           onClick={() => onSelect(c)}
         >
           <div className="card-header">
-            <span
-              className="status-dot"
-              style={{ background: STATUS_COLORS[c.status] }}
-            />
             <span className="card-title">{c.title}</span>
             <span className="card-votes"><FontAwesomeIcon icon={faChevronUp} /> {c.upvotes}</span>
           </div>

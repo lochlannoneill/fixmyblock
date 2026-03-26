@@ -36,7 +36,7 @@
 [data-theme="dark"] {
   --bg-primary: #121212;
   --bg-secondary: #1e1e1e;
-  --bg-card: #1e1e1e;
+  --bg-card: #272727;
   --bg-input: #2a2a2a;
   --bg-hint: #1a2a1a;
   --bg-upload: #2a2a2a;
@@ -296,7 +296,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin: 12px;
+  margin: 0;
   padding: 18px;
   border: 2px dashed var(--border-input);
   border-radius: 12px;
