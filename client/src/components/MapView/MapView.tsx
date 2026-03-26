@@ -4,6 +4,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./MapView.css";
 import type { Request } from "../../types/request";
 import { STATUS_COLORS, CATEGORY_LABELS } from "../../types/request";
+import Layers from "../Layers";
+import type { MapLayer } from "../Layers";
 
 interface MapViewProps {
   requests: Request[];
@@ -35,6 +37,7 @@ export default function MapView({
   const onMapClickRef = useRef(onMapClick);
   const reportModeRef = useRef(reportMode);
   const [mapReady, setMapReady] = useState(false);
+  const [activeLayer, setActiveLayer] = useState<MapLayer>("terrain");
 
   // Keep refs in sync so the map click handler always has latest values
   useEffect(() => { onMapClickRef.current = onMapClick; }, [onMapClick]);
@@ -47,8 +50,7 @@ export default function MapView({
     const azureMapsKey = import.meta.env.VITE_AZURE_MAPS_KEY || "";
 
     // Use Azure Maps tiles if key is available, otherwise use free OSM tiles
-    const lightStyle = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
-    const darkStyle = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
+    const defaultStyle = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
@@ -74,7 +76,7 @@ export default function MapView({
               },
             ],
           }
-        : document.documentElement.classList.contains("dark") ? darkStyle : lightStyle,
+        : defaultStyle,
       center: [-6.2603, 53.3498], // Default: Dublin
       zoom: 13,
       pitch: 45, // 3D tilt
@@ -146,11 +148,12 @@ export default function MapView({
     if (!map.current || !mapReady) return;
     const azureMapsKey = import.meta.env.VITE_AZURE_MAPS_KEY || "";
     if (azureMapsKey) return; // Azure Maps doesn't support style switching this way
+    if (activeLayer !== "default") return; // Don't override layer selection
     const style = darkMode
       ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
       : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
     map.current.setStyle(style);
-  }, [darkMode, mapReady]);
+  }, [darkMode, mapReady, activeLayer]);
 
   // Sync markers with requests
   useEffect(() => {
@@ -336,10 +339,52 @@ export default function MapView({
     }
   }, [reportMode, dropPinLocation, mapReady]);
 
+  const handleLayerChange = useCallback((layer: MapLayer) => {
+    if (!map.current) return;
+    setActiveLayer(layer);
+
+    const styles: Record<MapLayer, string | object> = {
+      default: darkMode
+        ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+        : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+      satellite: {
+        version: 8,
+        sources: {
+          "esri-satellite": {
+            type: "raster",
+            tiles: [
+              "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            ],
+            tileSize: 256,
+            maxzoom: 19,
+          },
+        },
+        layers: [
+          { id: "esri-satellite-layer", type: "raster", source: "esri-satellite" },
+        ],
+      },
+      terrain: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
+      flat: darkMode
+        ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+        : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+    };
+
+    map.current.setStyle(styles[layer] as string);
+
+    if (layer === "flat") {
+      map.current.easeTo({ pitch: 0, bearing: 0, duration: 500 });
+    } else if (map.current.getPitch() === 0) {
+      map.current.easeTo({ pitch: 45, bearing: -17.6, duration: 500 });
+    }
+  }, [darkMode]);
+
   return (
-    <div
-      ref={mapContainer}
-      style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
-    />
+    <div style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}>
+      <div
+        ref={mapContainer}
+        style={{ width: "100%", height: "100%" }}
+      />
+      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} />
+    </div>
   );
 }
