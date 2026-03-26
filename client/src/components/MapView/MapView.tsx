@@ -156,7 +156,6 @@ export default function MapView({
         height: 32px;
         border-radius: 50% 50% 50% 0;
         background: ${STATUS_COLORS[req.status]};
-        transform: rotate(-45deg);
         border: 2px solid white;
         cursor: pointer;
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
@@ -167,12 +166,11 @@ export default function MapView({
 
       const inner = document.createElement("div");
       inner.style.cssText = `
-        transform: rotate(45deg);
         font-size: 14px;
         color: white;
         font-weight: bold;
       `;
-      inner.textContent = req.upvotes > 0 ? `${req.upvotes}` : "!";
+      inner.textContent = `${req.upvotes}`;
       el.appendChild(inner);
 
       el.addEventListener("click", (e) => {
