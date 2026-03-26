@@ -209,18 +209,74 @@
 
 /* ===== THEME TOGGLE ===== */
 .theme-toggle {
-  background: none;
-  border: 1px solid var(--border-primary);
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 16px;
+  position: relative;
+  width: 64px;
+  height: 32px;
+  border-radius: 9999px;
+  border: none;
+  padding: 4px;
   cursor: pointer;
+  background: #e5e7eb;
   transition: background 0.2s;
-  line-height: 1;
+}
+
+[data-theme="dark"] .theme-toggle {
+  background: #374151;
 }
 
 .theme-toggle:hover {
-  background: var(--bg-secondary);
+  background: #d1d5db;
+}
+
+[data-theme="dark"] .theme-toggle:hover {
+  background: #4b5563;
+}
+
+.toggle-track-icons {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.toggle-icon {
+  width: 18px;
+  height: 18px;
+  color: #9ca3af;
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s, background 0.3s;
+}
+
+.toggle-knob--light {
+  background: #facc15;
+  transform: translateX(0);
+}
+
+.toggle-knob--dark {
+  background: #3b82f6;
+  transform: translateX(32px);
+}
+
+.knob-icon {
+  width: 14px;
+  height: 14px;
+  color: white;
 }
 
 /* ===== MAP POPUP ===== */
