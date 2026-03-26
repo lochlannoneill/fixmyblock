@@ -296,7 +296,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin: 0;
+  margin: 12px;
   padding: 18px;
   border: 2px dashed var(--border-input);
   border-radius: 12px;

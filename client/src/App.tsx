@@ -1,10 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Header from "./components/Header";
 import MapView from "./components/MapView";
 import ReportForm from "./components/ReportForm";
 import ComplaintList from "./components/ComplaintList";
-import type { Complaint, NewComplaint } from "./types/complaint";
+import SidebarToolbar from "./components/SidebarToolbar";
+import type { Complaint, NewComplaint, ComplaintCategory, ComplaintStatus } from "./types/complaint";
 import { fetchComplaints, createComplaint, upvoteComplaint, deleteComplaint } from "./services/api";
+import type { SortBy } from "./components/SidebarToolbar";
 import "./App.css";
 
 export default function App() {
@@ -22,6 +24,22 @@ export default function App() {
     if (saved) return saved === "dark";
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
+  const [filterCategory, setFilterCategory] = useState<ComplaintCategory | "">("");
+  const [filterStatus, setFilterStatus] = useState<ComplaintStatus | "">("");
+  const [sortBy, setSortBy] = useState<SortBy>("newest");
+
+  const filteredSorted = useMemo(() => {
+    const filtered = complaints.filter((c) => {
+      if (filterCategory && c.category !== filterCategory) return false;
+      if (filterStatus && c.status !== filterStatus) return false;
+      return true;
+    });
+    return [...filtered].sort((a, b) => {
+      if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (sortBy === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      return b.upvotes - a.upvotes;
+    });
+  }, [complaints, filterCategory, filterStatus, sortBy]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", darkMode ? "dark" : "light");
@@ -121,14 +139,26 @@ export default function App() {
               onCancel={handleCancelReport}
             />
           ) : (
-            <ComplaintList
-              complaints={complaints}
-              onSelect={handleSelectComplaint}
-              onDelete={handleDelete}
-              onNewRequest={handleStartReport}
-              selectedId={selectedComplaint?.id ?? null}
-              showingForm={showForm}
-            />
+            <>
+              <SidebarToolbar
+                onNewRequest={handleStartReport}
+                showingForm={showForm}
+                totalCount={complaints.length}
+                filteredCount={filteredSorted.length}
+                filterCategory={filterCategory}
+                filterStatus={filterStatus}
+                sortBy={sortBy}
+                onFilterCategory={setFilterCategory}
+                onFilterStatus={setFilterStatus}
+                onSortBy={setSortBy}
+              />
+              <ComplaintList
+                complaints={filteredSorted}
+                onSelect={handleSelectComplaint}
+                onDelete={handleDelete}
+                selectedId={selectedComplaint?.id ?? null}
+              />
+            </>
           )}
         </aside>
         <main className="map-container">
