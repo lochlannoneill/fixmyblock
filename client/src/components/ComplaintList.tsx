@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChevronUp } from "@fortawesome/free-solid-svg-icons";
 import type { Complaint, ComplaintCategory, ComplaintStatus } from "../types/complaint";
 import { CATEGORY_LABELS, STATUS_COLORS } from "../types/complaint";
 
@@ -95,7 +97,7 @@ export default function ComplaintList({
               style={{ background: STATUS_COLORS[c.status] }}
             />
             <span className="card-title">{c.title}</span>
-            <span className="card-votes">👍 {c.upvotes}</span>
+            <span className="card-votes"><FontAwesomeIcon icon={faChevronUp} /> {c.upvotes}</span>
           </div>
           <div className="card-meta">
             {CATEGORY_LABELS[c.category]} ·{" "}
