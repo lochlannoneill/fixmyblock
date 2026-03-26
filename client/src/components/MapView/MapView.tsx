@@ -210,30 +210,34 @@ export default function MapView({
           </div>`
         : "";
 
+      const statusColors: Record<string, string> = { open: "#3b82f6", "in-progress": "#eab308", resolved: "#22c55e" };
+      const statusLabels: Record<string, string> = { open: "Open", "in-progress": "In Progress", resolved: "Resolved" };
+      const statusColor = statusColors[req.status] || "#3b82f6";
+      const statusLabel = statusLabels[req.status] || req.status;
+
       const html = `
-        <div class="popup-content">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${STATUS_COLORS[req.status]}"></span>
-            <strong class="popup-title">${req.title}</strong>
+        <div class="popup-content" style="position:relative;min-width:260px;min-height:120px">
+          <span style="position:absolute;top:0;right:0;display:flex;align-items:center;gap:6px">
+            <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px">${statusLabel}</span>
+            <button id="popup-upvote-${req.id}" class="popup-upvote-btn" style="margin:0">${req.upvotes} <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"/></svg></button>
+          </span>
+          <div class="popup-meta" style="margin-bottom:4px">
+            <div>${new Date(req.createdAt).toLocaleDateString()} · ${new Date(req.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+            <div>${CATEGORY_LABELS[req.category]}</div>
           </div>
-          <div class="popup-meta">
-            ${CATEGORY_LABELS[req.category]} · ${req.status} · ${new Date(req.createdAt).toLocaleDateString()}
+          <div style="display:flex;align-items:center;gap:8px;padding-right:80px">
+            <strong class="popup-title">${req.title}</strong>
           </div>
           ${thumbs}
           <p class="popup-desc">${req.description.slice(0, 150)}${req.description.length > 150 ? "..." : ""}</p>
-          <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
-            <button id="popup-upvote-${req.id}" class="popup-upvote-btn">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 512 512" fill="currentColor"><path d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"/></svg>
-              ${req.upvotes}
-            </button>
-            <span class="popup-reporter">Reported by ${req.reporterName}</span>
-          </div>
+          <span class="popup-reporter" style="display:block;margin-top:8px">Reported by ${req.reporterName}</span>
         </div>
       `;
 
       const popup = new maplibregl.Popup({
         offset: 25,
         closeOnClick: true,
+        closeButton: false,
         maxWidth: "320px",
       })
         .setLngLat([req.longitude, req.latitude])
@@ -258,15 +262,22 @@ export default function MapView({
     [onSelectRequest, onUpvote]
   );
 
+  const selectedIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (selectedRequest) {
+      const isNewSelection = selectedIdRef.current !== selectedRequest.id;
+      selectedIdRef.current = selectedRequest.id;
       showPopup(selectedRequest);
-      map.current?.flyTo({
-        center: [selectedRequest.longitude, selectedRequest.latitude],
-        zoom: 16,
-        pitch: 50,
-      });
+      if (isNewSelection) {
+        map.current?.flyTo({
+          center: [selectedRequest.longitude, selectedRequest.latitude],
+          zoom: 16,
+          pitch: 50,
+        });
+      }
     } else {
+      selectedIdRef.current = null;
       if (popupRef.current) {
         popupRef.current.off("close", popupCloseHandlerRef.current!);
         popupRef.current.remove();
