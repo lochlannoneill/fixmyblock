@@ -13,6 +13,7 @@ interface MapViewProps {
   onUpvote: (id: string) => void;
   reportMode: boolean;
   dropPinLocation: { lng: number; lat: number } | null;
+  darkMode: boolean;
 }
 
 export default function MapView({
@@ -23,6 +24,7 @@ export default function MapView({
   onUpvote,
   reportMode,
   dropPinLocation,
+  darkMode,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -45,9 +47,8 @@ export default function MapView({
     const azureMapsKey = import.meta.env.VITE_AZURE_MAPS_KEY || "";
 
     // Use Azure Maps tiles if key is available, otherwise use free OSM tiles
-    const styleUrl = azureMapsKey
-      ? `https://atlas.microsoft.com/map/style?api-version=2024-04-01&style=microsoft-imagery&subscription-key=${azureMapsKey}`
-      : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+    const lightStyle = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+    const darkStyle = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
@@ -73,7 +74,7 @@ export default function MapView({
               },
             ],
           }
-        : styleUrl,
+        : document.documentElement.classList.contains("dark") ? darkStyle : lightStyle,
       center: [-6.2603, 53.3498], // Default: Dublin
       zoom: 13,
       pitch: 45, // 3D tilt
@@ -139,6 +140,17 @@ export default function MapView({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Switch map style on dark mode toggle
+  useEffect(() => {
+    if (!map.current || !mapReady) return;
+    const azureMapsKey = import.meta.env.VITE_AZURE_MAPS_KEY || "";
+    if (azureMapsKey) return; // Azure Maps doesn't support style switching this way
+    const style = darkMode
+      ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+      : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+    map.current.setStyle(style);
+  }, [darkMode, mapReady]);
 
   // Sync markers with requests
   useEffect(() => {

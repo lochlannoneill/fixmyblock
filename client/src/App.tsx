@@ -97,6 +97,7 @@ export default function App() {
             onUpvote={upvote}
             reportMode={showForm}
             dropPinLocation={selectedLocation}
+            darkMode={darkMode}
           />
         </main>
       </div>
