@@ -1,0 +1,86 @@
+/* ===== MapLibre popup overrides ===== */
+.maplibregl-popup-content {
+  background: var(--bg-card) !important;
+  color: var(--text-primary);
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-md) !important;
+  padding: 14px !important;
+}
+
+.maplibregl-popup-tip {
+  border-top-color: var(--bg-card) !important;
+}
+
+.maplibregl-popup-close-button {
+  color: var(--text-muted) !important;
+  font-size: 18px;
+}
+
+.maplibregl-popup-close-button:hover {
+  color: var(--text-primary) !important;
+}
+
+/* Popup content (injected via innerHTML) */
+.popup-content {
+  max-width: 280px;
+  font-family: system-ui, sans-serif;
+}
+
+.popup-title {
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.popup-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.popup-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 4px 0;
+}
+
+.popup-upvote-btn {
+  background: none;
+  border: 1px solid var(--border-input);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.popup-upvote-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-focus-ring);
+}
+
+.popup-reporter {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* ===== Drop pin marker ===== */
+.drop-pin-marker {
+  cursor: grab;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  animation: drop-bounce 0.4s ease-out;
+}
+
+.drop-pin-marker:active {
+  cursor: grabbing;
+}
+
+@keyframes drop-bounce {
+  0% { transform: translateY(-40px); opacity: 0; }
+  60% { transform: translateY(4px); opacity: 1; }
+  100% { transform: translateY(0); }
+}

@@ -1,24 +1,25 @@
 import { useRef, useEffect, useCallback, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { Complaint } from "../types/complaint";
-import { STATUS_COLORS, CATEGORY_LABELS } from "../types/complaint";
+import "./MapView.css";
+import type { Request } from "../../types/request";
+import { STATUS_COLORS, CATEGORY_LABELS } from "../../types/request";
 
 interface MapViewProps {
-  complaints: Complaint[];
+  requests: Request[];
   onMapClick: (lng: number, lat: number) => void;
-  selectedComplaint: Complaint | null;
-  onSelectComplaint: (c: Complaint | null) => void;
+  selectedRequest: Request | null;
+  onSelectRequest: (c: Request | null) => void;
   onUpvote: (id: string) => void;
   reportMode: boolean;
   dropPinLocation: { lng: number; lat: number } | null;
 }
 
 export default function MapView({
-  complaints,
+  requests,
   onMapClick,
-  selectedComplaint,
-  onSelectComplaint,
+  selectedRequest,
+  onSelectRequest,
   onUpvote,
   reportMode,
   dropPinLocation,
@@ -139,7 +140,7 @@ export default function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync markers with complaints
+  // Sync markers with requests
   useEffect(() => {
     if (!map.current || !mapReady) return;
 
@@ -147,14 +148,14 @@ export default function MapView({
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    complaints.forEach((complaint) => {
+    requests.forEach((req) => {
       const el = document.createElement("div");
-      el.className = "complaint-marker";
+      el.className = "request-marker";
       el.style.cssText = `
         width: 32px;
         height: 32px;
         border-radius: 50% 50% 50% 0;
-        background: ${STATUS_COLORS[complaint.status]};
+        background: ${STATUS_COLORS[req.status]};
         transform: rotate(-45deg);
         border: 2px solid white;
         cursor: pointer;
@@ -171,25 +172,25 @@ export default function MapView({
         color: white;
         font-weight: bold;
       `;
-      inner.textContent = complaint.upvotes > 0 ? `${complaint.upvotes}` : "!";
+      inner.textContent = req.upvotes > 0 ? `${req.upvotes}` : "!";
       el.appendChild(inner);
 
       el.addEventListener("click", (e) => {
         e.stopPropagation();
-        onSelectComplaint(complaint);
+        onSelectRequest(req);
       });
 
       const marker = new maplibregl.Marker({ element: el })
-        .setLngLat([complaint.longitude, complaint.latitude])
+        .setLngLat([req.longitude, req.latitude])
         .addTo(map.current!);
 
       markersRef.current.push(marker);
     });
-  }, [complaints, mapReady, onSelectComplaint]);
+  }, [requests, mapReady, onSelectRequest]);
 
-  // Show popup for selected complaint
+  // Show popup for selected request
   const showPopup = useCallback(
-    (complaint: Complaint) => {
+    (req: Request) => {
       if (!map.current) return;
       // Remove old popup without triggering its close handler
       if (popupRef.current) {
@@ -197,9 +198,9 @@ export default function MapView({
         popupRef.current.remove();
       }
 
-      const thumbs = complaint.imageUrls.length
+      const thumbs = req.imageUrls.length
         ? `<div style="display:flex;gap:4px;margin:8px 0;overflow-x:auto">
-            ${complaint.imageUrls
+            ${req.imageUrls
               .slice(0, 3)
               .map(
                 (url) =>
@@ -212,55 +213,56 @@ export default function MapView({
       const html = `
         <div class="popup-content">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${STATUS_COLORS[complaint.status]}"></span>
-            <strong class="popup-title">${complaint.title}</strong>
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${STATUS_COLORS[req.status]}"></span>
+            <strong class="popup-title">${req.title}</strong>
           </div>
           <div class="popup-meta">
-            ${CATEGORY_LABELS[complaint.category]} · ${complaint.status} · ${new Date(complaint.createdAt).toLocaleDateString()}
+            ${CATEGORY_LABELS[req.category]} · ${req.status} · ${new Date(req.createdAt).toLocaleDateString()}
           </div>
           ${thumbs}
-          <p class="popup-desc">${complaint.description.slice(0, 150)}${complaint.description.length > 150 ? "..." : ""}</p>
+          <p class="popup-desc">${req.description.slice(0, 150)}${req.description.length > 150 ? "..." : ""}</p>
           <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
-            <button id="popup-upvote-${complaint.id}" class="popup-upvote-btn">
-              👍 ${complaint.upvotes}
+            <button id="popup-upvote-${req.id}" class="popup-upvote-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 512 512" fill="currentColor"><path d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"/></svg>
+              ${req.upvotes}
             </button>
-            <span class="popup-reporter">Reported by ${complaint.reporterName}</span>
+            <span class="popup-reporter">Reported by ${req.reporterName}</span>
           </div>
         </div>
       `;
 
       const popup = new maplibregl.Popup({
         offset: 25,
-        closeOnClick: false,
+        closeOnClick: true,
         maxWidth: "320px",
       })
-        .setLngLat([complaint.longitude, complaint.latitude])
+        .setLngLat([req.longitude, req.latitude])
         .setHTML(html)
         .addTo(map.current);
 
-      const closeHandler = () => onSelectComplaint(null);
+      const closeHandler = () => onSelectRequest(null);
       popupCloseHandlerRef.current = closeHandler;
       popup.on("close", closeHandler);
 
       // Attach upvote handler after DOM insertion
       setTimeout(() => {
-        const btn = document.getElementById(`popup-upvote-${complaint.id}`);
+        const btn = document.getElementById(`popup-upvote-${req.id}`);
         btn?.addEventListener("click", (e) => {
           e.stopPropagation();
-          onUpvote(complaint.id);
+          onUpvote(req.id);
         });
       }, 0);
 
       popupRef.current = popup;
     },
-    [onSelectComplaint, onUpvote]
+    [onSelectRequest, onUpvote]
   );
 
   useEffect(() => {
-    if (selectedComplaint) {
-      showPopup(selectedComplaint);
+    if (selectedRequest) {
+      showPopup(selectedRequest);
       map.current?.flyTo({
-        center: [selectedComplaint.longitude, selectedComplaint.latitude],
+        center: [selectedRequest.longitude, selectedRequest.latitude],
         zoom: 16,
         pitch: 50,
       });
@@ -270,7 +272,7 @@ export default function MapView({
         popupRef.current.remove();
       }
     }
-  }, [selectedComplaint, showPopup]);
+  }, [selectedRequest, showPopup]);
 
   // Toggle crosshair cursor in report mode
   useEffect(() => {

@@ -1,15 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Header from "./components/Header";
 import MapView from "./components/MapView";
-import ReportForm from "./components/ReportForm";
-import ComplaintList from "./components/ComplaintList";
-import type { Complaint, NewComplaint } from "./types/complaint";
-import { fetchComplaints, createComplaint, upvoteComplaint, deleteComplaint } from "./services/api";
+import RequestForm from "./components/RequestForm";
+import RequestList from "./components/RequestList";
+import Toolbar from "./components/Toolbar";
+import type { Request, NewRequest, RequestCategory, RequestStatus } from "./types/request";
+import { fetchRequests, createRequest, upvoteRequest, deleteRequest } from "./services/api";
+import type { SortBy } from "./components/Toolbar";
 import "./App.css";
 
 export default function App() {
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
-  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const [requests, setRequests] = useState<Request[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{
     lng: number;
@@ -22,20 +24,40 @@ export default function App() {
     if (saved) return saved === "dark";
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
+  const [filterCategory, setFilterCategory] = useState<RequestCategory | "">("")
+  const [filterStatus, setFilterStatus] = useState<RequestStatus | "">("")
+  const [sortBy, setSortBy] = useState<SortBy>("newest");
+
+  const filteredSorted = useMemo(() => {
+    const filtered = requests.filter((c) => {
+      if (filterCategory && c.category !== filterCategory) return false;
+      if (filterStatus && c.status !== filterStatus) return false;
+      return true;
+    });
+    return [...filtered].sort((a, b) => {
+      if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (sortBy === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      return b.upvotes - a.upvotes;
+    });
+  }, [requests, filterCategory, filterStatus, sortBy]);
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", darkMode ? "dark" : "light");
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
     localStorage.setItem("fixmyblock-theme", darkMode ? "dark" : "light");
   }, [darkMode]);
 
   useEffect(() => {
-    loadComplaints();
+    loadRequests();
   }, []);
 
-  async function loadComplaints() {
+  async function loadRequests() {
     try {
-      const data = await fetchComplaints();
-      setComplaints(data);
+      const data = await fetchRequests();
+      setRequests(data);
     } catch {
       console.warn("API not connected. Running in demo mode.");
     } finally {
@@ -52,8 +74,8 @@ export default function App() {
     [showForm]
   );
 
-  const handleSelectComplaint = useCallback((c: Complaint | null) => {
-    setSelectedComplaint(c);
+  const handleSelectRequest = useCallback((c: Request | null) => {
+    setSelectedRequest(c);
     if (c) {
       setSidebarView("list");
       setShowForm(false);
@@ -62,11 +84,11 @@ export default function App() {
 
   const handleUpvote = useCallback(async (id: string) => {
     try {
-      const updated = await upvoteComplaint(id);
-      setComplaints((prev) =>
+      const updated = await upvoteRequest(id);
+      setRequests((prev) =>
         prev.map((c) => (c.id === updated.id ? updated : c))
       );
-      setSelectedComplaint((prev) =>
+      setSelectedRequest((prev) =>
         prev?.id === updated.id ? updated : prev
       );
     } catch {
@@ -76,72 +98,84 @@ export default function App() {
 
   const handleDelete = useCallback(async (id: string) => {
     try {
-      await deleteComplaint(id);
-      setComplaints((prev) => prev.filter((c) => c.id !== id));
-      setSelectedComplaint((prev) => (prev?.id === id ? null : prev));
+      await deleteRequest(id);
+      setRequests((prev) => prev.filter((c) => c.id !== id));
+      setSelectedRequest((prev) => (prev?.id === id ? null : prev));
     } catch {
       console.error("Failed to delete");
     }
   }, []);
 
-  const handleSubmit = async (data: NewComplaint) => {
-    const created = await createComplaint(data);
-    setComplaints((prev) => [created, ...prev]);
+  const handleSubmit = async (data: NewRequest) => {
+    const created = await createRequest(data);
+    setRequests((prev) => [created, ...prev]);
     setShowForm(false);
     setSidebarView("list");
     setSelectedLocation(null);
-    setSelectedComplaint(created);
+    setSelectedRequest(created);
   };
 
-  const handleStartReport = () => {
+  const handleStartRequest = () => {
     setShowForm(true);
     setSidebarView("form");
-    setSelectedComplaint(null);
+    setSelectedRequest(null);
     setSelectedLocation(null);
   };
 
-  const handleCancelReport = () => {
+  const handleCancelRequest = () => {
     setShowForm(false);
     setSidebarView("list");
     setSelectedLocation(null);
   };
 
   return (
-    <div className="app">
+    <div className="flex flex-col h-screen overflow-hidden bg-white dark:bg-[#121212] text-slate-800 dark:text-zinc-200">
       <Header
         darkMode={darkMode}
         onToggleTheme={() => setDarkMode((d) => !d)}
       />
-      <div className="app-body">
-        <aside className="sidebar">
+      <div className="flex flex-col-reverse md:flex-row flex-1 overflow-hidden">
+        <aside className="sidebar w-full flex-1 border-t border-slate-200 dark:border-[#2a2a2a] md:w-[380px] md:min-w-[380px] md:flex-none md:border-r md:border-t-0 bg-slate-50 dark:bg-[#1e1e1e] overflow-y-auto z-10">
           {sidebarView === "form" ? (
-            <ReportForm
+            <RequestForm
               selectedLocation={selectedLocation}
               onSubmit={handleSubmit}
-              onCancel={handleCancelReport}
+              onCancel={handleCancelRequest}
             />
           ) : (
-            <ComplaintList
-              complaints={complaints}
-              onSelect={handleSelectComplaint}
-              onDelete={handleDelete}
-              onNewRequest={handleStartReport}
-              selectedId={selectedComplaint?.id ?? null}
-              showingForm={showForm}
-            />
+            <>
+              <Toolbar
+                onNewRequest={handleStartRequest}
+                showingForm={showForm}
+                totalCount={requests.length}
+                filteredCount={filteredSorted.length}
+                filterCategory={filterCategory}
+                filterStatus={filterStatus}
+                sortBy={sortBy}
+                onFilterCategory={setFilterCategory}
+                onFilterStatus={setFilterStatus}
+                onSortBy={setSortBy}
+              />
+              <RequestList
+                requests={filteredSorted}
+                onSelect={handleSelectRequest}
+                onDelete={handleDelete}
+                selectedId={selectedRequest?.id ?? null}
+              />
+            </>
           )}
         </aside>
-        <main className="map-container">
+        <main className="flex-none h-[25vh] min-h-[25vh] md:flex-1 md:h-auto md:min-h-0 relative">
           {showForm && (
-            <div className="map-overlay-hint">
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-[#121212] text-white py-2.5 px-6 rounded-3xl text-sm font-medium z-50 shadow-lg animate-pulse">
               Click anywhere on the map to place your pin
             </div>
           )}
           <MapView
-            complaints={complaints}
+            requests={requests}
             onMapClick={handleMapClick}
-            selectedComplaint={selectedComplaint}
-            onSelectComplaint={handleSelectComplaint}
+            selectedRequest={selectedRequest}
+            onSelectRequest={handleSelectRequest}
             onUpvote={handleUpvote}
             reportMode={showForm}
             dropPinLocation={selectedLocation}

@@ -1,21 +1,21 @@
-import { useState, useRef } from "react";
-import type { ComplaintCategory, NewComplaint } from "../types/complaint";
-import { CATEGORY_LABELS } from "../types/complaint";
+﻿import { useState, useRef } from "react";
+import type { RequestCategory, NewRequest } from "../../types/request";
+import { CATEGORY_LABELS } from "../../types/request";
 
-interface ReportFormProps {
+interface RequestFormProps {
   selectedLocation: { lng: number; lat: number } | null;
-  onSubmit: (data: NewComplaint) => Promise<void>;
+  onSubmit: (data: NewRequest) => Promise<void>;
   onCancel: () => void;
 }
 
-export default function ReportForm({
+export default function RequestForm({
   selectedLocation,
   onSubmit,
   onCancel,
-}: ReportFormProps) {
+}: RequestFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<ComplaintCategory>("pothole");
+  const [category, setCategory] = useState<RequestCategory>("pothole");
   const [reporterName, setReporterName] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -31,7 +31,7 @@ export default function ReportForm({
     }
     const valid = files.filter((f) => {
       if (!f.type.startsWith("image/")) return false;
-      if (f.size > 10 * 1024 * 1024) return false; // 10MB max
+      if (f.size > 10 * 1024 * 1024) return false;
       return true;
     });
     setImages((prev) => [...prev, ...valid]);
@@ -71,7 +71,6 @@ export default function ReportForm({
         images,
         reporterName: reporterName.trim(),
       });
-      // Reset form
       setTitle("");
       setDescription("");
       setCategory("pothole");
@@ -79,26 +78,30 @@ export default function ReportForm({
       setImages([]);
       setPreviews([]);
     } catch {
-      setError("Failed to submit report. Please try again.");
+      setError("Failed to submit request. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  return (
-    <form className="report-form" onSubmit={handleSubmit}>
-      <h2>Report an Issue</h2>
+  const inputClasses =
+    "block w-full mt-1 px-3 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg text-sm font-[inherit] bg-white dark:bg-[#2a2a2a] text-slate-800 dark:text-zinc-200 transition-colors focus:outline-none focus:border-blue-500 focus:ring-[3px] focus:ring-blue-500/10";
 
-      <div className="form-hint">
+  return (
+    <form className="p-6" onSubmit={handleSubmit}>
+      <h2 className="m-0 mb-4 text-lg text-slate-800 dark:text-zinc-200">New Request</h2>
+
+      <div className="bg-blue-50 dark:bg-[#1a2a1a] border border-blue-200 dark:border-blue-800 rounded-lg px-3.5 py-2.5 text-[13px] text-blue-800 dark:text-blue-300 mb-4">
         {selectedLocation
-          ? `📍 Location: ${selectedLocation.lat.toFixed(5)}, ${selectedLocation.lng.toFixed(5)}`
-          : "👆 Click on the map to drop a pin"}
+          ? `Location: ${selectedLocation.lat.toFixed(5)}, ${selectedLocation.lng.toFixed(5)}`
+          : "Click on the map to drop a pin"}
       </div>
 
-      <label>
+      <label className="block text-[13px] font-semibold text-slate-600 dark:text-[#b4b4bb] mb-3.5">
         Your Name *
         <input
           type="text"
+          className={inputClasses}
           value={reporterName}
           onChange={(e) => setReporterName(e.target.value)}
           placeholder="Jane Doe"
@@ -107,10 +110,11 @@ export default function ReportForm({
         />
       </label>
 
-      <label>
+      <label className="block text-[13px] font-semibold text-slate-600 dark:text-[#b4b4bb] mb-3.5">
         Title *
         <input
           type="text"
+          className={inputClasses}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="e.g. Large pothole on Main Street"
@@ -119,23 +123,23 @@ export default function ReportForm({
         />
       </label>
 
-      <label>
+      <label className="block text-[13px] font-semibold text-slate-600 dark:text-[#b4b4bb] mb-3.5">
         Category
         <select
+          className={inputClasses}
           value={category}
-          onChange={(e) => setCategory(e.target.value as ComplaintCategory)}
+          onChange={(e) => setCategory(e.target.value as RequestCategory)}
         >
           {Object.entries(CATEGORY_LABELS).map(([val, label]) => (
-            <option key={val} value={val}>
-              {label}
-            </option>
+            <option key={val} value={val}>{label}</option>
           ))}
         </select>
       </label>
 
-      <label>
+      <label className="block text-[13px] font-semibold text-slate-600 dark:text-[#b4b4bb] mb-3.5">
         Description *
         <textarea
+          className={inputClasses}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Describe the issue in detail..."
@@ -145,7 +149,7 @@ export default function ReportForm({
         />
       </label>
 
-      <label>
+      <label className="block text-[13px] font-semibold text-slate-600 dark:text-[#b4b4bb] mb-3.5">
         Photos (up to 5)
         <input
           ref={fileInputRef}
@@ -157,37 +161,49 @@ export default function ReportForm({
         />
         <button
           type="button"
-          className="upload-btn"
+          className="inline-block mt-1.5 px-4 py-2 bg-slate-100 dark:bg-[#2a2a2a] border border-dashed border-slate-400 dark:border-zinc-600 rounded-lg cursor-pointer text-[13px] text-slate-600 dark:text-[#b4b4bb] transition-colors hover:bg-slate-200 dark:hover:bg-[#353535]"
           onClick={() => fileInputRef.current?.click()}
         >
-          📷 Add Photos
+          Add Photos
         </button>
       </label>
 
       {previews.length > 0 && (
-        <div className="image-previews">
+        <div className="flex gap-2 flex-wrap mb-4">
           {previews.map((src, i) => (
-            <div key={i} className="preview-thumb">
-              <img src={src} alt={`preview ${i + 1}`} />
+            <div key={i} className="relative w-[72px] h-[72px] rounded-lg overflow-hidden">
+              <img className="w-full h-full object-cover" src={src} alt={`preview ${i + 1}`} />
               <button
                 type="button"
-                className="remove-btn"
+                className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white border-none cursor-pointer text-[11px] flex items-center justify-center"
                 onClick={() => removeImage(i)}
               >
-                ✕
+                X
               </button>
             </div>
           ))}
         </div>
       )}
 
-      {error && <div className="form-error">{error}</div>}
+      {error && (
+        <div className="bg-red-50 dark:bg-[#3d1111] border border-red-200 dark:border-[#5c1a1a] text-red-800 dark:text-red-300 px-3 py-2 rounded-lg text-[13px] mb-3">
+          {error}
+        </div>
+      )}
 
-      <div className="form-actions">
-        <button type="submit" className="submit-btn" disabled={submitting}>
-          {submitting ? "Submitting..." : "Submit Report"}
+      <div className="flex gap-2 mt-2">
+        <button
+          type="submit"
+          className="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 dark:disabled:bg-blue-900 text-white border-none rounded-lg font-semibold text-sm cursor-pointer disabled:cursor-not-allowed transition-colors"
+          disabled={submitting}
+        >
+          {submitting ? "Submitting..." : "Submit Request"}
         </button>
-        <button type="button" className="cancel-btn" onClick={onCancel}>
+        <button
+          type="button"
+          className="px-5 py-2.5 bg-white dark:bg-[#272727] hover:bg-slate-50 dark:hover:bg-[#1e1e1e] text-slate-600 dark:text-[#b4b4bb] border border-gray-300 dark:border-zinc-700 rounded-lg cursor-pointer text-sm transition-colors"
+          onClick={onCancel}
+        >
           Cancel
         </button>
       </div>

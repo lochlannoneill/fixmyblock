@@ -1,20 +1,20 @@
-import type { Complaint, NewComplaint } from "../types/complaint";
+import type { Request, NewRequest } from "../types/request";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
-export async function fetchComplaints(): Promise<Complaint[]> {
+export async function fetchRequests(): Promise<Request[]> {
   const res = await fetch(`${API_BASE}/complaints`);
-  if (!res.ok) throw new Error("Failed to fetch complaints");
+  if (!res.ok) throw new Error("Failed to fetch requests");
   return res.json();
 }
 
-export async function fetchComplaint(id: string): Promise<Complaint> {
+export async function fetchRequest(id: string): Promise<Request> {
   const res = await fetch(`${API_BASE}/complaints/${encodeURIComponent(id)}`);
-  if (!res.ok) throw new Error("Failed to fetch complaint");
+  if (!res.ok) throw new Error("Failed to fetch request");
   return res.json();
 }
 
-export async function createComplaint(data: NewComplaint): Promise<Complaint> {
+export async function createRequest(data: NewRequest): Promise<Request> {
   const formData = new FormData();
   formData.append("title", data.title);
   formData.append("description", data.description);
@@ -31,23 +31,23 @@ export async function createComplaint(data: NewComplaint): Promise<Complaint> {
     method: "POST",
     body: formData,
   });
-  if (!res.ok) throw new Error("Failed to create complaint");
+  if (!res.ok) throw new Error("Failed to create request");
   return res.json();
 }
 
-export async function upvoteComplaint(id: string): Promise<Complaint> {
+export async function upvoteRequest(id: string): Promise<Request> {
   const res = await fetch(
     `${API_BASE}/complaints/${encodeURIComponent(id)}/upvote`,
     { method: "POST" }
   );
-  if (!res.ok) throw new Error("Failed to upvote complaint");
+  if (!res.ok) throw new Error("Failed to upvote request");
   return res.json();
 }
 
-export async function deleteComplaint(id: string): Promise<void> {
+export async function deleteRequest(id: string): Promise<void> {
   const res = await fetch(
     `${API_BASE}/complaints/${encodeURIComponent(id)}`,
     { method: "DELETE" }
   );
-  if (!res.ok) throw new Error("Failed to delete complaint");
+  if (!res.ok) throw new Error("Failed to delete request");
 }

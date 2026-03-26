@@ -17,7 +17,7 @@ function getContainer(): Container {
   return container;
 }
 
-export interface ComplaintDoc {
+export interface RequestDoc {
   id: string;
   title: string;
   description: string;
@@ -31,43 +31,43 @@ export interface ComplaintDoc {
   reporterName: string;
 }
 
-export async function getAllComplaints(): Promise<ComplaintDoc[]> {
+export async function getAllRequests(): Promise<RequestDoc[]> {
   const { resources } = await getContainer()
-    .items.query<ComplaintDoc>("SELECT * FROM c ORDER BY c.createdAt DESC")
+    .items.query<RequestDoc>("SELECT * FROM c ORDER BY c.createdAt DESC")
     .fetchAll();
   return resources;
 }
 
-export async function getComplaintById(
+export async function getRequestById(
   id: string
-): Promise<ComplaintDoc | null> {
+): Promise<RequestDoc | null> {
   try {
-    const { resource } = await getContainer().item(id, id).read<ComplaintDoc>();
+    const { resource } = await getContainer().item(id, id).read<RequestDoc>();
     return resource ?? null;
   } catch {
     return null;
   }
 }
 
-export async function createComplaint(
-  doc: ComplaintDoc
-): Promise<ComplaintDoc> {
-  const { resource } = await getContainer().items.create<ComplaintDoc>(doc);
+export async function createRequest(
+  doc: RequestDoc
+): Promise<RequestDoc> {
+  const { resource } = await getContainer().items.create<RequestDoc>(doc);
   return resource!;
 }
 
-export async function incrementUpvote(id: string): Promise<ComplaintDoc | null> {
-  const existing = await getComplaintById(id);
+export async function incrementUpvote(id: string): Promise<RequestDoc | null> {
+  const existing = await getRequestById(id);
   if (!existing) return null;
 
   existing.upvotes = (existing.upvotes || 0) + 1;
   const { resource } = await getContainer()
     .item(id, id)
-    .replace<ComplaintDoc>(existing);
+    .replace<RequestDoc>(existing);
   return resource ?? null;
 }
 
-export async function deleteComplaint(id: string): Promise<boolean> {
+export async function deleteRequest(id: string): Promise<boolean> {
   try {
     await getContainer().item(id, id).delete();
     return true;
