@@ -42,7 +42,11 @@ export default function App() {
   }, [complaints, filterCategory, filterStatus, sortBy]);
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", darkMode ? "dark" : "light");
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
     localStorage.setItem("fixmyblock-theme", darkMode ? "dark" : "light");
   }, [darkMode]);
 
@@ -125,13 +129,13 @@ export default function App() {
   };
 
   return (
-    <div className="app">
+    <div className="flex flex-col h-screen overflow-hidden bg-white dark:bg-[#121212] text-slate-800 dark:text-zinc-200">
       <Header
         darkMode={darkMode}
         onToggleTheme={() => setDarkMode((d) => !d)}
       />
-      <div className="app-body">
-        <aside className="sidebar">
+      <div className="flex flex-col-reverse md:flex-row flex-1 overflow-hidden">
+        <aside className="sidebar w-full flex-1 border-t border-slate-200 dark:border-[#2a2a2a] md:w-[380px] md:min-w-[380px] md:flex-none md:border-r md:border-t-0 bg-slate-50 dark:bg-[#1e1e1e] overflow-y-auto z-10">
           {sidebarView === "form" ? (
             <ReportForm
               selectedLocation={selectedLocation}
@@ -161,9 +165,9 @@ export default function App() {
             </>
           )}
         </aside>
-        <main className="map-container">
+        <main className="flex-none h-[25vh] min-h-[25vh] md:flex-1 md:h-auto md:min-h-0 relative">
           {showForm && (
-            <div className="map-overlay-hint">
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-[#121212] text-white py-2.5 px-6 rounded-3xl text-sm font-medium z-50 shadow-lg animate-pulse">
               Click anywhere on the map to place your pin
             </div>
           )}
