@@ -1,21 +1,21 @@
 ﻿import { useState, useRef } from "react";
-import type { ComplaintCategory, NewComplaint } from "../../types/complaint";
-import { CATEGORY_LABELS } from "../../types/complaint";
+import type { RequestCategory, NewRequest } from "../../types/request";
+import { CATEGORY_LABELS } from "../../types/request";
 
-interface ReportFormProps {
+interface RequestFormProps {
   selectedLocation: { lng: number; lat: number } | null;
-  onSubmit: (data: NewComplaint) => Promise<void>;
+  onSubmit: (data: NewRequest) => Promise<void>;
   onCancel: () => void;
 }
 
-export default function ReportForm({
+export default function RequestForm({
   selectedLocation,
   onSubmit,
   onCancel,
-}: ReportFormProps) {
+}: RequestFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<ComplaintCategory>("pothole");
+  const [category, setCategory] = useState<RequestCategory>("pothole");
   const [reporterName, setReporterName] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -78,7 +78,7 @@ export default function ReportForm({
       setImages([]);
       setPreviews([]);
     } catch {
-      setError("Failed to submit report. Please try again.");
+      setError("Failed to submit request. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -89,7 +89,7 @@ export default function ReportForm({
 
   return (
     <form className="p-6" onSubmit={handleSubmit}>
-      <h2 className="m-0 mb-4 text-lg text-slate-800 dark:text-zinc-200">Report an Issue</h2>
+      <h2 className="m-0 mb-4 text-lg text-slate-800 dark:text-zinc-200">New Request</h2>
 
       <div className="bg-blue-50 dark:bg-[#1a2a1a] border border-blue-200 dark:border-blue-800 rounded-lg px-3.5 py-2.5 text-[13px] text-blue-800 dark:text-blue-300 mb-4">
         {selectedLocation
@@ -128,7 +128,7 @@ export default function ReportForm({
         <select
           className={inputClasses}
           value={category}
-          onChange={(e) => setCategory(e.target.value as ComplaintCategory)}
+          onChange={(e) => setCategory(e.target.value as RequestCategory)}
         >
           {Object.entries(CATEGORY_LABELS).map(([val, label]) => (
             <option key={val} value={val}>{label}</option>
@@ -197,7 +197,7 @@ export default function ReportForm({
           className="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 dark:disabled:bg-blue-900 text-white border-none rounded-lg font-semibold text-sm cursor-pointer disabled:cursor-not-allowed transition-colors"
           disabled={submitting}
         >
-          {submitting ? "Submitting..." : "Submit Report"}
+          {submitting ? "Submitting..." : "Submit Request"}
         </button>
         <button
           type="button"

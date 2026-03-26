@@ -6,45 +6,45 @@ import {
 } from "@azure/functions";
 import { v4 as uuidv4 } from "uuid";
 import {
-  getAllComplaints,
-  getComplaintById,
-  createComplaint as createComplaintDoc,
+  getAllRequests,
+  getRequestById,
+  createRequest as createRequestDoc,
   incrementUpvote,
-  deleteComplaint as deleteComplaintDoc,
-  ComplaintDoc,
+  deleteRequest as deleteRequestDoc,
+  RequestDoc,
 } from "../cosmos.js";
 import { uploadImage } from "../storage.js";
 import { parseMultipart } from "../multipart.js";
 
 // GET /api/complaints
-async function listComplaints(
+async function listRequests(
   _req: HttpRequest,
   _ctx: InvocationContext
 ): Promise<HttpResponseInit> {
   try {
-    const complaints = await getAllComplaints();
-    return { status: 200, jsonBody: complaints };
+    const requests = await getAllRequests();
+    return { status: 200, jsonBody: requests };
   } catch (err) {
-    return { status: 500, jsonBody: { error: "Failed to fetch complaints" } };
+    return { status: 500, jsonBody: { error: "Failed to fetch requests" } };
   }
 }
 
 // GET /api/complaints/{id}
-async function getComplaint(
+async function getRequest(
   req: HttpRequest,
   _ctx: InvocationContext
 ): Promise<HttpResponseInit> {
   const id = req.params.id;
   if (!id) return { status: 400, jsonBody: { error: "Missing id" } };
 
-  const complaint = await getComplaintById(id);
-  if (!complaint) return { status: 404, jsonBody: { error: "Not found" } };
+  const request = await getRequestById(id);
+  if (!request) return { status: 404, jsonBody: { error: "Not found" } };
 
-  return { status: 200, jsonBody: complaint };
+  return { status: 200, jsonBody: request };
 }
 
 // POST /api/complaints
-async function postComplaint(
+async function postRequest(
   req: HttpRequest,
   ctx: InvocationContext
 ): Promise<HttpResponseInit> {
@@ -91,7 +91,7 @@ async function postComplaint(
       imageUrls.push(url);
     }
 
-    const doc: ComplaintDoc = {
+    const doc: RequestDoc = {
       id: uuidv4(),
       title,
       description,
@@ -105,11 +105,11 @@ async function postComplaint(
       reporterName,
     };
 
-    const created = await createComplaintDoc(doc);
+    const created = await createRequestDoc(doc);
     return { status: 201, jsonBody: created };
   } catch (err) {
-    ctx.log("Error creating complaint:", err);
-    return { status: 500, jsonBody: { error: "Failed to create complaint" } };
+    ctx.log("Error creating request:", err);
+    return { status: 500, jsonBody: { error: "Failed to create request" } };
   }
 }
 
@@ -128,51 +128,51 @@ async function upvote(
 }
 
 // DELETE /api/complaints/{id}
-async function removeComplaint(
+async function removeRequest(
   req: HttpRequest,
   _ctx: InvocationContext
 ): Promise<HttpResponseInit> {
   const id = req.params.id;
   if (!id) return { status: 400, jsonBody: { error: "Missing id" } };
 
-  const deleted = await deleteComplaintDoc(id);
+  const deleted = await deleteRequestDoc(id);
   if (!deleted) return { status: 404, jsonBody: { error: "Not found" } };
 
   return { status: 204 };
 }
 
 // Register routes
-app.http("listComplaints", {
+app.http("listRequests", {
   methods: ["GET"],
   authLevel: "anonymous",
   route: "complaints",
-  handler: listComplaints,
+  handler: listRequests,
 });
 
-app.http("getComplaint", {
+app.http("getRequest", {
   methods: ["GET"],
   authLevel: "anonymous",
   route: "complaints/{id}",
-  handler: getComplaint,
+  handler: getRequest,
 });
 
-app.http("createComplaint", {
+app.http("createRequest", {
   methods: ["POST"],
   authLevel: "anonymous",
   route: "complaints",
-  handler: postComplaint,
+  handler: postRequest,
 });
 
-app.http("upvoteComplaint", {
+app.http("upvoteRequest", {
   methods: ["POST"],
   authLevel: "anonymous",
   route: "complaints/{id}/upvote",
   handler: upvote,
 });
 
-app.http("deleteComplaint", {
+app.http("deleteRequest", {
   methods: ["DELETE"],
   authLevel: "anonymous",
   route: "complaints/{id}",
-  handler: removeComplaint,
+  handler: removeRequest,
 });

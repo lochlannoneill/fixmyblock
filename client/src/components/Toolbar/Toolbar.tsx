@@ -1,8 +1,8 @@
 ﻿import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSliders, faArrowDownUpAcrossLine } from "@fortawesome/free-solid-svg-icons";
-import type { ComplaintCategory, ComplaintStatus } from "../../types/complaint";
-import { CATEGORY_LABELS } from "../../types/complaint";
+import type { RequestCategory, RequestStatus } from "../../types/request";
+import { CATEGORY_LABELS } from "../../types/request";
 
 export type SortBy = "newest" | "oldest" | "upvotes";
 
@@ -11,11 +11,11 @@ interface ToolbarProps {
   showingForm: boolean;
   totalCount: number;
   filteredCount: number;
-  filterCategory: ComplaintCategory | "";
-  filterStatus: ComplaintStatus | "";
+  filterCategory: RequestCategory | "";
+  filterStatus: RequestStatus | "";
   sortBy: SortBy;
-  onFilterCategory: (v: ComplaintCategory | "") => void;
-  onFilterStatus: (v: ComplaintStatus | "") => void;
+  onFilterCategory: (v: RequestCategory | "") => void;
+  onFilterStatus: (v: RequestStatus | "") => void;
   onSortBy: (v: SortBy) => void;
 }
 
@@ -81,7 +81,7 @@ export default function Toolbar({
             <select
               className={selectClasses}
               value={filterCategory}
-              onChange={(e) => onFilterCategory(e.target.value as ComplaintCategory | "")}
+              onChange={(e) => onFilterCategory(e.target.value as RequestCategory | "")}
             >
               <option value="">All Categories</option>
               {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
@@ -91,7 +91,7 @@ export default function Toolbar({
             <select
               className={selectClasses}
               value={filterStatus}
-              onChange={(e) => onFilterStatus(e.target.value as ComplaintStatus | "")}
+              onChange={(e) => onFilterStatus(e.target.value as RequestStatus | "")}
             >
               <option value="">All Statuses</option>
               <option value="open">Open</option>
@@ -114,7 +114,7 @@ export default function Toolbar({
           </div>
         )}
         <span className="text-[13px] font-semibold text-slate-500 dark:text-[#8c8c96] mt-1.5">
-          {filteredCount} of {totalCount} reports
+          {filteredCount} of {totalCount} requests
         </span>
       </div>
     </>

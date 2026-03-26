@@ -1,32 +1,32 @@
 ﻿import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronUp } from "@fortawesome/free-solid-svg-icons";
-import type { Complaint } from "../../types/complaint";
-import { CATEGORY_LABELS } from "../../types/complaint";
+import type { Request } from "../../types/request";
+import { CATEGORY_LABELS } from "../../types/request";
 
-interface ComplaintListProps {
-  complaints: Complaint[];
-  onSelect: (c: Complaint) => void;
+interface RequestListProps {
+  requests: Request[];
+  onSelect: (c: Request) => void;
   onDelete: (id: string) => void;
   selectedId: string | null;
 }
 
-export default function ComplaintList({
-  complaints,
+export default function RequestList({
+  requests,
   onSelect,
   onDelete,
   selectedId,
-}: ComplaintListProps) {
-  if (complaints.length === 0) {
+}: RequestListProps) {
+  if (requests.length === 0) {
     return (
       <div className="py-12 px-6 text-center text-slate-400 dark:text-[#6e6e79] text-sm">
-        <p>No reports match your criteria.</p>
+        <p>No requests match your criteria.</p>
       </div>
     );
   }
 
   return (
     <div className="p-3">
-      {complaints.map((c) => (
+      {requests.map((c) => (
         <div
           key={c.id}
           className={`group bg-white dark:bg-[#272727] rounded-xl p-3.5 mb-2.5 cursor-pointer border-2 transition-all shadow-sm relative
@@ -59,9 +59,9 @@ export default function ComplaintList({
             className="absolute bottom-2.5 right-2.5 bg-transparent border-none text-sm cursor-pointer opacity-30 group-hover:opacity-60 hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all p-1 px-1.5 rounded"
             onClick={(e) => {
               e.stopPropagation();
-              if (confirm("Delete this report?")) onDelete(c.id);
+              if (confirm("Delete this request?")) onDelete(c.id);
             }}
-            title="Delete report"
+            title="Delete request"
           >
             &#128465;
           </button>

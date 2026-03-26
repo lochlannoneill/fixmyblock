@@ -1,9 +1,9 @@
-export interface Complaint {
+export interface Request {
   id: string;
   title: string;
   description: string;
-  category: ComplaintCategory;
-  status: ComplaintStatus;
+  category: RequestCategory;
+  status: RequestStatus;
   latitude: number;
   longitude: number;
   imageUrls: string[];
@@ -12,7 +12,7 @@ export interface Complaint {
   reporterName: string;
 }
 
-export type ComplaintCategory =
+export type RequestCategory =
   | "pothole"
   | "streetlight"
   | "graffiti"
@@ -22,19 +22,19 @@ export type ComplaintCategory =
   | "signage"
   | "other";
 
-export type ComplaintStatus = "open" | "in-progress" | "resolved";
+export type RequestStatus = "open" | "in-progress" | "resolved";
 
-export interface NewComplaint {
+export interface NewRequest {
   title: string;
   description: string;
-  category: ComplaintCategory;
+  category: RequestCategory;
   latitude: number;
   longitude: number;
   images: File[];
   reporterName: string;
 }
 
-export const CATEGORY_LABELS: Record<ComplaintCategory, string> = {
+export const CATEGORY_LABELS: Record<RequestCategory, string> = {
   pothole: "Pothole",
   streetlight: "Broken Streetlight",
   graffiti: "Graffiti",
@@ -45,7 +45,7 @@ export const CATEGORY_LABELS: Record<ComplaintCategory, string> = {
   other: "Other",
 };
 
-export const STATUS_COLORS: Record<ComplaintStatus, string> = {
+export const STATUS_COLORS: Record<RequestStatus, string> = {
   open: "#3b82f6",
   "in-progress": "#f59e0b",
   resolved: "#22c55e",
