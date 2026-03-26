@@ -678,9 +678,16 @@
   .sidebar {
     width: 100%;
     min-width: unset;
-    max-height: 40vh;
+    max-height: none;
+    flex: 1;
     border-right: none;
     border-top: 1px solid var(--border-primary);
+  }
+
+  .map-container {
+    height: 25vh;
+    min-height: 25vh;
+    flex: none;
   }
 
   .header-tagline {
