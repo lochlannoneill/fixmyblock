@@ -158,7 +158,7 @@ export default function RequestForm({
         style={{ display: "none" }}
       />
 
-      <span className="block text-[13px] font-semibold text-slate-600 dark:text-[#b4b4bb] mb-1.5">Images (max 5)</span>
+      <span className="block text-[13px] font-semibold text-slate-600 dark:text-[#b4b4bb] mb-1.5">Images <span className="font-normal text-slate-400 dark:text-zinc-500">(max 5)</span></span>
       <div className="flex gap-2 flex-wrap mb-4">
         {previews.map((src, i) => (
           <div key={i} className="relative w-[72px] h-[72px] rounded-lg overflow-hidden">
@@ -183,7 +183,7 @@ export default function RequestForm({
               <circle cx="6" cy="6" r="2" />
               <path d="M24 16l-7-7L0 24" />
             </svg>
-            <svg className="relative w-8 h-8 text-white opacity-0 group-hover/add:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <svg className="relative w-8 h-8 text-blue-500 opacity-0 group-hover/add:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <path d="M12 8v8M8 12h8" />
             </svg>
           </button>
