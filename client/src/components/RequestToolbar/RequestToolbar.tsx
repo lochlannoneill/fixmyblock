@@ -50,15 +50,6 @@ export default function RequestToolbar({
 
   return (
     <>
-      {!showingForm && (
-        <div
-          className="flex items-center justify-center gap-2 m-3 p-[18px] border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-xl text-slate-500 dark:text-[#8c8c96] text-[15px] font-semibold cursor-pointer transition-colors hover:border-blue-500 hover:text-blue-500 hover:bg-blue-500/10"
-          onClick={onNewRequest}
-        >
-          <span className="text-lg font-bold leading-none flex items-center">+</span>
-          <span>New Request</span>
-        </div>
-      )}
       <div className="flex flex-col items-end px-3 py-2 mx-3">
         <div className="flex gap-1.5 justify-end">
           <button

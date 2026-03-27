@@ -104,12 +104,25 @@ export default function App() {
               <polyline points="18 15 12 9 6 15" className="md:hidden" />
               <polyline points="9 18 15 12 9 6" className="hidden md:block" />
             </svg>
-            {sidebarCollapsed ? "Show Requests List" : (<><span className="md:hidden">Show map</span><span className="hidden md:inline">Hide Requests List</span></>)}
+            {sidebarCollapsed ? "Show Requests" : (<><span className="md:hidden">Show map</span><span className="hidden md:inline">Hide Requests List</span></>)}
           </button>
           {showForm && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-[#121212] text-white py-2.5 px-6 rounded-3xl text-sm font-medium z-50 shadow-lg animate-pulse">
               Click anywhere on the map to place your pin
             </div>
+          )}
+          {!showForm && (
+            <button
+              onClick={handleStartRequest}
+              className="absolute bottom-6 right-4 z-50 w-16 h-16 md:w-auto md:h-auto md:px-6 md:py-4 flex items-center justify-center md:gap-2 rounded-full border-2 border-dashed border-slate-400 dark:border-zinc-500 bg-white/60 dark:bg-[#2a2a2a]/60 backdrop-blur-sm text-slate-600 dark:text-zinc-300 hover:border-blue-500 hover:text-blue-500 shadow-lg cursor-pointer transition-colors"
+              title="New Request"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              <span className="hidden md:inline text-base font-semibold">New Request</span>
+            </button>
           )}
           <MapView
             requests={requests}
