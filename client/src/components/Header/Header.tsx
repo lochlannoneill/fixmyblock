@@ -7,7 +7,7 @@ export default function Header({ darkMode, onToggleTheme }: HeaderProps) {
   return (
     <header className="flex items-center justify-between px-6 h-14 bg-white dark:bg-[#272727] text-slate-800 dark:text-zinc-200 z-[100] shadow-sm border-b border-slate-200 dark:border-[#2a2a2a]">
       <div>
-        <h1 className="m-0 text-xl font-bold flex items-center gap-2">
+        <h1 className="m-0 text-xl font-bold flex items-center gap-2 cursor-pointer" onClick={() => window.location.reload()}>
           <span className="inline-flex items-center">
             <svg width="28" height="28" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M32 4L2 30h10v28h40V30h10L32 4z" fill="#3b82f6" stroke="currentColor" strokeWidth="2"/>
