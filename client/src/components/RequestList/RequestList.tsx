@@ -1,4 +1,5 @@
-﻿import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+﻿import { useRef, useState, useEffect, useCallback } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronUp } from "@fortawesome/free-solid-svg-icons";
 import type { Request } from "../../types/request";
 import { CATEGORY_LABELS, STATUS_COLORS } from "../../types/request";
@@ -16,6 +17,28 @@ export default function RequestList({
   onDelete,
   selectedId,
 }: RequestListProps) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  const handleScroll = useCallback(() => {
+    const el = listRef.current?.closest(".sidebar");
+    if (el) {
+      setShowBackToTop(el.scrollTop > 150);
+    }
+  }, []);
+
+  useEffect(() => {
+    const el = listRef.current?.closest(".sidebar");
+    if (!el) return;
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
+
+  const scrollToTop = () => {
+    const el = listRef.current?.closest(".sidebar");
+    el?.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   if (requests.length === 0) {
     return (
       <div className="py-12 px-6 text-center text-slate-400 dark:text-[#6e6e79] text-sm">
@@ -25,7 +48,15 @@ export default function RequestList({
   }
 
   return (
-    <div className="p-3">
+    <div className="p-3 relative" ref={listRef}>
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          className="sticky top-0 z-20 w-full mb-2 py-1.5 text-xs font-medium text-slate-500 dark:text-zinc-400 bg-slate-100/90 dark:bg-[#1e1e1e]/90 backdrop-blur-sm hover:text-blue-500 cursor-pointer transition-colors"
+        >
+          ↑ Back to top
+        </button>
+      )}
       {requests.map((c) => (
         <div
           key={c.id}

@@ -50,7 +50,7 @@ export default function RequestToolbar({
 
   return (
     <>
-      <div className="flex flex-col items-end px-3 py-2 mx-3">
+      <div className="flex flex-col items-end px-3 py-2 mx-3 mt-3">
         <div className="flex gap-1.5 justify-end">
           <button
             className={`flex items-center justify-center w-9 h-9 border rounded-lg text-[15px] cursor-pointer transition-colors
