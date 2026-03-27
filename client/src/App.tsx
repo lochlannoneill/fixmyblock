@@ -22,6 +22,11 @@ export default function App() {
   const [sidebarView, setSidebarView] = useState<"list" | "form">("list");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
   const geoAbortRef = useRef(false);
+  const userLocationRef = useRef<{ lng: number; lat: number } | null>(null);
+
+  const handleUserLocation = useCallback((lng: number, lat: number) => {
+    userLocationRef.current = { lng, lat };
+  }, []);
 
   const handleMapClick = useCallback(
     (lng: number, lat: number) => {
@@ -70,6 +75,10 @@ export default function App() {
   const handleUseCurrentLocation = () => {
     setSelectingOnMap(false);
     setSelectedLocation(null);
+    if (userLocationRef.current) {
+      setSelectedLocation(userLocationRef.current);
+      return;
+    }
     setGeolocating(true);
     geoAbortRef.current = false;
     navigator.geolocation.getCurrentPosition(
@@ -174,6 +183,7 @@ export default function App() {
             reportMode={showForm}
             dropPinLocation={selectedLocation}
             darkMode={darkMode}
+            onUserLocation={handleUserLocation}
           />
         </main>
       </div>

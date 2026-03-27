@@ -16,6 +16,7 @@ interface MapViewProps {
   reportMode: boolean;
   dropPinLocation: { lng: number; lat: number } | null;
   darkMode: boolean;
+  onUserLocation?: (lng: number, lat: number) => void;
 }
 
 export default function MapView({
@@ -27,6 +28,7 @@ export default function MapView({
   reportMode,
   dropPinLocation,
   darkMode,
+  onUserLocation,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -36,11 +38,13 @@ export default function MapView({
   const dropPinRef = useRef<maplibregl.Marker | null>(null);
   const onMapClickRef = useRef(onMapClick);
   const reportModeRef = useRef(reportMode);
+  const onUserLocationRef = useRef(onUserLocation);
   const [mapReady, setMapReady] = useState(false);
   const [activeLayer, setActiveLayer] = useState<MapLayer>("terrain");
 
   // Keep refs in sync so the map click handler always has latest values
   useEffect(() => { onMapClickRef.current = onMapClick; }, [onMapClick]);
+  useEffect(() => { onUserLocationRef.current = onUserLocation; }, [onUserLocation]);
   useEffect(() => { reportModeRef.current = reportMode; }, [reportMode]);
 
   // Initialize map
@@ -93,6 +97,11 @@ export default function MapView({
       trackUserLocation: true,
     });
     map.current.addControl(geolocate, "top-right");
+
+    geolocate.on("geolocate", (e: unknown) => {
+      const pos = e as GeolocationPosition;
+      onUserLocationRef.current?.(pos.coords.longitude, pos.coords.latitude);
+    });
 
     map.current.on("load", () => {
       setMapReady(true);
