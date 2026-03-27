@@ -221,7 +221,7 @@ export default function MapView({
         height: 32px;
         border-radius: 50% 50% 50% 0;
         background: ${STATUS_COLORS[req.status]};
-        border: 2px solid white;
+        border: 2px solid ${darkMode ? "#2a2a2a" : "white"};
         cursor: pointer;
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         display: flex;
@@ -249,7 +249,7 @@ export default function MapView({
 
       markersRef.current.push(marker);
     });
-  }, [requests, mapReady, onSelectRequest]);
+  }, [requests, mapReady, onSelectRequest, darkMode]);
 
   // Show popup for selected request
   const showPopup = useCallback(
@@ -273,9 +273,9 @@ export default function MapView({
           </div>`
         : "";
 
-      const statusColors: Record<string, string> = { open: "#3b82f6", "in-progress": "#eab308", resolved: "#22c55e" };
+      const statusColors: Record<string, string> = { open: "#ef4444", "in-progress": "#eab308", resolved: "#22c55e" };
       const statusLabels: Record<string, string> = { open: "Open", "in-progress": "In Progress", resolved: "Resolved" };
-      const statusColor = statusColors[req.status] || "#3b82f6";
+      const statusColor = statusColors[req.status] || "#ef4444";
       const statusLabel = statusLabels[req.status] || req.status;
 
       const html = `
