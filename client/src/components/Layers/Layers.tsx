@@ -64,7 +64,7 @@ export default function Layers({ activeLayer, onLayerChange, darkMode }: LayersP
       </button>
       <div
         className={`flex overflow-hidden transition-all duration-300 ease-in-out ${
-          expanded ? "max-w-[500px] opacity-100 scale-100" : "max-w-0 opacity-0 scale-95"
+          expanded ? "max-w-lg opacity-100 scale-100" : "max-w-0 opacity-0 scale-95"
         }`}
       >
         <div className="flex gap-2 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-lg border border-slate-200 dark:border-[#3a3a3a] p-2">

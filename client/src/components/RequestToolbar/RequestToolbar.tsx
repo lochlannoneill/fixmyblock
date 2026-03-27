@@ -18,8 +18,6 @@ interface RequestToolbarProps {
 
 export default function RequestToolbar({
   requests,
-  onNewRequest,
-  showingForm,
   onSelectRequest,
   onDeleteRequest,
   selectedId,

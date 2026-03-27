@@ -161,7 +161,7 @@ export default function RequestForm({
       <span className="block text-[13px] font-semibold text-slate-600 dark:text-[#b4b4bb] mb-1.5">Images <span className="font-normal text-slate-400 dark:text-zinc-500">(max 5)</span></span>
       <div className="flex gap-2 flex-wrap mb-4">
         {previews.map((src, i) => (
-          <div key={i} className="relative w-[72px] h-[72px] rounded-lg overflow-hidden">
+          <div key={i} className="relative w-18 h-18 rounded-lg overflow-hidden">
             <img className="w-full h-full object-cover" src={src} alt={`preview ${i + 1}`} />
             <button
               type="button"
@@ -175,7 +175,7 @@ export default function RequestForm({
         {images.length < 5 && (
           <button
             type="button"
-            className="group/add relative w-[72px] h-[72px] rounded-lg border-2 border-dashed border-slate-300 dark:border-zinc-600 bg-slate-100 dark:bg-[#2a2a2a] cursor-pointer flex items-center justify-center transition-colors hover:border-blue-500 hover:bg-blue-500/5 overflow-hidden"
+            className="group/add relative w-18 h-18 rounded-lg border-2 border-dashed border-slate-300 dark:border-zinc-600 bg-slate-100 dark:bg-[#2a2a2a] cursor-pointer flex items-center justify-center transition-colors hover:border-blue-500 hover:bg-blue-500/5 overflow-hidden"
             onClick={() => fileInputRef.current?.click()}
           >
             <svg className="absolute inset-3.5 w-[calc(100%-28px)] h-[calc(100%-28px)] text-slate-300 dark:text-zinc-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" preserveAspectRatio="none">

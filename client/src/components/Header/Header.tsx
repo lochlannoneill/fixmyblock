@@ -5,7 +5,7 @@ interface HeaderProps {
 
 export default function Header({ darkMode, onToggleTheme }: HeaderProps) {
   return (
-    <header className="flex items-center justify-between px-6 h-14 bg-white dark:bg-[#272727] text-slate-800 dark:text-zinc-200 z-[100] shadow-sm border-b border-slate-200 dark:border-[#2a2a2a]">
+    <header className="flex items-center justify-between px-6 h-14 bg-white dark:bg-[#272727] text-slate-800 dark:text-zinc-200 z-50 shadow-sm border-b border-slate-200 dark:border-[#2a2a2a]">
       <div>
         <h1 className="m-0 text-xl font-bold flex items-center gap-2 cursor-pointer" onClick={() => window.location.reload()}>
           <span className="inline-flex items-center">
@@ -28,11 +28,11 @@ export default function Header({ darkMode, onToggleTheme }: HeaderProps) {
           title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
         >
           <div className="absolute inset-0 flex items-center justify-between px-2 pointer-events-none select-none">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-[18px] w-[18px] text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="5" fill="currentColor" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 1v2m0 18v2m11-11h-2M3 12H1m16.95 4.95l-1.41-1.41M6.34 6.34l-1.41-1.41m12.02 0l-1.41 1.41M6.34 17.66l-1.41 1.41" />
             </svg>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-[18px] w-[18px] text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" fill="currentColor" />
             </svg>
           </div>

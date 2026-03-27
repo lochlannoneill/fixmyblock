@@ -70,7 +70,7 @@ export default function App() {
         <aside className={`sidebar border-t border-slate-200 dark:border-[#2a2a2a] md:border-r md:border-t-0 bg-slate-50 dark:bg-[#1e1e1e] overflow-y-auto z-10 transition-all duration-300 ${
           sidebarCollapsed
             ? "hidden md:block md:w-0 md:min-w-0 md:overflow-hidden"
-            : "w-full flex-1 md:w-[380px] md:min-w-[380px] md:flex-none"
+            : "w-full flex-1 md:w-96 md:min-w-96 md:flex-none"
         }`}>
           {sidebarView === "form" ? (
             <RequestForm
