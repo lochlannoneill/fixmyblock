@@ -56,6 +56,7 @@ export default function MapView({
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
+      attributionControl: false,
       style: azureMapsKey
         ? {
             version: 8,
