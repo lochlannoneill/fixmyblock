@@ -18,7 +18,7 @@ export default function App() {
     lat: number;
   } | null>(null);
   const [sidebarView, setSidebarView] = useState<"list" | "form">("list");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
 
   const handleMapClick = useCallback(
     (lng: number, lat: number) => {
