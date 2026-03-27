@@ -1,6 +1,8 @@
 /* ===== MapLibre popup overrides ===== */
 .maplibregl-popup-content {
-  background: var(--bg-card) !important;
+  background: color-mix(in srgb, var(--bg-card) 85%, transparent) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: var(--text-primary);
   border-radius: 12px !important;
   box-shadow: var(--shadow-md) !important;
@@ -8,7 +10,7 @@
 }
 
 .maplibregl-popup-tip {
-  border-top-color: var(--bg-card) !important;
+  border-top-color: color-mix(in srgb, var(--bg-card) 85%, transparent) !important;
 }
 
 .maplibregl-popup-close-button {
