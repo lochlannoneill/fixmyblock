@@ -1,6 +1,35 @@
+/* ===== MapLibre control dark mode ===== */
+.dark .maplibregl-ctrl-group {
+  background: #2a2a2a !important;
+  border-color: #3a3a3a !important;
+}
+
+.dark .maplibregl-ctrl-group button {
+  background-color: #2a2a2a !important;
+  border-color: #3a3a3a !important;
+}
+
+.dark .maplibregl-ctrl-group button + button {
+  border-top-color: #3a3a3a !important;
+}
+
+.dark .maplibregl-ctrl-group button:hover {
+  background-color: #3a3a3a !important;
+}
+
+.dark .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+.dark .maplibregl-ctrl-geolocate .maplibregl-ctrl-icon {
+  filter: invert(1) hue-rotate(180deg);
+}
+
 /* ===== MapLibre popup overrides ===== */
 .maplibregl-popup-content {
-  background: var(--bg-card) !important;
+  background: color-mix(in srgb, var(--bg-card) 85%, transparent) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: var(--text-primary);
   border-radius: 12px !important;
   box-shadow: var(--shadow-md) !important;
@@ -8,7 +37,7 @@
 }
 
 .maplibregl-popup-tip {
-  border-top-color: var(--bg-card) !important;
+  border-top-color: color-mix(in srgb, var(--bg-card) 85%, transparent) !important;
 }
 
 .maplibregl-popup-close-button {

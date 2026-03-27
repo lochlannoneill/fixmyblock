@@ -8,36 +8,45 @@ interface LayerOption {
   thumbnail: string;
 }
 
-const LAYER_THUMBNAILS: Record<MapLayer, string> = {
+const LAYER_THUMBNAILS_LIGHT: Record<MapLayer, string> = {
   default: "https://a.basemaps.cartocdn.com/light_all/13/4093/2723.png",
   satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/2723/4093",
   terrain: "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/4093/2723.png",
   flat: "https://a.basemaps.cartocdn.com/light_all/13/4093/2723.png",
 };
 
-const LAYERS: LayerOption[] = [
-  { id: "terrain", label: "Terrain", thumbnail: LAYER_THUMBNAILS.terrain },
-  { id: "satellite", label: "Satellite", thumbnail: LAYER_THUMBNAILS.satellite },
-  { id: "default", label: "Minimal", thumbnail: LAYER_THUMBNAILS.default },
-];
+const LAYER_THUMBNAILS_DARK: Record<MapLayer, string> = {
+  default: "https://a.basemaps.cartocdn.com/dark_all/13/4093/2723.png",
+  satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/2723/4093",
+  terrain: "https://a.basemaps.cartocdn.com/dark_all/13/4093/2723.png",
+  flat: "https://a.basemaps.cartocdn.com/dark_all/13/4093/2723.png",
+};
 
 interface LayersProps {
   activeLayer: MapLayer;
   onLayerChange: (layer: MapLayer) => void;
+  darkMode: boolean;
 }
 
-export default function Layers({ activeLayer, onLayerChange }: LayersProps) {
+export default function Layers({ activeLayer, onLayerChange, darkMode }: LayersProps) {
   const [expanded, setExpanded] = useState(false);
+  const thumbnails = darkMode ? LAYER_THUMBNAILS_DARK : LAYER_THUMBNAILS_LIGHT;
+
+  const LAYERS: LayerOption[] = [
+    { id: "terrain", label: "3D", thumbnail: thumbnails.terrain },
+    { id: "satellite", label: "Satellite", thumbnail: thumbnails.satellite },
+    { id: "default", label: "2D", thumbnail: thumbnails.default },
+  ];
 
   return (
     <div className="absolute bottom-6 left-4 z-50 flex items-end gap-2">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="group relative flex items-center justify-center w-24 h-24 rounded-xl overflow-hidden border-2 border-white dark:border-[#3a3a3a] shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+        className="group relative flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border-2 border-white dark:border-[#3a3a3a] shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
         title="Map layers"
       >
         <img
-          src={LAYER_THUMBNAILS[activeLayer]}
+          src={thumbnails[activeLayer]}
           alt="Layers"
           className="absolute inset-0 w-full h-full object-cover transition-all duration-200 group-hover:brightness-110"
         />
@@ -55,7 +64,7 @@ export default function Layers({ activeLayer, onLayerChange }: LayersProps) {
       </button>
       <div
         className={`flex overflow-hidden transition-all duration-300 ease-in-out ${
-          expanded ? "max-w-[500px] opacity-100 scale-100" : "max-w-0 opacity-0 scale-95"
+          expanded ? "max-w-lg opacity-100 scale-100" : "max-w-0 opacity-0 scale-95"
         }`}
       >
         <div className="flex gap-2 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-lg border border-slate-200 dark:border-[#3a3a3a] p-2">

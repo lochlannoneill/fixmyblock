@@ -46,7 +46,7 @@ export const CATEGORY_LABELS: Record<RequestCategory, string> = {
 };
 
 export const STATUS_COLORS: Record<RequestStatus, string> = {
-  open: "#3b82f6",
+  open: "#ef4444",
   "in-progress": "#f59e0b",
   resolved: "#22c55e",
 };
