@@ -4,14 +4,22 @@ import { CATEGORY_LABELS } from "../../types/request";
 
 interface RequestFormProps {
   selectedLocation: { lng: number; lat: number } | null;
+  geolocating: boolean;
+  selectingOnMap: boolean;
   onSubmit: (data: NewRequest) => Promise<void>;
   onCancel: () => void;
+  onUseCurrentLocation: () => void;
+  onSelectOnMap: () => void;
 }
 
 export default function RequestForm({
   selectedLocation,
+  geolocating,
+  selectingOnMap,
   onSubmit,
   onCancel,
+  onUseCurrentLocation,
+  onSelectOnMap,
 }: RequestFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -91,11 +99,47 @@ export default function RequestForm({
     <form className="p-6" onSubmit={handleSubmit}>
       <h2 className="m-0 mb-4 text-lg text-slate-800 dark:text-zinc-200">New Request</h2>
 
-      <div className="bg-blue-50 dark:bg-[#1a2a1a] border border-blue-200 dark:border-blue-800 rounded-lg px-3.5 py-2.5 text-[13px] text-blue-800 dark:text-blue-300 mb-4">
-        {selectedLocation
-          ? `Location: ${selectedLocation.lat.toFixed(5)}, ${selectedLocation.lng.toFixed(5)}`
-          : "Click on the map to drop a pin"}
+      <div className="flex gap-2 mb-4">
+        <button
+          type="button"
+          onClick={onUseCurrentLocation}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
+            !selectingOnMap
+              ? "border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/40"
+              : "border-slate-200 dark:border-zinc-700 bg-white dark:bg-[#2a2a2a] text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
+          }`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 2v4m0 12v4m10-10h-4M6 12H2" />
+          </svg>
+          {geolocating ? "Getting location..." : "Use Current Location"}
+        </button>
+        <button
+          type="button"
+          onClick={onSelectOnMap}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
+            selectedLocation
+              ? "border-slate-200 dark:border-zinc-700 bg-white dark:bg-[#2a2a2a] text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
+              : "border-slate-200 dark:border-zinc-700 bg-white dark:bg-[#2a2a2a] text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
+          }`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          Select on Map
+        </button>
       </div>
+
+      {selectedLocation && !selectingOnMap && !geolocating && (
+        <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+          Location: {selectedLocation.lat.toFixed(5)}, {selectedLocation.lng.toFixed(5)}
+        </div>
+      )}
 
       <label className="block text-[13px] font-semibold text-slate-600 dark:text-[#b4b4bb] mb-3.5">
         Your Name *

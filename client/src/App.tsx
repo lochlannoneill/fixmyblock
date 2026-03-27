@@ -17,6 +17,8 @@ export default function App() {
     lng: number;
     lat: number;
   } | null>(null);
+  const [geolocating, setGeolocating] = useState(false);
+  const [selectingOnMap, setSelectingOnMap] = useState(false);
   const [sidebarView, setSidebarView] = useState<"list" | "form">("list");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
 
@@ -24,6 +26,8 @@ export default function App() {
     (lng: number, lat: number) => {
       if (showForm) {
         setSelectedLocation({ lng, lat });
+        setSelectingOnMap(false);
+        setSidebarCollapsed(false);
       }
     },
     [showForm]
@@ -50,14 +54,41 @@ export default function App() {
   const handleStartRequest = () => {
     setShowForm(true);
     setSidebarView("form");
+    setSidebarCollapsed(false);
     selectRequest(null);
     setSelectedLocation(null);
+    setSelectingOnMap(false);
   };
 
   const handleCancelRequest = () => {
     setShowForm(false);
     setSidebarView("list");
     setSelectedLocation(null);
+  };
+
+  const handleUseCurrentLocation = () => {
+    setSelectingOnMap(false);
+    setSelectedLocation(null);
+    setGeolocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setSelectedLocation({ lng: pos.coords.longitude, lat: pos.coords.latitude });
+        setGeolocating(false);
+      },
+      () => {
+        setGeolocating(false);
+        alert("Unable to get your location. Please allow location access or select on the map.");
+      },
+      { enableHighAccuracy: true }
+    );
+  };
+
+  const handleSelectOnMap = () => {
+    setSelectingOnMap(true);
+    setSelectedLocation(null);
+    if (window.innerWidth < 768) {
+      setSidebarCollapsed(true);
+    }
   };
 
   return (
@@ -75,8 +106,12 @@ export default function App() {
           {sidebarView === "form" ? (
             <RequestForm
               selectedLocation={selectedLocation}
+              geolocating={geolocating}
+              selectingOnMap={selectingOnMap}
               onSubmit={handleSubmit}
               onCancel={handleCancelRequest}
+              onUseCurrentLocation={handleUseCurrentLocation}
+              onSelectOnMap={handleSelectOnMap}
             />
           ) : (
             <>
@@ -106,7 +141,7 @@ export default function App() {
             </svg>
             {sidebarCollapsed ? "Show Requests" : (<><span className="md:hidden">Show map</span><span className="hidden md:inline">Hide Requests List</span></>)}
           </button>
-          {showForm && (
+          {showForm && selectingOnMap && !selectedLocation && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-[#121212] text-white py-2.5 px-6 rounded-3xl text-sm font-medium z-50 shadow-lg animate-pulse">
               Click anywhere on the map to place your pin
             </div>
