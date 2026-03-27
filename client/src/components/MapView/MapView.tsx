@@ -109,6 +109,17 @@ export default function MapView({
           const sourceId = sources["openmaptiles"]
             ? "openmaptiles"
             : "carto";
+
+          // Hide flat 2D building layers so they don't show through
+          for (const layer of layers) {
+            if (
+              layer["source-layer"] === "building" &&
+              (layer.type === "fill" || layer.type === "line")
+            ) {
+              map.current!.setLayoutProperty(layer.id, "visibility", "none");
+            }
+          }
+
           map.current!.addLayer(
             {
               id: "3d-buildings",
@@ -120,7 +131,7 @@ export default function MapView({
                 "fill-extrusion-color": "#c4b5a2",
                 "fill-extrusion-height": ["get", "render_height"],
                 "fill-extrusion-base": ["get", "render_min_height"],
-                "fill-extrusion-opacity": 0.6,
+                "fill-extrusion-opacity": 0.85,
               },
             },
             firstLabelId
@@ -369,6 +380,41 @@ export default function MapView({
     };
 
     map.current.setStyle(styles[layer] as string);
+
+    map.current.once("style.load", () => {
+      if (!map.current) return;
+      if (layer === "terrain") {
+        const newLayers = map.current.getStyle().layers;
+        const newSources = map.current.getStyle().sources;
+        if (newLayers && (newSources["openmaptiles"] || newSources["carto"])) {
+          const sourceId = newSources["openmaptiles"] ? "openmaptiles" : "carto";
+          for (const l of newLayers) {
+            if (l["source-layer"] === "building" && (l.type === "fill" || l.type === "line")) {
+              map.current.setLayoutProperty(l.id, "visibility", "none");
+            }
+          }
+          const labelLayer = newLayers.find(
+            (l) => l.type === "symbol" && l.layout && "text-field" in l.layout
+          );
+          map.current.addLayer(
+            {
+              id: "3d-buildings",
+              source: sourceId,
+              "source-layer": "building",
+              type: "fill-extrusion",
+              minzoom: 14,
+              paint: {
+                "fill-extrusion-color": "#c4b5a2",
+                "fill-extrusion-height": ["get", "render_height"],
+                "fill-extrusion-base": ["get", "render_min_height"],
+                "fill-extrusion-opacity": 0.85,
+              },
+            },
+            labelLayer?.id
+          );
+        }
+      }
+    });
 
     if (layer === "flat") {
       map.current.easeTo({ pitch: 0, bearing: 0, duration: 500 });
