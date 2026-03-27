@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import Header from "./components/Header";
 import MapView from "./components/MapView";
 import RequestForm from "./components/RequestForm";
@@ -21,6 +21,7 @@ export default function App() {
   const [selectingOnMap, setSelectingOnMap] = useState(false);
   const [sidebarView, setSidebarView] = useState<"list" | "form">("list");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
+  const geoAbortRef = useRef(false);
 
   const handleMapClick = useCallback(
     (lng: number, lat: number) => {
@@ -70,12 +71,15 @@ export default function App() {
     setSelectingOnMap(false);
     setSelectedLocation(null);
     setGeolocating(true);
+    geoAbortRef.current = false;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        if (geoAbortRef.current) return;
         setSelectedLocation({ lng: pos.coords.longitude, lat: pos.coords.latitude });
         setGeolocating(false);
       },
       () => {
+        if (geoAbortRef.current) return;
         setGeolocating(false);
         alert("Unable to get your location. Please allow location access or select on the map.");
       },
@@ -84,6 +88,8 @@ export default function App() {
   };
 
   const handleSelectOnMap = () => {
+    geoAbortRef.current = true;
+    setGeolocating(false);
     setSelectingOnMap(true);
     setSelectedLocation(null);
     if (window.innerWidth < 768) {
