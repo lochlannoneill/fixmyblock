@@ -18,7 +18,7 @@ export default function App() {
     lat: number;
   } | null>(null);
   const [sidebarView, setSidebarView] = useState<"list" | "form">("list");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   const handleMapClick = useCallback(
     (lng: number, lat: number) => {
@@ -88,10 +88,12 @@ export default function App() {
             </>
           )}
         </aside>
-        <main className="flex-none h-[25vh] min-h-[25vh] md:flex-1 md:h-auto md:min-h-0 relative">
+        <main className={`md:flex-1 md:h-auto md:min-h-0 relative transition-all duration-300 ${
+          sidebarCollapsed ? "flex-1" : "flex-none h-[25vh] min-h-[25vh]"
+        }`}>
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="hidden md:flex absolute top-4 left-4 z-50 w-9 h-9 items-center justify-center rounded-lg bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-[#3a3a3a] shadow-md hover:bg-slate-100 dark:hover:bg-[#333] transition-colors"
+            className="absolute z-50 transition-colors hidden md:flex top-4 left-4 w-9 h-9 items-center justify-center rounded-lg bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-[#3a3a3a] shadow-md hover:bg-slate-100 dark:hover:bg-[#333]"
             title={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -101,6 +103,19 @@ export default function App() {
                 <><polyline points="15 18 9 12 15 6" /></>
               )}
             </svg>
+          </button>
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="absolute z-50 transition-colors md:hidden bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-4 py-2 rounded-full bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-[#3a3a3a] shadow-lg text-xs font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-[#333]"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {sidebarCollapsed ? (
+                <><polyline points="6 15 12 9 18 15" /></>
+              ) : (
+                <><polyline points="18 9 12 15 6 9" /></>
+              )}
+            </svg>
+            {sidebarCollapsed ? "Show list" : "Expand map"}
           </button>
           {showForm && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-[#121212] text-white py-2.5 px-6 rounded-3xl text-sm font-medium z-50 shadow-lg animate-pulse">
