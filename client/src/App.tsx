@@ -34,6 +34,9 @@ export default function App() {
     if (c) {
       setSidebarView("list");
       setShowForm(false);
+      if (window.innerWidth < 768) {
+        setSidebarCollapsed(true);
+      }
     }
   }, [selectRequest]);
 
