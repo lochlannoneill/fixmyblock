@@ -116,7 +116,7 @@ export default function MapView({
           // Hide flat 2D building layers so they don't show through
           for (const layer of layers) {
             if (
-              layer["source-layer"] === "building" &&
+              (layer as Record<string, unknown>)["source-layer"] === "building" &&
               (layer.type === "fill" || layer.type === "line")
             ) {
               map.current!.setLayoutProperty(layer.id, "visibility", "none");
@@ -177,7 +177,7 @@ export default function MapView({
         if (newLayers && (newSources["openmaptiles"] || newSources["carto"])) {
           const sourceId = newSources["openmaptiles"] ? "openmaptiles" : "carto";
           for (const l of newLayers) {
-            if (l["source-layer"] === "building" && (l.type === "fill" || l.type === "line")) {
+            if ((l as Record<string, unknown>)["source-layer"] === "building" && (l.type === "fill" || l.type === "line")) {
               map.current.setLayoutProperty(l.id, "visibility", "none");
             }
           }
@@ -431,7 +431,7 @@ export default function MapView({
         if (newLayers && (newSources["openmaptiles"] || newSources["carto"])) {
           const sourceId = newSources["openmaptiles"] ? "openmaptiles" : "carto";
           for (const l of newLayers) {
-            if (l["source-layer"] === "building" && (l.type === "fill" || l.type === "line")) {
+            if ((l as Record<string, unknown>)["source-layer"] === "building" && (l.type === "fill" || l.type === "line")) {
               map.current.setLayoutProperty(l.id, "visibility", "none");
             }
           }
