@@ -50,7 +50,9 @@ export default function MapView({
     const azureMapsKey = import.meta.env.VITE_AZURE_MAPS_KEY || "";
 
     // Use Azure Maps tiles if key is available, otherwise use free OSM tiles
-    const defaultStyle = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
+    const defaultStyle = darkMode
+      ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+      : "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
@@ -158,11 +160,48 @@ export default function MapView({
     if (!map.current || !mapReady) return;
     const azureMapsKey = import.meta.env.VITE_AZURE_MAPS_KEY || "";
     if (azureMapsKey) return; // Azure Maps doesn't support style switching this way
-    if (activeLayer !== "default") return; // Don't override layer selection
+    if (activeLayer !== "default" && activeLayer !== "terrain") return; // Don't override layer selection
     const style = darkMode
       ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
-      : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+      : activeLayer === "terrain"
+        ? "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json"
+        : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
     map.current.setStyle(style);
+
+    if (activeLayer === "terrain") {
+      map.current.once("style.load", () => {
+        if (!map.current) return;
+        const newLayers = map.current.getStyle().layers;
+        const newSources = map.current.getStyle().sources;
+        if (newLayers && (newSources["openmaptiles"] || newSources["carto"])) {
+          const sourceId = newSources["openmaptiles"] ? "openmaptiles" : "carto";
+          for (const l of newLayers) {
+            if (l["source-layer"] === "building" && (l.type === "fill" || l.type === "line")) {
+              map.current.setLayoutProperty(l.id, "visibility", "none");
+            }
+          }
+          const labelLayer = newLayers.find(
+            (l) => l.type === "symbol" && l.layout && "text-field" in l.layout
+          );
+          map.current.addLayer(
+            {
+              id: "3d-buildings",
+              source: sourceId,
+              "source-layer": "building",
+              type: "fill-extrusion",
+              minzoom: 14,
+              paint: {
+                "fill-extrusion-color": "#c4b5a2",
+                "fill-extrusion-height": ["get", "render_height"],
+                "fill-extrusion-base": ["get", "render_min_height"],
+                "fill-extrusion-opacity": 0.85,
+              },
+            },
+            labelLayer?.id
+          );
+        }
+      });
+    }
   }, [darkMode, mapReady, activeLayer]);
 
   // Sync markers with requests
@@ -373,7 +412,9 @@ export default function MapView({
           { id: "esri-satellite-layer", type: "raster", source: "esri-satellite" },
         ],
       },
-      terrain: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
+      terrain: darkMode
+        ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+        : "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
       flat: darkMode
         ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
         : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
