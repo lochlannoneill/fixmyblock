@@ -80,7 +80,7 @@ export default function MapView({
       center: [-6.2603, 53.3498], // Default: Dublin
       zoom: 13,
       pitch: 45, // 3D tilt
-      bearing: -17.6,
+      bearing: 0,
     });
 
     map.current.addControl(new maplibregl.NavigationControl(), "top-right");
