@@ -8,26 +8,35 @@ interface LayerOption {
   thumbnail: string;
 }
 
-const LAYER_THUMBNAILS: Record<MapLayer, string> = {
+const LAYER_THUMBNAILS_LIGHT: Record<MapLayer, string> = {
   default: "https://a.basemaps.cartocdn.com/light_all/13/4093/2723.png",
   satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/2723/4093",
   terrain: "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/4093/2723.png",
   flat: "https://a.basemaps.cartocdn.com/light_all/13/4093/2723.png",
 };
 
-const LAYERS: LayerOption[] = [
-  { id: "terrain", label: "Terrain", thumbnail: LAYER_THUMBNAILS.terrain },
-  { id: "satellite", label: "Satellite", thumbnail: LAYER_THUMBNAILS.satellite },
-  { id: "default", label: "Minimal", thumbnail: LAYER_THUMBNAILS.default },
-];
+const LAYER_THUMBNAILS_DARK: Record<MapLayer, string> = {
+  default: "https://a.basemaps.cartocdn.com/dark_all/13/4093/2723.png",
+  satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/2723/4093",
+  terrain: "https://a.basemaps.cartocdn.com/dark_all/13/4093/2723.png",
+  flat: "https://a.basemaps.cartocdn.com/dark_all/13/4093/2723.png",
+};
 
 interface LayersProps {
   activeLayer: MapLayer;
   onLayerChange: (layer: MapLayer) => void;
+  darkMode: boolean;
 }
 
-export default function Layers({ activeLayer, onLayerChange }: LayersProps) {
+export default function Layers({ activeLayer, onLayerChange, darkMode }: LayersProps) {
   const [expanded, setExpanded] = useState(false);
+  const thumbnails = darkMode ? LAYER_THUMBNAILS_DARK : LAYER_THUMBNAILS_LIGHT;
+
+  const LAYERS: LayerOption[] = [
+    { id: "terrain", label: "3D", thumbnail: thumbnails.terrain },
+    { id: "satellite", label: "Satellite", thumbnail: thumbnails.satellite },
+    { id: "default", label: "2D", thumbnail: thumbnails.default },
+  ];
 
   return (
     <div className="absolute bottom-6 left-4 z-50 flex items-end gap-2">
@@ -37,7 +46,7 @@ export default function Layers({ activeLayer, onLayerChange }: LayersProps) {
         title="Map layers"
       >
         <img
-          src={LAYER_THUMBNAILS[activeLayer]}
+          src={thumbnails[activeLayer]}
           alt="Layers"
           className="absolute inset-0 w-full h-full object-cover transition-all duration-200 group-hover:brightness-110"
         />

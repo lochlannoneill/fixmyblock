@@ -471,7 +471,7 @@ export default function MapView({
         ref={mapContainer}
         style={{ width: "100%", height: "100%" }}
       />
-      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} />
+      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} />
     </div>
   );
 }
