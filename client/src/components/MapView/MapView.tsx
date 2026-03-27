@@ -85,16 +85,15 @@ export default function MapView({
 
     map.current.addControl(new maplibregl.NavigationControl(), "top-right");
 
-    map.current.addControl(
-      new maplibregl.GeolocateControl({
-        positionOptions: { enableHighAccuracy: true },
-        trackUserLocation: true,
-      }),
-      "top-right"
-    );
+    const geolocate = new maplibregl.GeolocateControl({
+      positionOptions: { enableHighAccuracy: true },
+      trackUserLocation: true,
+    });
+    map.current.addControl(geolocate, "top-right");
 
     map.current.on("load", () => {
       setMapReady(true);
+      geolocate.trigger();
 
       // Add 3D building layer if using styles that support it
       const layers = map.current!.getStyle().layers;
