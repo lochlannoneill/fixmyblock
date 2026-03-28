@@ -24,6 +24,9 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(getAppVersion()),
   },
   plugins: [tailwindcss(), react()],
+  build: {
+    cssTarget: ['chrome80', 'safari14', 'firefox80'],
+  },
   server: {
     proxy: {
       '/api': {

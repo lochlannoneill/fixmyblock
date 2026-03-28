@@ -45,7 +45,6 @@
 .maplibregl-popup-content {
   background: rgba(255, 255, 255, 0.7) !important;
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   color: var(--text-primary);
   border-radius: 12px !important;
   box-shadow: var(--shadow-md) !important;
