@@ -5,6 +5,7 @@ import { CATEGORY_LABELS } from "../../types/request";
 interface RequestFormProps {
   selectedLocation: { lng: number; lat: number } | null;
   geolocating: boolean;
+  usedGeolocation: boolean;
   selectingOnMap: boolean;
   onSubmit: (data: NewRequest) => Promise<void>;
   onCancel: () => void;
@@ -15,6 +16,7 @@ interface RequestFormProps {
 export default function RequestForm({
   selectedLocation,
   geolocating,
+  usedGeolocation,
   selectingOnMap,
   onSubmit,
   onCancel,
@@ -104,7 +106,7 @@ export default function RequestForm({
           type="button"
           onClick={onUseCurrentLocation}
           className={`flex-1 flex items-center justify-center py-2.5 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
-            geolocating
+            geolocating || usedGeolocation
               ? "border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/40"
               : "border-slate-200 dark:border-zinc-700 bg-white dark:bg-[#2a2a2a] text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
           }`}
@@ -121,9 +123,11 @@ export default function RequestForm({
           type="button"
           onClick={onSelectOnMap}
           className={`flex-1 flex items-center justify-center py-2.5 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
-            selectedLocation
-              ? "border-slate-200 dark:border-zinc-700 bg-white dark:bg-[#2a2a2a] text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
-              : "border-slate-200 dark:border-zinc-700 bg-white dark:bg-[#2a2a2a] text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
+            selectedLocation && !usedGeolocation
+              ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40"
+              : selectingOnMap
+                ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40"
+                : "border-slate-200 dark:border-zinc-700 bg-white dark:bg-[#2a2a2a] text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
           }`}
         >
           <span className="inline-flex items-center">
@@ -136,7 +140,7 @@ export default function RequestForm({
         </button>
       </div>
 
-      {selectedLocation && !selectingOnMap && !geolocating && (
+      {selectedLocation && !selectingOnMap && !geolocating && !usedGeolocation && (
         <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 6L9 17l-5-5" />

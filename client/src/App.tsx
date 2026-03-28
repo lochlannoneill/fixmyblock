@@ -18,6 +18,7 @@ export default function App() {
     lat: number;
   } | null>(null);
   const [geolocating, setGeolocating] = useState(false);
+  const [usedGeolocation, setUsedGeolocation] = useState(false);
   const [selectingOnMap, setSelectingOnMap] = useState(false);
   const [sidebarView, setSidebarView] = useState<"list" | "form">("list");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
@@ -33,6 +34,7 @@ export default function App() {
       if (showForm) {
         setSelectedLocation({ lng, lat });
         setSelectingOnMap(false);
+        setUsedGeolocation(false);
         setSidebarCollapsed(false);
       }
     },
@@ -77,6 +79,7 @@ export default function App() {
     setSelectedLocation(null);
     if (userLocationRef.current) {
       setSelectedLocation(userLocationRef.current);
+      setUsedGeolocation(true);
       return;
     }
     setGeolocating(true);
@@ -86,6 +89,7 @@ export default function App() {
         if (geoAbortRef.current) return;
         setSelectedLocation({ lng: pos.coords.longitude, lat: pos.coords.latitude });
         setGeolocating(false);
+        setUsedGeolocation(true);
       },
       () => {
         if (geoAbortRef.current) return;
@@ -99,6 +103,7 @@ export default function App() {
   const handleSelectOnMap = () => {
     geoAbortRef.current = true;
     setGeolocating(false);
+    setUsedGeolocation(false);
     setSelectingOnMap(true);
     setSelectedLocation(null);
     if (window.innerWidth < 768) {
@@ -122,6 +127,7 @@ export default function App() {
             <RequestForm
               selectedLocation={selectedLocation}
               geolocating={geolocating}
+              usedGeolocation={usedGeolocation}
               selectingOnMap={selectingOnMap}
               onSubmit={handleSubmit}
               onCancel={handleCancelRequest}
