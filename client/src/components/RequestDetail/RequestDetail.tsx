@@ -33,6 +33,9 @@ export default function RequestDetail({
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuAnimate, setMenuAnimate] = useState(false);
   const [commentMenuId, setCommentMenuId] = useState<string | null>(null);
+  const COMMENT_PAGE = 5;
+  const [visibleComments, setVisibleComments] = useState(COMMENT_PAGE);
+  const commentSentinelRef = useRef<HTMLDivElement>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -60,6 +63,28 @@ export default function RequestDetail({
 
   const comments = request.comments || [];
   const topLevelComments = comments.filter(c => !c.parentId);
+
+  // Reset visible comments when switching posts
+  useEffect(() => {
+    setVisibleComments(COMMENT_PAGE);
+  }, [request.id]);
+
+  // Lazy load comments via IntersectionObserver
+  useEffect(() => {
+    const sentinel = commentSentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleComments((prev) => Math.min(prev + COMMENT_PAGE, topLevelComments.length));
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [topLevelComments.length]);
+
   const getReplies = (parentId: string) => comments.filter(c => c.parentId === parentId);
   const likeCount = (request.likers || []).length;
   const hasLiked = currentUserId && (request.likers || []).includes(currentUserId);
@@ -305,7 +330,7 @@ export default function RequestDetail({
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                {topLevelComments.map((comment) => {
+                {topLevelComments.slice(0, visibleComments).map((comment) => {
                   const commentLikes = (comment.likers || []).length;
                   const hasLikedComment = currentUserId && (comment.likers || []).includes(currentUserId);
                   const replies = getReplies(comment.id);
@@ -452,6 +477,11 @@ export default function RequestDetail({
                   </div>
                   );
                 })}
+                {visibleComments < topLevelComments.length && (
+                  <div ref={commentSentinelRef} className="flex justify-center py-3">
+                    <div className="w-4 h-4 border-2 border-slate-300 dark:border-zinc-600 border-t-blue-500 rounded-full animate-spin" />
+                  </div>
+                )}
               </div>
             )}
           </div>
