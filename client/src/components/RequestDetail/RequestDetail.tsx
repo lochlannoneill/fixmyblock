@@ -32,6 +32,7 @@ export default function RequestDetail({
   const [showMenu, setShowMenu] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuAnimate, setMenuAnimate] = useState(false);
+  const [commentMenuId, setCommentMenuId] = useState<string | null>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -315,7 +316,18 @@ export default function RequestDetail({
                       {((comment.userName || "U")[0] ?? "U").toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{comment.userName || "Anonymous"}</span>
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{comment.userName || "Anonymous"}</span>
+                        <CommentMenu
+                          commentId={comment.id}
+                          isAuthor={currentUserId === comment.userId}
+                          openMenuId={commentMenuId}
+                          onToggle={(id) => setCommentMenuId(commentMenuId === id ? null : id)}
+                          onDelete={() => { /* TODO: delete comment */ }}
+                          onEdit={() => { /* TODO: edit comment */ }}
+                          onReport={() => { /* TODO: report comment */ }}
+                        />
+                      </div>
                       <p className="text-slate-600 dark:text-zinc-400 mt-0.5">{comment.text}</p>
                       <div className="flex items-center justify-between mt-1.5">
                         <div className="flex items-center gap-2">
@@ -354,7 +366,18 @@ export default function RequestDetail({
                             {((reply.userName || "U")[0] ?? "U").toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{reply.userName || "Anonymous"}</span>
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{reply.userName || "Anonymous"}</span>
+                              <CommentMenu
+                                commentId={reply.id}
+                                isAuthor={currentUserId === reply.userId}
+                                openMenuId={commentMenuId}
+                                onToggle={(id) => setCommentMenuId(commentMenuId === id ? null : id)}
+                                onDelete={() => { /* TODO: delete reply */ }}
+                                onEdit={() => { /* TODO: edit reply */ }}
+                                onReport={() => { /* TODO: report reply */ }}
+                              />
+                            </div>
                             <p className="text-slate-600 dark:text-zinc-400 mt-0.5">{formatCommentText(reply.text)}</p>
                             <div className="flex items-center justify-between mt-1.5">
                               <div className="flex items-center gap-2">
@@ -448,4 +471,71 @@ function getTimeSince(dateStr: string): string {
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days}d ago`;
   return new Date(dateStr).toLocaleDateString();
+}
+
+function CommentMenu({ commentId, isAuthor, openMenuId, onToggle, onDelete, onEdit, onReport }: {
+  commentId: string;
+  isAuthor: boolean;
+  openMenuId: string | null;
+  onToggle: (id: string) => void;
+  onDelete: () => void;
+  onEdit: () => void;
+  onReport: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isOpen = openMenuId === commentId;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onToggle(commentId);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [isOpen, commentId, onToggle]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={(e) => { e.stopPropagation(); onToggle(commentId); }}
+        className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-[#2a2a2a] transition-colors cursor-pointer text-slate-400 dark:text-zinc-500"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="5" r="2"/>
+          <circle cx="12" cy="12" r="2"/>
+          <circle cx="12" cy="19" r="2"/>
+        </svg>
+      </button>
+      {isOpen && (
+        <div
+          className="absolute right-0 top-full mt-1 w-28 bg-white dark:bg-[#272727] border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden origin-top-right animate-[fadeScale_150ms_ease]"
+          style={{ animation: "fadeScale 150ms ease" }}
+        >
+          {isAuthor ? (
+            <>
+              <button
+                className="w-full text-left px-3 py-2 text-[12px] text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333] cursor-pointer transition-colors"
+                onClick={() => { onToggle(commentId); onEdit(); }}
+              >
+                Edit
+              </button>
+              <button
+                className="w-full text-left px-3 py-2 text-[12px] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors"
+                onClick={() => { onToggle(commentId); onDelete(); }}
+              >
+                Delete
+              </button>
+            </>
+          ) : (
+            <button
+              className="w-full text-left px-3 py-2 text-[12px] text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333] cursor-pointer transition-colors"
+              onClick={() => { onToggle(commentId); onReport(); }}
+            >
+              Report
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
