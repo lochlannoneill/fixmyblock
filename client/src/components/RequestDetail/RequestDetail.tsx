@@ -101,7 +101,7 @@ export default function RequestDetail({
           </div>
 
           {/* Title */}
-          <h2 className="text-base font-semibold text-slate-800 dark:text-zinc-200 mt-3">{request.title}</h2>
+          <h2 className="text-base font-semibold text-slate-800 dark:text-zinc-200 mt-5">{request.title}</h2>
 
           {/* Description */}
           <p className="text-[13px] text-slate-600 dark:text-[#b0b0b8] mt-1 leading-relaxed whitespace-pre-wrap">
@@ -161,7 +161,9 @@ export default function RequestDetail({
             </div>
 
             {comments.length === 0 ? (
-              <p className="text-xs text-slate-400 dark:text-zinc-500 italic">No comments yet. Be the first to comment.</p>
+              <div className="flex items-center justify-center py-8">
+                <p className="text-xs text-slate-400 dark:text-zinc-500 italic">No comments yet. Be the first to comment.</p>
+              </div>
             ) : (
               <div className="flex flex-col gap-2">
                 {comments.map((comment) => (
