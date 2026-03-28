@@ -53,6 +53,27 @@ export default function Header({ darkMode, onToggleTheme, user, onLoginClick, on
         </h1>
       </div>
       <div className="flex items-center gap-3">
+        <button
+          type="button"
+          aria-label="Toggle dark mode"
+          onClick={onToggleTheme}
+          className="relative w-20 h-10 flex items-center rounded-full p-1 transition-colors cursor-pointer bg-slate-100 dark:bg-[#333] hover:bg-slate-200 dark:hover:bg-[#3a3a3a]"
+          title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          <div className="absolute inset-0 flex items-center justify-between px-2.5 pointer-events-none select-none">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="5" fill="currentColor" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 1v2m0 18v2m11-11h-2M3 12H1m16.95 4.95l-1.41-1.41M6.34 6.34l-1.41-1.41m12.02 0l-1.41 1.41M6.34 17.66l-1.41 1.41" />
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" fill="currentColor" />
+            </svg>
+          </div>
+          <span
+            className={`absolute top-1 left-1 w-8 h-8 rounded-full shadow-md transition-all duration-300
+              ${darkMode ? "bg-[#3a3a3a] translate-x-10" : "bg-white translate-x-0"}`}
+          />
+        </button>
         {user ? (
           <div className="relative" ref={dropdownRef}>
             <button
@@ -119,24 +140,6 @@ export default function Header({ darkMode, onToggleTheme, user, onLoginClick, on
             </svg>
           </button>
         )}
-        <button
-          type="button"
-          aria-label="Toggle dark mode"
-          onClick={onToggleTheme}
-          className="w-10 h-10 rounded-full bg-slate-100 dark:bg-[#333] hover:bg-slate-200 dark:hover:bg-[#3a3a3a] flex items-center justify-center cursor-pointer transition-colors"
-          title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-        >
-          {darkMode ? (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-zinc-300">
-              <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-slate-500">
-              <circle cx="12" cy="12" r="5" />
-              <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 1v2m0 18v2m11-11h-2M3 12H1m16.95 4.95l-1.41-1.41M6.34 6.34l-1.41-1.41m12.02 0l-1.41 1.41M6.34 17.66l-1.41 1.41" />
-            </svg>
-          )}
-        </button>
       </div>
     </header>
   );
