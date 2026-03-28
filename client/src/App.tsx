@@ -3,6 +3,7 @@ import Header from "./components/Header";
 import MapView from "./components/MapView";
 import RequestForm from "./components/RequestForm";
 import RequestToolbar from "./components/RequestToolbar";
+import RequestDetail from "./components/RequestDetail";
 import AuthModal from "./components/AuthModal";
 import ProfilePage from "./components/ProfilePage";
 import { useTheme } from "./hooks/useTheme";
@@ -13,7 +14,7 @@ import "./App.css";
 
 export default function App() {
   const { darkMode, toggleTheme } = useTheme();
-  const { requests, loading, selectedRequest, selectRequest, upvote, remove, create } = useRequests();
+  const { requests, loading, selectedRequest, selectRequest, upvote, remove, create, addComment } = useRequests();
   const { user, login, logout } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
@@ -25,7 +26,7 @@ export default function App() {
   const [geolocating, setGeolocating] = useState(false);
   const [usedGeolocation, setUsedGeolocation] = useState(false);
   const [selectingOnMap, setSelectingOnMap] = useState(false);
-  const [sidebarView, setSidebarView] = useState<"list" | "form" | "profile">("list");
+  const [sidebarView, setSidebarView] = useState<"list" | "form" | "profile" | "detail">("list");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
   const geoAbortRef = useRef(false);
   const userLocationRef = useRef<{ lng: number; lat: number } | null>(null);
@@ -49,11 +50,11 @@ export default function App() {
   const handleSelectRequest = useCallback((c: Request | null) => {
     selectRequest(c);
     if (c) {
-      setSidebarView("list");
+      setSidebarView("detail");
       setShowForm(false);
-      if (window.innerWidth < 768) {
-        setSidebarCollapsed(true);
-      }
+      setSidebarCollapsed(false);
+    } else {
+      setSidebarView("list");
     }
   }, [selectRequest]);
 
@@ -167,18 +168,24 @@ export default function App() {
                 handleSelectRequest(r);
               }}
             />
+          ) : sidebarView === "detail" && selectedRequest ? (
+            <RequestDetail
+              request={selectedRequest}
+              onBack={() => { selectRequest(null); setSidebarView("list"); }}
+              onUpvote={(id: string) => { if (!user) { setShowAuthModal(true); return; } upvote(id); }}
+              onAddComment={(id: string, text: string) => { if (!user) { setShowAuthModal(true); return; } addComment(id, text); }}
+              onDelete={(id: string) => { remove(id); setSidebarView("list"); }}
+              currentUserId={user?.userId}
+            />
           ) : (
-            <>
-              <RequestToolbar
-                requests={requests}
-                loading={loading}
-                onNewRequest={handleStartRequest}
-                showingForm={showForm}
-                onSelectRequest={handleSelectRequest}
-                onDeleteRequest={remove}
-                selectedId={selectedRequest?.id ?? null}
-              />
-            </>
+            <RequestToolbar
+              requests={requests}
+              loading={loading}
+              onNewRequest={handleStartRequest}
+              showingForm={showForm}
+              onSelectRequest={handleSelectRequest}
+              selectedId={selectedRequest?.id ?? null}
+            />
           )}
         </aside>
         <main className={`md:flex-1 md:h-auto md:min-h-0 relative transition-all duration-300 ${

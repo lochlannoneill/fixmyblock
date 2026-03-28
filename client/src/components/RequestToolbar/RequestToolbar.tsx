@@ -13,7 +13,6 @@ interface RequestToolbarProps {
   onNewRequest: () => void;
   showingForm: boolean;
   onSelectRequest: (c: Request) => void;
-  onDeleteRequest: (id: string) => void;
   selectedId: string | null;
 }
 
@@ -21,7 +20,6 @@ export default function RequestToolbar({
   requests,
   loading,
   onSelectRequest,
-  onDeleteRequest,
   selectedId,
 }: RequestToolbarProps) {
   const [filterCategory, setFilterCategory] = useState<RequestCategory | "">("");
@@ -126,7 +124,6 @@ export default function RequestToolbar({
         requests={filteredSorted}
         loading={loading}
         onSelect={onSelectRequest}
-        onDelete={onDeleteRequest}
         selectedId={selectedId}
       />
     </>

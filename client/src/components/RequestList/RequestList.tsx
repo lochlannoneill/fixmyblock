@@ -1,18 +1,14 @@
 ﻿import { useRef, useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronUp, faChevronDown, faComment, faCalendar, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
+import { faChevronUp, faComment, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
 import type { Request } from "../../types/request";
-import { CATEGORY_LABELS, STATUS_COLORS } from "../../types/request";
+import { STATUS_COLORS } from "../../types/request";
 
 interface RequestListProps {
   requests: Request[];
   loading?: boolean;
   onSelect: (c: Request) => void;
-  onDelete: (id: string) => void;
-  onUpvote?: (id: string) => void;
-  onAddComment?: (id: string, text: string) => void;
   selectedId: string | null;
-  currentUserId?: string;
 }
 
 function SkeletonCard() {
@@ -34,16 +30,10 @@ export default function RequestList({
   requests,
   loading,
   onSelect,
-  onDelete,
-  onUpvote,
-  onAddComment,
   selectedId,
-  currentUserId,
 }: RequestListProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [commentText, setCommentText] = useState("");
   const [locationNames, setLocationNames] = useState<Record<string, string>>({});
 
   // Reverse geocode locations on mount / when requests change
@@ -136,10 +126,8 @@ export default function RequestList({
         </button>
       )}
       {requests.map((c) => {
-        const isExpanded = expandedId === c.id;
         const comments = c.comments || [];
         const upvoteCount = (c.upvoters || []).length;
-        const hasUpvoted = currentUserId && (c.upvoters || []).includes(currentUserId);
         const timeSince = getTimeSince(c.createdAt);
         const locKey = `${c.latitude.toFixed(4)},${c.longitude.toFixed(4)}`;
         const locationName = locationNames[locKey] || `${c.latitude.toFixed(4)}, ${c.longitude.toFixed(4)}`;
@@ -147,17 +135,14 @@ export default function RequestList({
         return (
         <div
           key={c.id}
-          className={`group bg-white dark:bg-[#272727] rounded-xl mb-2.5 border-2 transition-all shadow-sm relative
+          className={`group bg-white dark:bg-[#272727] rounded-xl mb-2.5 border-2 transition-all shadow-sm cursor-pointer
             ${c.id === selectedId
               ? "border-blue-500"
               : "border-transparent hover:border-blue-200 dark:hover:border-blue-900 hover:shadow-md"
             }`}
+          onClick={() => onSelect(c)}
         >
-          {/* Collapsed header - always visible */}
-          <div
-            className="p-3.5 cursor-pointer"
-            onClick={() => onSelect(c)}
-          >
+          <div className="p-3.5">
             <div className="flex items-center gap-2">
               <span className="flex-1 font-semibold text-sm text-slate-800 dark:text-zinc-200">{c.title}</span>
               <span
@@ -168,11 +153,11 @@ export default function RequestList({
               </span>
             </div>
             <div className="flex items-center justify-between text-xs text-slate-400 dark:text-[#6e6e79] mt-1">
-              <span>{CATEGORY_LABELS[c.category]} &middot; {timeSince}</span>
               <span className="flex items-center gap-1 shrink-0">
                 <FontAwesomeIcon icon={faMapMarkerAlt} className="text-[10px]" />
                 {locationName}
               </span>
+              <span>{timeSince}</span>
             </div>
             {c.imageUrls.length > 0 && (
               <div className="mt-2 rounded-lg overflow-hidden h-30">
@@ -180,127 +165,18 @@ export default function RequestList({
               </div>
             )}
             <p className="text-[13px] text-slate-500 dark:text-[#8c8c96] mt-2 leading-relaxed">
-              {isExpanded ? c.description : (
-                <>
-                  {c.description.slice(0, 100)}
-                  {c.description.length > 100 ? "..." : ""}
-                </>
-              )}
+              {c.description.slice(0, 100)}
+              {c.description.length > 100 ? "..." : ""}
             </p>
           </div>
-
-          {/* Metrics bar */}
-          <div className="flex items-center gap-3 px-3.5 pb-2 text-xs">
-            <button
-              className={`flex items-center gap-1 transition-colors cursor-pointer ${
-                hasUpvoted
-                  ? "text-blue-500 font-semibold"
-                  : "text-slate-400 dark:text-[#8c8c96] hover:text-blue-500"
-              }`}
-              onClick={(e) => { e.stopPropagation(); onUpvote?.(c.id); }}
-              title={hasUpvoted ? "Remove upvote" : "Upvote"}
-            >
+          <div className="flex items-center gap-3 px-3.5 pb-2.5 text-xs text-slate-400 dark:text-[#8c8c96]">
+            <span className="flex items-center gap-1">
               <FontAwesomeIcon icon={faChevronUp} /> {upvoteCount}
-            </button>
-            <button
-              className="flex items-center gap-1 text-slate-400 dark:text-[#8c8c96] hover:text-blue-500 transition-colors cursor-pointer"
-              onClick={(e) => { e.stopPropagation(); setExpandedId(isExpanded ? null : c.id); }}
-              title="Comments"
-            >
+            </span>
+            <span className="flex items-center gap-1">
               <FontAwesomeIcon icon={faComment} /> {comments.length}
-            </button>
-            <button
-              className="ml-auto flex items-center gap-1 text-slate-400 dark:text-[#6e6e79] hover:text-blue-500 transition-colors cursor-pointer"
-              onClick={(e) => { e.stopPropagation(); setExpandedId(isExpanded ? null : c.id); }}
-            >
-              <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} className="text-[10px]" />
-              <span>{isExpanded ? "Less" : "More"}</span>
-            </button>
+            </span>
           </div>
-
-          {/* Expanded section */}
-          {isExpanded && (
-            <div className="border-t border-slate-100 dark:border-[#3a3a3a] px-3.5 pb-3.5">
-              {/* Extra images */}
-              {c.imageUrls.length > 1 && (
-                <div className="flex gap-2 mt-3 overflow-x-auto">
-                  {c.imageUrls.slice(1).map((url, i) => (
-                    <img
-                      key={i}
-                      src={url}
-                      alt={`${c.title} ${i + 2}`}
-                      className="w-20 h-16 object-cover rounded-lg shrink-0"
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* Comments section */}
-              <div className="mt-3">
-                <h4 className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wide mb-2">
-                  Comments ({comments.length})
-                </h4>
-                {comments.length === 0 ? (
-                  <p className="text-xs text-slate-400 dark:text-zinc-500 italic">No comments yet.</p>
-                ) : (
-                  <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
-                    {comments.map((comment) => (
-                      <div key={comment.id} className="p-2 rounded-lg bg-slate-50 dark:bg-[#2a2a2a] text-xs">
-                        <p className="text-slate-700 dark:text-zinc-300">{comment.text}</p>
-                        <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-1">
-                          {getTimeSince(comment.createdAt)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Add comment */}
-                {onAddComment && (
-                  <div className="flex gap-2 mt-2">
-                    <input
-                      type="text"
-                      value={expandedId === c.id ? commentText : ""}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      placeholder="Add a comment..."
-                      className="flex-1 px-2.5 py-1.5 text-xs border border-slate-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-[#2a2a2a] text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && commentText.trim()) {
-                          onAddComment(c.id, commentText.trim());
-                          setCommentText("");
-                        }
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <button
-                      className="px-3 py-1.5 text-xs font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled={!commentText.trim()}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (commentText.trim()) {
-                          onAddComment(c.id, commentText.trim());
-                          setCommentText("");
-                        }
-                      }}
-                    >
-                      Post
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Delete */}
-              <button
-                className="mt-3 w-full py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (confirm("Delete this request?")) onDelete(c.id);
-                }}
-              >
-                Delete request
-              </button>
-            </div>
-          )}
         </div>
         );
       })}

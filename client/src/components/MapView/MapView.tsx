@@ -244,42 +244,55 @@ export default function MapView({
       }
 
       const thumbs = req.imageUrls.length
-        ? `<div style="display:flex;gap:4px;margin:8px 0;overflow-x:auto">
-            ${req.imageUrls
-              .slice(0, 3)
-              .map(
-                (url) =>
-                  `<img src="${url}" style="width:80px;height:60px;object-fit:cover;border-radius:4px" />`
-              )
-              .join("")}
+        ? `<div style="margin-top:8px;border-radius:8px;overflow:hidden;height:120px">
+            <img src="${req.imageUrls[0]}" style="width:100%;height:100%;object-fit:cover" />
           </div>`
         : "";
 
-      const statusColors: Record<string, string> = { open: "#ef4444", "in-progress": "#eab308", resolved: "#22c55e" };
-      const statusLabels: Record<string, string> = { open: "Open", "in-progress": "In Progress", resolved: "Resolved" };
-      const statusColor = statusColors[req.status] || "#ef4444";
-      const statusLabel = statusLabels[req.status] || req.status;
+      const statusColor = STATUS_COLORS[req.status] || "#ef4444";
+      const statusLabel = req.status === "in-progress" ? "In Progress" : req.status.charAt(0).toUpperCase() + req.status.slice(1);
 
       const hasUpvoted = currentUserId && (req.upvoters || []).includes(currentUserId);
       const upvoteCount = (req.upvoters || []).length;
-      const upvoteBtnClass = hasUpvoted ? "popup-upvote-btn popup-upvote-active" : "popup-upvote-btn";
+      const commentCount = (req.comments || []).length;
+      const upvoteColor = hasUpvoted ? "color:#3b82f6;font-weight:600" : "";
+
+      // Time since
+      const seconds = Math.floor((Date.now() - new Date(req.createdAt).getTime()) / 1000);
+      let timeSince = "just now";
+      if (seconds >= 60) {
+        const minutes = Math.floor(seconds / 60);
+        if (minutes >= 60) {
+          const hours = Math.floor(minutes / 60);
+          if (hours >= 24) {
+            const days = Math.floor(hours / 24);
+            timeSince = days >= 30 ? new Date(req.createdAt).toLocaleDateString() : `${days}d ago`;
+          } else timeSince = `${hours}h ago`;
+        } else timeSince = `${minutes}m ago`;
+      }
 
       const html = `
-        <div class="popup-content" style="position:relative;min-width:260px;min-height:120px">
-          <span style="position:absolute;top:0;right:0;display:flex;align-items:center;gap:6px">
-            <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px">${statusLabel}</span>
-            <button id="popup-upvote-${req.id}" class="${upvoteBtnClass}" style="margin:0">${upvoteCount} <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"/></svg></button>
-          </span>
-          <div class="popup-meta" style="margin-bottom:4px">
-            <div>${new Date(req.createdAt).toLocaleDateString()} · ${new Date(req.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
-            <div>${CATEGORY_LABELS[req.category]}</div>
+        <div class="popup-content" style="min-width:260px;font-family:system-ui,sans-serif">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="flex:1;font-weight:600;font-size:14px" class="popup-title">${req.title}</span>
+            <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap">${statusLabel}</span>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;padding-right:80px">
-            <strong class="popup-title">${req.title}</strong>
+          <div class="popup-meta" style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+            <span>${req.latitude.toFixed(4)}, ${req.longitude.toFixed(4)}</span>
+            <span>${timeSince}</span>
           </div>
           ${thumbs}
-          <p class="popup-desc">${req.description.slice(0, 150)}${req.description.length > 150 ? "..." : ""}</p>
-          <span class="popup-reporter" style="display:block;margin-top:8px">Reported by ${req.reporterId}</span>
+          <p class="popup-desc" style="margin:8px 0 0;line-height:1.5">${req.description.slice(0, 150)}${req.description.length > 150 ? "..." : ""}</p>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:8px;font-size:12px">
+            <button id="popup-upvote-${req.id}" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;font-size:12px;${upvoteColor}" class="popup-metric-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"/></svg>
+              ${upvoteCount}
+            </button>
+            <span style="display:flex;align-items:center;gap:4px" class="popup-metric">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M512 240c0 114.9-114.6 208-256 208c-37.1 0-72.3-6.4-104.1-17.9c-11.9 8.7-31.3 20.6-54.3 30.6C73.6 471.1 44.7 480 16 480c-6.5 0-12.3-3.9-14.8-9.9c-2.5-6-1.1-12.8 3.4-17.4c0 0 0 0 0 0s0 0 0 0s0 0 0 0c0 0 0 0 0 0l.3-.3c.3-.3 .7-.7 1.3-1.4c1.1-1.2 2.8-3.1 4.9-5.7c4.1-5 9.6-12.4 15.2-21.6c10-16.6 19.5-38.4 21.4-62.9C17.7 326.8 0 285.1 0 240C0 125.1 114.6 32 256 32s256 93.1 256 208z"/></svg>
+              ${commentCount}
+            </span>
+          </div>
         </div>
       `;
 

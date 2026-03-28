@@ -103,6 +103,19 @@
   color: var(--text-faint);
 }
 
+.popup-metric-btn {
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+
+.popup-metric-btn:hover {
+  color: var(--accent);
+}
+
+.popup-metric {
+  color: var(--text-muted);
+}
+
 /* ===== Drop pin marker ===== */
 .drop-pin-marker {
   cursor: grab;
