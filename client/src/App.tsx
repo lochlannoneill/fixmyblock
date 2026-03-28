@@ -6,6 +6,8 @@ import RequestToolbar from "./components/RequestToolbar";
 import RequestDetail from "./components/RequestDetail";
 import AuthModal from "./components/AuthModal";
 import ProfilePage from "./components/ProfilePage";
+import { SettingsPage } from "./components/SettingsPage";
+import { FeedbackPage } from "./components/FeedbackPage";
 import { useTheme } from "./hooks/useTheme";
 import { useRequests } from "./hooks/useRequests";
 import { useAuth } from "./hooks/useAuth";
@@ -26,7 +28,7 @@ export default function App() {
   const [geolocating, setGeolocating] = useState(false);
   const [usedGeolocation, setUsedGeolocation] = useState(false);
   const [selectingOnMap, setSelectingOnMap] = useState(false);
-  const [sidebarView, setSidebarView] = useState<"list" | "form" | "profile" | "detail">("list");
+  const [sidebarView, setSidebarView] = useState<"list" | "form" | "profile" | "detail" | "settings" | "feedback">("list");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
   const geoAbortRef = useRef(false);
   const userLocationRef = useRef<{ lng: number; lat: number } | null>(null);
@@ -135,6 +137,18 @@ export default function App() {
           setSidebarCollapsed(false);
           selectRequest(null);
         }}
+        onSettingsClick={() => {
+          setShowForm(false);
+          setSidebarView("settings");
+          setSidebarCollapsed(false);
+          selectRequest(null);
+        }}
+        onFeedbackClick={() => {
+          setShowForm(false);
+          setSidebarView("feedback");
+          setSidebarCollapsed(false);
+          selectRequest(null);
+        }}
       />
       <AuthModal
         open={showAuthModal}
@@ -167,6 +181,16 @@ export default function App() {
                 setSidebarView("list");
                 handleSelectRequest(r);
               }}
+            />
+          ) : sidebarView === "settings" ? (
+            <SettingsPage
+              darkMode={darkMode}
+              onToggleTheme={toggleTheme}
+              onClose={() => setSidebarView("list")}
+            />
+          ) : sidebarView === "feedback" ? (
+            <FeedbackPage
+              onClose={() => setSidebarView("list")}
             />
           ) : sidebarView === "detail" && selectedRequest ? (
             <RequestDetail

@@ -8,9 +8,11 @@ interface HeaderProps {
   onLoginClick: () => void;
   onLogout: () => void;
   onProfileClick: () => void;
+  onSettingsClick: () => void;
+  onFeedbackClick: () => void;
 }
 
-export default function Header({ darkMode, onToggleTheme, user, onLoginClick, onLogout, onProfileClick }: HeaderProps) {
+export default function Header({ darkMode, onToggleTheme, user, onLoginClick, onLogout, onProfileClick, onSettingsClick, onFeedbackClick }: HeaderProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [dropdownAnimate, setDropdownAnimate] = useState(false);
@@ -118,7 +120,7 @@ export default function Header({ darkMode, onToggleTheme, user, onLoginClick, on
                 Profile
               </button>
               <button
-                onClick={() => { setDropdownOpen(false); }}
+                onClick={() => { setDropdownOpen(false); onSettingsClick(); }}
                 className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333] cursor-pointer transition-colors flex items-center gap-2"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -128,7 +130,7 @@ export default function Header({ darkMode, onToggleTheme, user, onLoginClick, on
                 Settings
               </button>
               <button
-                onClick={() => { setDropdownOpen(false); }}
+                onClick={() => { setDropdownOpen(false); onFeedbackClick(); }}
                 className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333] cursor-pointer transition-colors flex items-center gap-2"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
