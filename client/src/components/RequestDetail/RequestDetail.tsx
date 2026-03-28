@@ -22,6 +22,7 @@ export default function RequestDetail({
   currentUserId,
 }: RequestDetailProps) {
   const [commentText, setCommentText] = useState("");
+  const [saved, setSaved] = useState(false);
   const commentInputRef = useRef<HTMLInputElement>(null);
 
   const comments = request.comments || [];
@@ -109,7 +110,8 @@ export default function RequestDetail({
           </p>
 
           {/* Metrics bar */}
-          <div className="flex items-center gap-2 mt-4 text-xs">
+          <div className="flex items-center justify-between mt-4 text-xs">
+            <div className="flex items-center gap-2">
             <button
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
                 hasUpvoted
@@ -127,6 +129,35 @@ export default function RequestDetail({
             >
               <FontAwesomeIcon icon={faComment} /> {comments.length}
             </button>
+            </div>
+            <div className="flex items-center gap-2">
+            <button
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
+                saved
+                  ? "text-blue-500 font-semibold bg-blue-50 dark:bg-blue-500/10"
+                  : "text-slate-500 dark:text-[#8c8c96] bg-slate-100 dark:bg-[#2a2a2a] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+              }`}
+              onClick={() => setSaved(!saved)}
+              title={saved ? "Unsave" : "Save"}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              Save
+            </button>
+            <button
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-[#2a2a2a] text-slate-500 dark:text-[#8c8c96] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer"
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({ title: request.title, text: request.description, url: window.location.href });
+                } else {
+                  navigator.clipboard.writeText(window.location.href);
+                }
+              }}
+              title="Share"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              Share
+            </button>
+            </div>
           </div>
 
           {/* Comments */}
