@@ -27,9 +27,9 @@
 
 /* ===== MapLibre popup overrides ===== */
 .maplibregl-popup-content {
-  background: color-mix(in srgb, var(--bg-card) 85%, transparent) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: color-mix(in srgb, var(--bg-card) 70%, transparent) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: var(--text-primary);
   border-radius: 12px !important;
   box-shadow: var(--shadow-md) !important;
@@ -37,7 +37,7 @@
 }
 
 .maplibregl-popup-tip {
-  border-top-color: color-mix(in srgb, var(--bg-card) 85%, transparent) !important;
+  border-top-color: color-mix(in srgb, var(--bg-card) 70%, transparent) !important;
 }
 
 .maplibregl-popup-close-button {
