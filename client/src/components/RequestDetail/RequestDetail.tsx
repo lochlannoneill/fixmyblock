@@ -176,6 +176,18 @@ export default function RequestDetail({
             </div>
           </div>
 
+          {/* Delete — only visible to the post author */}
+          {currentUserId && currentUserId === request.reporterId && (
+            <button
+              className="mt-3 w-full py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer border border-red-200 dark:border-red-900/30"
+              onClick={() => {
+                if (confirm("Delete this request?")) onDelete(request.id);
+              }}
+            >
+              Delete request
+            </button>
+          )}
+
           {/* Comments */}
           <div className="mt-8">
             {/* Add comment input */}
@@ -341,16 +353,6 @@ export default function RequestDetail({
               </div>
             )}
           </div>
-
-          {/* Delete */}
-          <button
-            className="mt-6 w-full py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer border border-red-200 dark:border-red-900/30"
-            onClick={() => {
-              if (confirm("Delete this request?")) onDelete(request.id);
-            }}
-          >
-            Delete request
-          </button>
         </div>
       </div>
     </div>
