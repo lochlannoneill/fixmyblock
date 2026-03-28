@@ -42,6 +42,7 @@ export interface RequestDoc {
   likers: string[];
   savedBy: string[];
   reporterId: string;
+  reporterName: string;
   comments: Comment[];
 }
 

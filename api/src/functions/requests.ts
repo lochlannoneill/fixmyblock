@@ -75,11 +75,13 @@ async function postRequest(
 
     // Extract reporter identity from SWA auth header
     let reporterId = "";
+    let reporterName = "Anonymous";
     const principal = req.headers.get("x-ms-client-principal");
     if (principal) {
       try {
         const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
         reporterId = decoded.userId || "";
+        reporterName = decoded.userDetails || "Anonymous";
       } catch {
         // ignore decode errors
       }
@@ -121,6 +123,7 @@ async function postRequest(
       likers: [],
       savedBy: [],
       reporterId,
+      reporterName,
       comments: [],
     };
 

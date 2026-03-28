@@ -72,13 +72,17 @@ export default function RequestDetail({
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-4">
-          {/* Meta */}
-          <div className="flex items-center justify-between text-xs text-slate-400 dark:text-[#6e6e79]">
-            <span className="flex items-center gap-1">
-              <FontAwesomeIcon icon={faMapMarkerAlt} className="text-[10px]" />
-              {displayLocation}
-            </span>
-            <span>{getTimeSince(request.createdAt)}</span>
+          {/* Poster info */}
+          <div className="flex items-center gap-2.5 mb-3">
+            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+              {((request.reporterName || "A")[0] ?? "A").toUpperCase()}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">
+                {request.reporterName || "Anonymous"}
+              </span>
+              <span className="text-xs text-slate-400 dark:text-[#6e6e79]">{getTimeSince(request.createdAt)}</span>
+            </div>
           </div>
 
           {/* Images */}
@@ -115,6 +119,12 @@ export default function RequestDetail({
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8c0 4.5-6 12-6 12s-6-7.5-6-12a6 6 0 0 1 12 0z"/><circle cx="12" cy="8" r="2"/></svg>
               Apple Maps
             </a>
+          </div>
+
+          {/* Location */}
+          <div className="flex items-center justify-center gap-1 mt-2 text-xs text-slate-400 dark:text-[#6e6e79]">
+            <FontAwesomeIcon icon={faMapMarkerAlt} className="text-[10px]" />
+            {displayLocation}
           </div>
 
           {/* Title */}
