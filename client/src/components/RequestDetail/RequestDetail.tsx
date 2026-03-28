@@ -123,10 +123,35 @@ export default function RequestDetail({
           </div>
 
           {/* Comments */}
-          <div className="mt-4">
-            <h4 className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wide mb-2">
-              Comments ({comments.length})
-            </h4>
+          <div className="mt-8">
+            {/* Add comment input */}
+            <div className="flex gap-2 mb-3 items-center">
+              <input
+                type="text"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Add a comment..."
+                className="flex-1 px-0 py-1 text-xs border-0 border-b border-slate-200 dark:border-zinc-700 bg-transparent text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 transition-colors"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && commentText.trim()) {
+                    onAddComment(request.id, commentText.trim());
+                    setCommentText("");
+                  }
+                }}
+              />
+              {commentText.trim() && (
+                <button
+                  className="text-xs font-medium text-blue-500 hover:text-blue-600 transition-colors cursor-pointer"
+                  onClick={() => {
+                    onAddComment(request.id, commentText.trim());
+                    setCommentText("");
+                  }}
+                >
+                  Post
+                </button>
+              )}
+            </div>
+
             {comments.length === 0 ? (
               <p className="text-xs text-slate-400 dark:text-zinc-500 italic">No comments yet. Be the first to comment.</p>
             ) : (
@@ -141,35 +166,6 @@ export default function RequestDetail({
                 ))}
               </div>
             )}
-
-            {/* Add comment input */}
-            <div className="flex gap-2 mt-3">
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Add a comment..."
-                className="flex-1 px-2.5 py-2 text-xs border border-slate-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-[#2a2a2a] text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && commentText.trim()) {
-                    onAddComment(request.id, commentText.trim());
-                    setCommentText("");
-                  }
-                }}
-              />
-              <button
-                className="px-3 py-2 text-xs font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!commentText.trim()}
-                onClick={() => {
-                  if (commentText.trim()) {
-                    onAddComment(request.id, commentText.trim());
-                    setCommentText("");
-                  }
-                }}
-              >
-                Post
-              </button>
-            </div>
           </div>
 
           {/* Delete */}
