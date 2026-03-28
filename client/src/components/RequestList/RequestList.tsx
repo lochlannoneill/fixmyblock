@@ -103,7 +103,7 @@ export default function RequestList({
               {c.status === "in-progress" ? "In Progress" : c.status.charAt(0).toUpperCase() + c.status.slice(1)}
             </span>
             <span className="text-xs text-slate-500 dark:text-[#8c8c96] flex items-center gap-1 transition-colors hover:text-blue-500">
-              <FontAwesomeIcon icon={faChevronUp} /> {c.upvotes}
+              <FontAwesomeIcon icon={faChevronUp} /> {(c.upvoters || []).length}
             </span>
           </div>
           <div className="text-xs text-slate-400 dark:text-[#6e6e79] mt-1">

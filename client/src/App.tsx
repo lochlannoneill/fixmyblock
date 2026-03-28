@@ -207,6 +207,7 @@ export default function App() {
             dropPinLocation={selectedLocation}
             darkMode={darkMode}
             onUserLocation={handleUserLocation}
+            currentUserId={user?.userId}
           />
         </main>
       </div>

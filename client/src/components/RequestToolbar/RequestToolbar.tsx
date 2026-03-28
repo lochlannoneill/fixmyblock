@@ -41,7 +41,7 @@ export default function RequestToolbar({
     return [...filtered].sort((a, b) => {
       if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       if (sortBy === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      return b.upvotes - a.upvotes;
+      return (b.upvoters || []).length - (a.upvoters || []).length;
     });
   }, [requests, filterCategory, filterStatus, sortBy]);
 

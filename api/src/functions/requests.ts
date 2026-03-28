@@ -9,7 +9,7 @@ import {
   getAllRequests,
   getRequestById,
   createRequest as createRequestDoc,
-  incrementUpvote,
+  toggleUpvote,
   deleteRequest as deleteRequestDoc,
   RequestDoc,
 } from "../cosmos.js";
@@ -77,7 +77,7 @@ async function postRequest(
       };
     }
 
-    // Upload images (max 5)
+    // Upload images (max 1)
     const imageFiles = parsed.files.filter((f) => f.name === "images").slice(0, 5);
     const imageUrls: string[] = [];
 
@@ -102,6 +102,7 @@ async function postRequest(
       imageUrls,
       createdAt: new Date().toISOString(),
       upvotes: 0,
+      upvoters: [],
       reporterName,
     };
 
@@ -121,7 +122,19 @@ async function upvote(
   const id = req.params.id;
   if (!id) return { status: 400, jsonBody: { error: "Missing id" } };
 
-  const updated = await incrementUpvote(id);
+  const principal = req.headers.get("x-ms-client-principal");
+  if (!principal) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  let userId: string;
+  try {
+    const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
+    userId = decoded.userId;
+  } catch {
+    return { status: 401, jsonBody: { error: "Invalid auth token" } };
+  }
+  if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
+
+  const updated = await toggleUpvote(id, userId);
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
   return { status: 200, jsonBody: updated };

@@ -17,6 +17,7 @@ interface MapViewProps {
   dropPinLocation: { lng: number; lat: number } | null;
   darkMode: boolean;
   onUserLocation?: (lng: number, lat: number) => void;
+  currentUserId?: string;
 }
 
 export default function MapView({
@@ -29,6 +30,7 @@ export default function MapView({
   dropPinLocation,
   darkMode,
   onUserLocation,
+  currentUserId,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -213,7 +215,7 @@ export default function MapView({
         color: white;
         font-weight: bold;
       `;
-      inner.textContent = `${req.upvotes}`;
+      inner.textContent = `${(req.upvoters || []).length}`;
       el.appendChild(inner);
 
       el.addEventListener("click", (e) => {
@@ -256,11 +258,15 @@ export default function MapView({
       const statusColor = statusColors[req.status] || "#ef4444";
       const statusLabel = statusLabels[req.status] || req.status;
 
+      const hasUpvoted = currentUserId && (req.upvoters || []).includes(currentUserId);
+      const upvoteCount = (req.upvoters || []).length;
+      const upvoteBtnClass = hasUpvoted ? "popup-upvote-btn popup-upvote-active" : "popup-upvote-btn";
+
       const html = `
         <div class="popup-content" style="position:relative;min-width:260px;min-height:120px">
           <span style="position:absolute;top:0;right:0;display:flex;align-items:center;gap:6px">
             <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px">${statusLabel}</span>
-            <button id="popup-upvote-${req.id}" class="popup-upvote-btn" style="margin:0">${req.upvotes} <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"/></svg></button>
+            <button id="popup-upvote-${req.id}" class="${upvoteBtnClass}" style="margin:0">${upvoteCount} <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"/></svg></button>
           </span>
           <div class="popup-meta" style="margin-bottom:4px">
             <div>${new Date(req.createdAt).toLocaleDateString()} · ${new Date(req.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
@@ -300,7 +306,7 @@ export default function MapView({
 
       popupRef.current = popup;
     },
-    [onSelectRequest, onUpvote]
+    [onSelectRequest, onUpvote, currentUserId]
   );
 
   const selectedIdRef = useRef<string | null>(null);

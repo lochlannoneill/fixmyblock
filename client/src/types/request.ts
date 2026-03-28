@@ -9,6 +9,7 @@ export interface Request {
   imageUrls: string[];
   createdAt: string;
   upvotes: number;
+  upvoters: string[];
   reporterName: string;
 }
 

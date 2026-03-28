@@ -28,6 +28,7 @@ export interface RequestDoc {
   imageUrls: string[];
   createdAt: string;
   upvotes: number;
+  upvoters: string[];
   reporterName: string;
 }
 
@@ -56,11 +57,20 @@ export async function createRequest(
   return resource!;
 }
 
-export async function incrementUpvote(id: string): Promise<RequestDoc | null> {
+export async function toggleUpvote(id: string, userId: string): Promise<RequestDoc | null> {
   const existing = await getRequestById(id);
   if (!existing) return null;
 
-  existing.upvotes = (existing.upvotes || 0) + 1;
+  const upvoters = existing.upvoters || [];
+  const index = upvoters.indexOf(userId);
+  if (index === -1) {
+    upvoters.push(userId);
+  } else {
+    upvoters.splice(index, 1);
+  }
+  existing.upvoters = upvoters;
+  existing.upvotes = upvoters.length;
+
   const { resource } = await getContainer()
     .item(id, id)
     .replace<RequestDoc>(existing);
