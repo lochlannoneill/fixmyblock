@@ -203,7 +203,7 @@ export default function MapView({
         height: 32px;
         border-radius: 50% 50% 50% 0;
         background: ${STATUS_COLORS[req.status]};
-        border: 2px solid ${darkMode ? "#2a2a2a" : "white"};
+        border: 2px solid var(--pin-border);
         cursor: pointer;
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         display: flex;
@@ -507,7 +507,7 @@ export default function MapView({
         style={{
           position: "absolute",
           inset: 0,
-          backgroundColor: darkMode ? "#121212" : "#ffffff",
+          backgroundColor: "var(--map-bg)",
           opacity: mapFading ? 1 : 0,
           transition: "opacity 200ms ease",
           pointerEvents: "none",
