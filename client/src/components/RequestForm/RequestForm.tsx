@@ -116,7 +116,7 @@ export default function RequestForm({
               <circle cx="12" cy="12" r="3" />
               <path d="M12 2v4m0 12v4m10-10h-4M6 12H2" />
             </svg>
-            {geolocating ? "Getting location..." : "Use Current Location"}
+            {geolocating ? "Getting location..." : "Current Location"}
           </span>
         </button>
         <button

@@ -25,6 +25,13 @@
   --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
+/* ===== Smooth dark/light mode transition ===== */
+*,
+*::before,
+*::after {
+  transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, fill 200ms ease, stroke 200ms ease, box-shadow 200ms ease;
+}
+
 /* ===== Sidebar scrollbar ===== */
 .sidebar {
   scrollbar-width: thin;

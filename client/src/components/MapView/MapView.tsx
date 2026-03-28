@@ -43,6 +43,7 @@ export default function MapView({
   const [activeLayer, setActiveLayer] = useState<MapLayer>("terrain");
   const lastDarkModeApplied = useRef(darkMode);
   const activeLayerRef = useRef<MapLayer>("terrain");
+  const [mapFading, setMapFading] = useState(false);
 
   const add3dBuildings = useCallback(() => {
     if (!map.current) return;
@@ -164,6 +165,7 @@ export default function MapView({
     if (!map.current || !mapReady) return;
     if (lastDarkModeApplied.current === darkMode) return;
     lastDarkModeApplied.current = darkMode;
+    setMapFading(true);
     const azureMapsKey = import.meta.env.VITE_AZURE_MAPS_KEY || "";
     if (azureMapsKey) return; // Azure Maps doesn't support style switching this way
     if (activeLayer !== "default" && activeLayer !== "terrain") return; // Don't override raster layer selections
@@ -175,7 +177,10 @@ export default function MapView({
     map.current.setStyle(style);
     (map.current as unknown as { _styleUrl?: string })._styleUrl = style;
 
-    map.current.once("style.load", add3dBuildings);
+    map.current.once("style.load", () => {
+      add3dBuildings();
+      setTimeout(() => setMapFading(false), 50);
+    });
   }, [darkMode, mapReady, activeLayer, add3dBuildings]);
 
   // Sync markers with requests
@@ -460,6 +465,17 @@ export default function MapView({
       <div
         ref={mapContainer}
         style={{ width: "100%", height: "100%" }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundColor: darkMode ? "#121212" : "#ffffff",
+          opacity: mapFading ? 1 : 0,
+          transition: "opacity 200ms ease",
+          pointerEvents: "none",
+          zIndex: 1,
+        }}
       />
       <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} />
     </div>
