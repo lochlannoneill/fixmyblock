@@ -57,7 +57,7 @@ export default function Header({ darkMode, onToggleTheme, user, onLoginClick, on
           type="button"
           aria-label="Toggle dark mode"
           onClick={onToggleTheme}
-          className="relative w-20 h-10 flex items-center rounded-full p-1 transition-colors cursor-pointer bg-slate-100 dark:bg-[#333] hover:bg-slate-200 dark:hover:bg-[#3a3a3a]"
+          className="relative w-18 h-10 flex items-center rounded-full p-1 transition-colors cursor-pointer bg-slate-100 dark:bg-[#333] hover:bg-slate-200 dark:hover:bg-[#3a3a3a]"
           title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
         >
           <div className="absolute inset-0 flex items-center justify-between px-2.5 pointer-events-none select-none">
@@ -70,8 +70,12 @@ export default function Header({ darkMode, onToggleTheme, user, onLoginClick, on
             </svg>
           </div>
           <span
-            className={`absolute top-1 left-1 w-8 h-8 rounded-full shadow-md transition-all duration-300
-              ${darkMode ? "bg-[#3a3a3a] translate-x-10" : "bg-white translate-x-0"}`}
+            className="absolute top-1 left-1 w-8 h-8 rounded-full shadow-md"
+            style={{
+              transition: "transform 300ms ease, background-color 300ms ease",
+              transform: darkMode ? "translateX(2rem)" : "translateX(0)",
+              backgroundColor: darkMode ? "#3a3a3a" : "#ffffff",
+            }}
           />
         </button>
         {user ? (
