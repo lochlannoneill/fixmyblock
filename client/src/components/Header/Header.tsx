@@ -65,6 +65,9 @@ export default function Header({ darkMode, onToggleTheme, user, onLoginClick, on
               <span className="hidden sm:inline text-sm font-medium truncate max-w-30">
                 {user.userDetails}
               </span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}>
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </button>
             {dropdownVisible && (
             <div
@@ -120,7 +123,7 @@ export default function Header({ darkMode, onToggleTheme, user, onLoginClick, on
           type="button"
           aria-label="Toggle dark mode"
           onClick={onToggleTheme}
-          className="w-8 h-8 rounded-full bg-slate-200 dark:bg-[#444] hover:bg-slate-300 dark:hover:bg-[#555] flex items-center justify-center cursor-pointer transition-colors"
+          className="w-10 h-10 rounded-full bg-slate-100 dark:bg-[#333] hover:bg-slate-200 dark:hover:bg-[#3a3a3a] flex items-center justify-center cursor-pointer transition-colors"
           title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
         >
           {darkMode ? (
