@@ -21,7 +21,6 @@ export async function createRequest(data: NewRequest): Promise<Request> {
   formData.append("category", data.category);
   formData.append("latitude", data.latitude.toString());
   formData.append("longitude", data.longitude.toString());
-  formData.append("reporterName", data.reporterName);
 
   for (const image of data.images) {
     formData.append("images", image);

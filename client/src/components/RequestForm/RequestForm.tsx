@@ -26,7 +26,6 @@ export default function RequestForm({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<RequestCategory>("pothole");
-  const [reporterName, setReporterName] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -65,7 +64,7 @@ export default function RequestForm({
       setError("Click on the map to select a location first");
       return;
     }
-    if (!title.trim() || !description.trim() || !reporterName.trim()) {
+    if (!title.trim() || !description.trim()) {
       setError("Please fill in all required fields");
       return;
     }
@@ -79,12 +78,10 @@ export default function RequestForm({
         latitude: selectedLocation.lat,
         longitude: selectedLocation.lng,
         images,
-        reporterName: reporterName.trim(),
       });
       setTitle("");
       setDescription("");
       setCategory("pothole");
-      setReporterName("");
       setImages([]);
       setPreviews([]);
     } catch {
@@ -148,19 +145,6 @@ export default function RequestForm({
           Location: {selectedLocation.lat.toFixed(5)}, {selectedLocation.lng.toFixed(5)}
         </div>
       )}
-
-      <label className="block text-[13px] font-semibold text-slate-600 dark:text-[#b4b4bb] mb-3.5">
-        Your Name *
-        <input
-          type="text"
-          className={inputClasses}
-          value={reporterName}
-          onChange={(e) => setReporterName(e.target.value)}
-          placeholder="Jane Doe"
-          maxLength={100}
-          required
-        />
-      </label>
 
       <label className="block text-[13px] font-semibold text-slate-600 dark:text-[#b4b4bb] mb-3.5">
         Title *

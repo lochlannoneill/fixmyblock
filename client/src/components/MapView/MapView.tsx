@@ -277,7 +277,7 @@ export default function MapView({
           </div>
           ${thumbs}
           <p class="popup-desc">${req.description.slice(0, 150)}${req.description.length > 150 ? "..." : ""}</p>
-          <span class="popup-reporter" style="display:block;margin-top:8px">Reported by ${req.reporterName}</span>
+          <span class="popup-reporter" style="display:block;margin-top:8px">Reported by ${req.reporterId}</span>
         </div>
       `;
 

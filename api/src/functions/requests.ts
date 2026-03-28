@@ -68,7 +68,18 @@ async function postRequest(
     const category = getField("category");
     const latitude = parseFloat(getField("latitude"));
     const longitude = parseFloat(getField("longitude"));
-    const reporterName = getField("reporterName").slice(0, 100);
+
+    // Extract reporter identity from SWA auth header
+    let reporterId = "";
+    const principal = req.headers.get("x-ms-client-principal");
+    if (principal) {
+      try {
+        const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
+        reporterId = decoded.userId || "";
+      } catch {
+        // ignore decode errors
+      }
+    }
 
     if (!title || !description || isNaN(latitude) || isNaN(longitude)) {
       return {
@@ -103,7 +114,7 @@ async function postRequest(
       createdAt: new Date().toISOString(),
       upvotes: 0,
       upvoters: [],
-      reporterName,
+      reporterId,
     };
 
     const created = await createRequestDoc(doc);

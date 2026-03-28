@@ -10,7 +10,7 @@ export interface Request {
   createdAt: string;
   upvotes: number;
   upvoters: string[];
-  reporterName: string;
+  reporterId: string;
 }
 
 export type RequestCategory =
@@ -32,7 +32,6 @@ export interface NewRequest {
   latitude: number;
   longitude: number;
   images: File[];
-  reporterName: string;
 }
 
 export const CATEGORY_LABELS: Record<RequestCategory, string> = {

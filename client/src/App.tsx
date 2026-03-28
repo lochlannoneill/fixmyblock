@@ -4,6 +4,7 @@ import MapView from "./components/MapView";
 import RequestForm from "./components/RequestForm";
 import RequestToolbar from "./components/RequestToolbar";
 import AuthModal from "./components/AuthModal";
+import ProfilePage from "./components/ProfilePage";
 import { useTheme } from "./hooks/useTheme";
 import { useRequests } from "./hooks/useRequests";
 import { useAuth } from "./hooks/useAuth";
@@ -24,7 +25,7 @@ export default function App() {
   const [geolocating, setGeolocating] = useState(false);
   const [usedGeolocation, setUsedGeolocation] = useState(false);
   const [selectingOnMap, setSelectingOnMap] = useState(false);
-  const [sidebarView, setSidebarView] = useState<"list" | "form">("list");
+  const [sidebarView, setSidebarView] = useState<"list" | "form" | "profile">("list");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
   const geoAbortRef = useRef(false);
   const userLocationRef = useRef<{ lng: number; lat: number } | null>(null);
@@ -127,6 +128,12 @@ export default function App() {
         user={user}
         onLoginClick={() => setShowAuthModal(true)}
         onLogout={logout}
+        onProfileClick={() => {
+          setShowForm(false);
+          setSidebarView("profile");
+          setSidebarCollapsed(false);
+          selectRequest(null);
+        }}
       />
       <AuthModal
         open={showAuthModal}
@@ -149,6 +156,16 @@ export default function App() {
               onCancel={handleCancelRequest}
               onUseCurrentLocation={handleUseCurrentLocation}
               onSelectOnMap={handleSelectOnMap}
+            />
+          ) : sidebarView === "profile" && user ? (
+            <ProfilePage
+              user={user}
+              requests={requests}
+              onClose={() => setSidebarView("list")}
+              onSelectRequest={(r) => {
+                setSidebarView("list");
+                handleSelectRequest(r);
+              }}
             />
           ) : (
             <>

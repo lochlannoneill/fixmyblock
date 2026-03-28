@@ -29,7 +29,7 @@ export interface RequestDoc {
   createdAt: string;
   upvotes: number;
   upvoters: string[];
-  reporterName: string;
+  reporterId: string;
 }
 
 export async function getAllRequests(): Promise<RequestDoc[]> {
