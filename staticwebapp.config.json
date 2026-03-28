@@ -52,32 +52,32 @@
       "allowedRoles": ["anonymous"]
     },
     {
-      "route": "/api/complaints",
+      "route": "/api/posts",
       "methods": ["POST"],
       "allowedRoles": ["authenticated"]
     },
     {
-      "route": "/api/complaints/*/like",
+      "route": "/api/posts/*/like",
       "methods": ["POST"],
       "allowedRoles": ["authenticated"]
     },
     {
-      "route": "/api/complaints/*/comments/*/like",
+      "route": "/api/posts/*/comments/*/like",
       "methods": ["POST"],
       "allowedRoles": ["authenticated"]
     },
     {
-      "route": "/api/complaints/*/comments",
+      "route": "/api/posts/*/comments",
       "methods": ["POST"],
       "allowedRoles": ["authenticated"]
     },
     {
-      "route": "/api/complaints/*/save",
+      "route": "/api/posts/*/save",
       "methods": ["POST"],
       "allowedRoles": ["authenticated"]
     },
     {
-      "route": "/api/complaints/*",
+      "route": "/api/posts/*",
       "methods": ["DELETE"],
       "allowedRoles": ["authenticated"]
     }

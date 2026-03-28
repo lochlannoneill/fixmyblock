@@ -3,13 +3,13 @@ import type { Request, NewRequest } from "../types/request";
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
 export async function fetchRequests(): Promise<Request[]> {
-  const res = await fetch(`${API_BASE}/complaints`);
+  const res = await fetch(`${API_BASE}/posts`);
   if (!res.ok) throw new Error("Failed to fetch requests");
   return res.json();
 }
 
 export async function fetchRequest(id: string): Promise<Request> {
-  const res = await fetch(`${API_BASE}/complaints/${encodeURIComponent(id)}`);
+  const res = await fetch(`${API_BASE}/posts/${encodeURIComponent(id)}`);
   if (!res.ok) throw new Error("Failed to fetch request");
   return res.json();
 }
@@ -27,7 +27,7 @@ export async function createRequest(data: NewRequest): Promise<Request> {
     formData.append("images", image);
   }
 
-  const res = await fetch(`${API_BASE}/complaints`, {
+  const res = await fetch(`${API_BASE}/posts`, {
     method: "POST",
     body: formData,
   });
@@ -37,7 +37,7 @@ export async function createRequest(data: NewRequest): Promise<Request> {
 
 export async function likeRequest(id: string): Promise<Request> {
   const res = await fetch(
-    `${API_BASE}/complaints/${encodeURIComponent(id)}/like`,
+    `${API_BASE}/posts/${encodeURIComponent(id)}/like`,
     { method: "POST" }
   );
   if (!res.ok) throw new Error("Failed to like request");
@@ -46,7 +46,7 @@ export async function likeRequest(id: string): Promise<Request> {
 
 export async function deleteRequest(id: string): Promise<void> {
   const res = await fetch(
-    `${API_BASE}/complaints/${encodeURIComponent(id)}`,
+    `${API_BASE}/posts/${encodeURIComponent(id)}`,
     { method: "DELETE" }
   );
   if (!res.ok) throw new Error("Failed to delete request");
@@ -54,7 +54,7 @@ export async function deleteRequest(id: string): Promise<void> {
 
 export async function addComment(id: string, text: string, parentId?: string): Promise<Request> {
   const res = await fetch(
-    `${API_BASE}/complaints/${encodeURIComponent(id)}/comments`,
+    `${API_BASE}/posts/${encodeURIComponent(id)}/comments`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -67,7 +67,7 @@ export async function addComment(id: string, text: string, parentId?: string): P
 
 export async function likeComment(requestId: string, commentId: string): Promise<Request> {
   const res = await fetch(
-    `${API_BASE}/complaints/${encodeURIComponent(requestId)}/comments/${encodeURIComponent(commentId)}/like`,
+    `${API_BASE}/posts/${encodeURIComponent(requestId)}/comments/${encodeURIComponent(commentId)}/like`,
     { method: "POST" }
   );
   if (!res.ok) throw new Error("Failed to like comment");
@@ -76,7 +76,7 @@ export async function likeComment(requestId: string, commentId: string): Promise
 
 export async function saveRequest(id: string): Promise<Request> {
   const res = await fetch(
-    `${API_BASE}/complaints/${encodeURIComponent(id)}/save`,
+    `${API_BASE}/posts/${encodeURIComponent(id)}/save`,
     { method: "POST" }
   );
   if (!res.ok) throw new Error("Failed to save request");

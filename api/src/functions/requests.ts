@@ -19,7 +19,7 @@ import {
 import { uploadImage } from "../storage.js";
 import { parseMultipart } from "../multipart.js";
 
-// GET /api/complaints
+// GET /api/posts
 async function listRequests(
   _req: HttpRequest,
   _ctx: InvocationContext
@@ -32,7 +32,7 @@ async function listRequests(
   }
 }
 
-// GET /api/complaints/{id}
+// GET /api/posts/{id}
 async function getRequest(
   req: HttpRequest,
   _ctx: InvocationContext
@@ -46,7 +46,7 @@ async function getRequest(
   return { status: 200, jsonBody: request };
 }
 
-// POST /api/complaints
+// POST /api/posts
 async function postRequest(
   req: HttpRequest,
   ctx: InvocationContext
@@ -110,6 +110,7 @@ async function postRequest(
 
     const doc: RequestDoc = {
       id: uuidv4(),
+      type: "complaint",
       title,
       description,
       category,
@@ -135,7 +136,7 @@ async function postRequest(
   }
 }
 
-// POST /api/complaints/{id}/like
+// POST /api/posts/{id}/like
 async function like(
   req: HttpRequest,
   _ctx: InvocationContext
@@ -161,7 +162,7 @@ async function like(
   return { status: 200, jsonBody: updated };
 }
 
-// POST /api/complaints/{id}/comments
+// POST /api/posts/{id}/comments
 async function postComment(
   req: HttpRequest,
   _ctx: InvocationContext
@@ -209,7 +210,7 @@ async function postComment(
   return { status: 201, jsonBody: updated };
 }
 
-// DELETE /api/complaints/{id}
+// DELETE /api/posts/{id}
 async function removeRequest(
   req: HttpRequest,
   _ctx: InvocationContext
@@ -223,7 +224,7 @@ async function removeRequest(
   return { status: 204 };
 }
 
-// POST /api/complaints/{id}/save
+// POST /api/posts/{id}/save
 async function saveRequest(
   req: HttpRequest,
   _ctx: InvocationContext
@@ -253,53 +254,53 @@ async function saveRequest(
 app.http("listRequests", {
   methods: ["GET"],
   authLevel: "anonymous",
-  route: "complaints",
+  route: "posts",
   handler: listRequests,
 });
 
 app.http("getRequest", {
   methods: ["GET"],
   authLevel: "anonymous",
-  route: "complaints/{id}",
+  route: "posts/{id}",
   handler: getRequest,
 });
 
 app.http("createRequest", {
   methods: ["POST"],
   authLevel: "anonymous",
-  route: "complaints",
+  route: "posts",
   handler: postRequest,
 });
 
 app.http("likeRequest", {
   methods: ["POST"],
   authLevel: "anonymous",
-  route: "complaints/{id}/like",
+  route: "posts/{id}/like",
   handler: like,
 });
 
 app.http("deleteRequest", {
   methods: ["DELETE"],
   authLevel: "anonymous",
-  route: "complaints/{id}",
+  route: "posts/{id}",
   handler: removeRequest,
 });
 
 app.http("postComment", {
   methods: ["POST"],
   authLevel: "anonymous",
-  route: "complaints/{id}/comments",
+  route: "posts/{id}/comments",
   handler: postComment,
 });
 
 app.http("saveRequest", {
   methods: ["POST"],
   authLevel: "anonymous",
-  route: "complaints/{id}/save",
+  route: "posts/{id}/save",
   handler: saveRequest,
 });
 
-// POST /api/complaints/{id}/comments/{commentId}/like
+// POST /api/posts/{id}/comments/{commentId}/like
 async function likeComment(
   req: HttpRequest,
   _ctx: InvocationContext
@@ -329,6 +330,6 @@ async function likeComment(
 app.http("likeComment", {
   methods: ["POST"],
   authLevel: "anonymous",
-  route: "complaints/{id}/comments/{commentId}/like",
+  route: "posts/{id}/comments/{commentId}/like",
   handler: likeComment,
 });

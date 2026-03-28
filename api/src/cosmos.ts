@@ -12,7 +12,7 @@ function getContainer(): Container {
     }
     client = new CosmosClient(connectionString);
     database = client.database(process.env.COSMOS_DATABASE || "fixmyblock");
-    container = database.container(process.env.COSMOS_CONTAINER || "complaints");
+    container = database.container(process.env.COSMOS_CONTAINER || "posts");
   }
   return container;
 }
@@ -29,6 +29,7 @@ export interface Comment {
 
 export interface RequestDoc {
   id: string;
+  type: string;
   title: string;
   description: string;
   category: string;
@@ -47,6 +48,7 @@ export interface RequestDoc {
 }
 
 function migrateDoc(doc: RequestDoc & { reporterId?: string; reporterName?: string }): RequestDoc {
+  if (!doc.type) doc.type = "complaint";
   if (!doc.userId && doc.reporterId) doc.userId = doc.reporterId;
   if (!doc.userName && doc.reporterName) doc.userName = doc.reporterName;
   return doc;

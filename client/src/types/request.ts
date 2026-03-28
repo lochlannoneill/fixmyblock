@@ -10,6 +10,7 @@ export interface Comment {
 
 export interface Request {
   id: string;
+  type: string;
   title: string;
   description: string;
   category: RequestCategory;
