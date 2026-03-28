@@ -10,6 +10,7 @@ import {
   getRequestById,
   createRequest as createRequestDoc,
   toggleUpvote,
+  addComment as addCommentDoc,
   deleteRequest as deleteRequestDoc,
   RequestDoc,
 } from "../cosmos.js";
@@ -115,6 +116,7 @@ async function postRequest(
       upvotes: 0,
       upvoters: [],
       reporterId,
+      comments: [],
     };
 
     const created = await createRequestDoc(doc);
@@ -149,6 +151,49 @@ async function upvote(
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
   return { status: 200, jsonBody: updated };
+}
+
+// POST /api/complaints/{id}/comments
+async function postComment(
+  req: HttpRequest,
+  _ctx: InvocationContext
+): Promise<HttpResponseInit> {
+  const id = req.params.id;
+  if (!id) return { status: 400, jsonBody: { error: "Missing id" } };
+
+  const principal = req.headers.get("x-ms-client-principal");
+  if (!principal) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  let userId: string;
+  try {
+    const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
+    userId = decoded.userId;
+  } catch {
+    return { status: 401, jsonBody: { error: "Invalid auth token" } };
+  }
+  if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
+
+  let body: { text?: string };
+  try {
+    body = await req.json() as { text?: string };
+  } catch {
+    return { status: 400, jsonBody: { error: "Invalid JSON" } };
+  }
+
+  const text = (body.text || "").trim().slice(0, 1000);
+  if (!text) return { status: 400, jsonBody: { error: "Comment text is required" } };
+
+  const comment = {
+    id: uuidv4(),
+    userId,
+    text,
+    createdAt: new Date().toISOString(),
+  };
+
+  const updated = await addCommentDoc(id, comment);
+  if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
+
+  return { status: 201, jsonBody: updated };
 }
 
 // DELETE /api/complaints/{id}
@@ -199,4 +244,11 @@ app.http("deleteRequest", {
   authLevel: "anonymous",
   route: "complaints/{id}",
   handler: removeRequest,
+});
+
+app.http("postComment", {
+  methods: ["POST"],
+  authLevel: "anonymous",
+  route: "complaints/{id}/comments",
+  handler: postComment,
 });

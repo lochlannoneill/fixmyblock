@@ -17,6 +17,13 @@ function getContainer(): Container {
   return container;
 }
 
+export interface Comment {
+  id: string;
+  userId: string;
+  text: string;
+  createdAt: string;
+}
+
 export interface RequestDoc {
   id: string;
   title: string;
@@ -30,6 +37,7 @@ export interface RequestDoc {
   upvotes: number;
   upvoters: string[];
   reporterId: string;
+  comments: Comment[];
 }
 
 export async function getAllRequests(): Promise<RequestDoc[]> {
@@ -70,6 +78,19 @@ export async function toggleUpvote(id: string, userId: string): Promise<RequestD
   }
   existing.upvoters = upvoters;
   existing.upvotes = upvoters.length;
+
+  const { resource } = await getContainer()
+    .item(id, id)
+    .replace<RequestDoc>(existing);
+  return resource ?? null;
+}
+
+export async function addComment(id: string, comment: Comment): Promise<RequestDoc | null> {
+  const existing = await getRequestById(id);
+  if (!existing) return null;
+
+  existing.comments = existing.comments || [];
+  existing.comments.push(comment);
 
   const { resource } = await getContainer()
     .item(id, id)

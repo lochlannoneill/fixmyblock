@@ -50,3 +50,16 @@ export async function deleteRequest(id: string): Promise<void> {
   );
   if (!res.ok) throw new Error("Failed to delete request");
 }
+
+export async function addComment(id: string, text: string): Promise<Request> {
+  const res = await fetch(
+    `${API_BASE}/complaints/${encodeURIComponent(id)}/comments`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    }
+  );
+  if (!res.ok) throw new Error("Failed to add comment");
+  return res.json();
+}

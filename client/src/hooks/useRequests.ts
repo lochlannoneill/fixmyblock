@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Request, NewRequest } from "../types/request";
-import { fetchRequests, createRequest, upvoteRequest, deleteRequest } from "../services/api";
+import { fetchRequests, createRequest, upvoteRequest, deleteRequest, addComment as addCommentApi } from "../services/api";
 
 export function useRequests() {
   const [requests, setRequests] = useState<Request[]>([]);
@@ -49,5 +49,19 @@ export function useRequests() {
     return created;
   }, []);
 
-  return { requests, loading, selectedRequest, selectRequest, upvote, remove, create };
+  const addComment = useCallback(async (id: string, text: string) => {
+    try {
+      const updated = await addCommentApi(id, text);
+      setRequests((prev) =>
+        prev.map((c) => (c.id === updated.id ? updated : c))
+      );
+      setSelectedRequest((prev) =>
+        prev?.id === updated.id ? updated : prev
+      );
+    } catch {
+      console.error("Failed to add comment");
+    }
+  }, []);
+
+  return { requests, loading, selectedRequest, selectRequest, upvote, remove, create, addComment };
 }

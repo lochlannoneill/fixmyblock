@@ -1,3 +1,10 @@
+export interface Comment {
+  id: string;
+  userId: string;
+  text: string;
+  createdAt: string;
+}
+
 export interface Request {
   id: string;
   title: string;
@@ -11,6 +18,7 @@ export interface Request {
   upvotes: number;
   upvoters: string[];
   reporterId: string;
+  comments: Comment[];
 }
 
 export type RequestCategory =
