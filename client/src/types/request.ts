@@ -22,8 +22,8 @@ export interface Request {
   likes: number;
   likers: string[];
   savedBy: string[];
-  reporterId: string;
-  reporterName?: string;
+  userId: string;
+  userName?: string;
   comments: Comment[];
 }
 

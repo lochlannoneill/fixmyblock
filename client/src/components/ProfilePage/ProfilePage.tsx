@@ -19,7 +19,7 @@ const PROVIDER_LABELS: Record<string, string> = {
 
 export default function ProfilePage({ user, requests, onClose, onSelectRequest }: ProfilePageProps) {
   const [activeTab, setActiveTab] = useState<"yours" | "saved">("yours");
-  const myPosts = requests.filter((r) => r.reporterId === user.userId);
+  const myPosts = requests.filter((r) => r.userId === user.userId);
   const savedPosts = requests.filter((r) => (r.savedBy || []).includes(user.userId));
   const totalLikesReceived = myPosts.reduce((sum, r) => sum + (r.likers || []).length, 0);
   const resolvedCount = myPosts.filter((r) => r.status === "resolved").length;

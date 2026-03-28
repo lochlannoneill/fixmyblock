@@ -74,14 +74,14 @@ async function postRequest(
     const location = getField("location").slice(0, 200);
 
     // Extract reporter identity from SWA auth header
-    let reporterId = "";
-    let reporterName = "Anonymous";
+    let visitorUserId = "";
+    let visitorUserName = "Anonymous";
     const principal = req.headers.get("x-ms-client-principal");
     if (principal) {
       try {
         const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
-        reporterId = decoded.userId || "";
-        reporterName = decoded.userDetails || "Anonymous";
+        visitorUserId = decoded.userId || "";
+        visitorUserName = decoded.userDetails || "Anonymous";
       } catch {
         // ignore decode errors
       }
@@ -122,8 +122,8 @@ async function postRequest(
       likes: 0,
       likers: [],
       savedBy: [],
-      reporterId,
-      reporterName,
+      userId: visitorUserId,
+      userName: visitorUserName,
       comments: [],
     };
 

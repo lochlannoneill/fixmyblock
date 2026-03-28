@@ -36,7 +36,7 @@ export default function RequestDetail({
   const commentInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const isOwner = currentUserId && currentUserId === request.reporterId;
+  const isOwner = currentUserId && currentUserId === request.userId;
 
   useEffect(() => {
     if (showMenu) {
@@ -102,11 +102,11 @@ export default function RequestDetail({
           {/* Poster info */}
           <div className="flex items-center gap-2.5 mb-3">
             <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-              {((request.reporterName || "A")[0] ?? "A").toUpperCase()}
+              {((request.userName || "A")[0] ?? "A").toUpperCase()}
             </div>
             <div className="flex flex-col flex-1 min-w-0">
               <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">
-                {request.reporterName || "Anonymous"}
+                {request.userName || "Anonymous"}
               </span>
               <span className="text-xs text-slate-400 dark:text-[#6e6e79]">{getTimeSince(request.createdAt)}</span>
             </div>

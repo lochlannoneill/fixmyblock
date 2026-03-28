@@ -41,16 +41,22 @@ export interface RequestDoc {
   likes: number;
   likers: string[];
   savedBy: string[];
-  reporterId: string;
-  reporterName: string;
+  userId: string;
+  userName: string;
   comments: Comment[];
+}
+
+function migrateDoc(doc: RequestDoc & { reporterId?: string; reporterName?: string }): RequestDoc {
+  if (!doc.userId && doc.reporterId) doc.userId = doc.reporterId;
+  if (!doc.userName && doc.reporterName) doc.userName = doc.reporterName;
+  return doc;
 }
 
 export async function getAllRequests(): Promise<RequestDoc[]> {
   const { resources } = await getContainer()
     .items.query<RequestDoc>("SELECT * FROM c ORDER BY c.createdAt DESC")
     .fetchAll();
-  return resources;
+  return resources.map(migrateDoc);
 }
 
 export async function getRequestById(
@@ -58,7 +64,7 @@ export async function getRequestById(
 ): Promise<RequestDoc | null> {
   try {
     const { resource } = await getContainer().item(id, id).read<RequestDoc>();
-    return resource ?? null;
+    return resource ? migrateDoc(resource) : null;
   } catch {
     return null;
   }
