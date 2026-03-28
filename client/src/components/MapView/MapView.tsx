@@ -411,6 +411,25 @@ export default function MapView({
           { id: "opentopomap-layer", type: "raster", source: "opentopomap" },
         ],
       },
+      transport: {
+        version: 8,
+        sources: {
+          "osm-transport": {
+            type: "raster",
+            tiles: [
+              "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+              "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+              "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            ],
+            tileSize: 256,
+            maxzoom: 19,
+            attribution: "&copy; OpenStreetMap contributors",
+          },
+        },
+        layers: [
+          { id: "osm-transport-layer", type: "raster", source: "osm-transport" },
+        ],
+      },
     };
 
     const newStyle = styles[layer];

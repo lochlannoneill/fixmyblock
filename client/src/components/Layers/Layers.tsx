@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export type MapLayer = "default" | "satellite" | "terrain" | "flat" | "topo";
+export type MapLayer = "default" | "satellite" | "terrain" | "flat" | "topo" | "transport";
 
 interface LayerOption {
   id: MapLayer;
@@ -14,6 +14,7 @@ const LAYER_THUMBNAILS_LIGHT: Record<MapLayer, string> = {
   terrain: "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/4093/2723.png",
   flat: "https://a.basemaps.cartocdn.com/light_all/13/4093/2723.png",
   topo: "https://a.tile.opentopomap.org/13/4093/2723.png",
+  transport: "https://a.tile.openstreetmap.org/13/4093/2723.png",
 };
 
 const LAYER_THUMBNAILS_DARK: Record<MapLayer, string> = {
@@ -22,6 +23,7 @@ const LAYER_THUMBNAILS_DARK: Record<MapLayer, string> = {
   terrain: "https://a.basemaps.cartocdn.com/dark_all/13/4093/2723.png",
   flat: "https://a.basemaps.cartocdn.com/dark_all/13/4093/2723.png",
   topo: "https://a.tile.opentopomap.org/13/4093/2723.png",
+  transport: "https://a.tile.openstreetmap.org/13/4093/2723.png",
 };
 
 interface LayersProps {
@@ -38,7 +40,8 @@ export default function Layers({ activeLayer, onLayerChange, darkMode }: LayersP
     { id: "terrain", label: "Terrain", thumbnail: thumbnails.terrain },
     { id: "satellite", label: "Satellite", thumbnail: thumbnails.satellite },
     { id: "topo", label: "Topo", thumbnail: thumbnails.topo },
-    { id: "default", label: "2D", thumbnail: thumbnails.default },
+    { id: "transport", label: "Transport", thumbnail: thumbnails.transport },
+    { id: "default", label: "Minimal", thumbnail: thumbnails.default },
   ];
 
   return (
