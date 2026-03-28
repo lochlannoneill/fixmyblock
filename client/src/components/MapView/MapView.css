@@ -43,7 +43,7 @@
 
 /* ===== MapLibre popup overrides ===== */
 .maplibregl-popup-content {
-  background: color-mix(in srgb, var(--bg-card) 70%, transparent) !important;
+  background: rgba(255, 255, 255, 0.7) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: var(--text-primary);
@@ -53,7 +53,15 @@
 }
 
 .maplibregl-popup-tip {
-  border-top-color: color-mix(in srgb, var(--bg-card) 70%, transparent) !important;
+  border-top-color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.dark .maplibregl-popup-content {
+  background: rgba(39, 39, 39, 0.7) !important;
+}
+
+.dark .maplibregl-popup-tip {
+  border-top-color: rgba(39, 39, 39, 0.7) !important;
 }
 
 .maplibregl-popup-close-button {
@@ -109,7 +117,7 @@
   }
 }
 
-.popup-upvote-btn {
+.popup-like-btn {
   background: none;
   border: 1px solid var(--border-input);
   border-radius: 6px;
@@ -123,16 +131,16 @@
   transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
 
-.popup-upvote-btn:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-  background: var(--accent-focus-ring);
+.popup-like-btn:hover {
+  color: #ef4444;
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
 }
 
-.popup-upvote-active {
-  color: var(--accent) !important;
-  border-color: var(--accent) !important;
-  background: var(--accent-focus-ring) !important;
+.popup-like-active {
+  color: #ef4444 !important;
+  border-color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.1) !important;
 }
 
 .popup-reporter {

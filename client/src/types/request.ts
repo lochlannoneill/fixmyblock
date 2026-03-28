@@ -1,12 +1,16 @@
 export interface Comment {
   id: string;
   userId: string;
+  userName: string;
   text: string;
   createdAt: string;
+  likers: string[];
+  parentId?: string;
 }
 
 export interface Request {
   id: string;
+  type: string;
   title: string;
   description: string;
   category: RequestCategory;
@@ -16,9 +20,11 @@ export interface Request {
   location?: string;
   imageUrls: string[];
   createdAt: string;
-  upvotes: number;
-  upvoters: string[];
-  reporterId: string;
+  likes: number;
+  likers: string[];
+  savedBy: string[];
+  userId: string;
+  userName?: string;
   comments: Comment[];
 }
 

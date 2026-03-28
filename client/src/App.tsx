@@ -16,7 +16,7 @@ import "./App.css";
 
 export default function App() {
   const { darkMode, toggleTheme } = useTheme();
-  const { requests, loading, selectedRequest, selectRequest, upvote, remove, create, addComment } = useRequests();
+  const { requests, loading, selectedRequest, selectRequest, like, remove, create, addComment, likeComment, save } = useRequests();
   const { user, login, logout } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
@@ -28,6 +28,7 @@ export default function App() {
   const [geolocating, setGeolocating] = useState(false);
   const [usedGeolocation, setUsedGeolocation] = useState(false);
   const [selectingOnMap, setSelectingOnMap] = useState(false);
+  const [highAccuracy, setHighAccuracy] = useState(() => localStorage.getItem("highAccuracy") !== "false");
   const [sidebarView, setSidebarView] = useState<"list" | "form" | "profile" | "detail" | "settings" | "feedback">("list");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
   const geoAbortRef = useRef(false);
@@ -108,7 +109,7 @@ export default function App() {
         setGeolocating(false);
         alert("Unable to get your location. Please allow location access or select on the map.");
       },
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: highAccuracy }
     );
   };
 
@@ -186,6 +187,8 @@ export default function App() {
             <SettingsPage
               darkMode={darkMode}
               onToggleTheme={toggleTheme}
+              highAccuracy={highAccuracy}
+              onToggleHighAccuracy={() => { const next = !highAccuracy; setHighAccuracy(next); localStorage.setItem("highAccuracy", String(next)); }}
               onClose={() => setSidebarView("list")}
             />
           ) : sidebarView === "feedback" ? (
@@ -196,8 +199,10 @@ export default function App() {
             <RequestDetail
               request={selectedRequest}
               onBack={() => { selectRequest(null); setSidebarView("list"); }}
-              onUpvote={(id: string) => { if (!user) { setShowAuthModal(true); return; } upvote(id); }}
-              onAddComment={(id: string, text: string) => { if (!user) { setShowAuthModal(true); return; } addComment(id, text); }}
+              onLike={(id: string) => { if (!user) { setShowAuthModal(true); return; } like(id); }}
+              onAddComment={(id: string, text: string, parentId?: string) => { if (!user) { setShowAuthModal(true); return; } addComment(id, text, parentId); }}
+              onLikeComment={(requestId: string, commentId: string) => { if (!user) { setShowAuthModal(true); return; } likeComment(requestId, commentId); }}
+              onSave={(id: string) => { if (!user) { setShowAuthModal(true); return; } save(id); }}
               onDelete={(id: string) => { remove(id); setSidebarView("list"); }}
               currentUserId={user?.userId}
             />
@@ -250,13 +255,14 @@ export default function App() {
             onMapClick={handleMapClick}
             selectedRequest={selectedRequest}
             onSelectRequest={handleSelectRequest}
-            onUpvote={(id: string) => { if (!user) { setShowAuthModal(true); return; } upvote(id); }}
+            onLike={(id: string) => { if (!user) { setShowAuthModal(true); return; } like(id); }}
             reportMode={showForm}
             dropPinLocation={selectedLocation}
             darkMode={darkMode}
             onUserLocation={handleUserLocation}
             currentUserId={user?.userId}
             usedGeolocation={usedGeolocation}
+            highAccuracy={highAccuracy}
           />
         </main>
       </div>

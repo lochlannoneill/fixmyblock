@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { AuthUser } from "../../hooks/useAuth";
 import type { Request } from "../../types/request";
 import { CATEGORY_LABELS, STATUS_COLORS } from "../../types/request";
@@ -17,10 +18,12 @@ const PROVIDER_LABELS: Record<string, string> = {
 };
 
 export default function ProfilePage({ user, requests, onClose, onSelectRequest }: ProfilePageProps) {
-  const myPosts = requests.filter((r) => r.reporterId === user.userId);
-  const totalUpvotesReceived = myPosts.reduce((sum, r) => sum + (r.upvoters || []).length, 0);
+  const [activeTab, setActiveTab] = useState<"yours" | "saved">("yours");
+  const myPosts = requests.filter((r) => r.userId === user.userId);
+  const savedPosts = requests.filter((r) => (r.savedBy || []).includes(user.userId));
+  const totalLikesReceived = myPosts.reduce((sum, r) => sum + (r.likers || []).length, 0);
   const resolvedCount = myPosts.filter((r) => r.status === "resolved").length;
-  const myUpvotesGiven = requests.filter((r) => (r.upvoters || []).includes(user.userId)).length;
+  const myLikesGiven = requests.filter((r) => (r.likers || []).includes(user.userId)).length;
 
   return (
     <div className="p-6">
@@ -59,9 +62,9 @@ export default function ProfilePage({ user, requests, onClose, onSelectRequest }
             <polyline points="14 2 14 8 20 8" />
           </svg>
         } />
-        <StatCard label="Upvotes Received" value={totalUpvotesReceived} icon={
+        <StatCard label="Likes Received" value={totalLikesReceived} icon={
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="18 15 12 9 6 15" />
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
         } />
         <StatCard label="Issues Resolved" value={resolvedCount} icon={
@@ -69,17 +72,39 @@ export default function ProfilePage({ user, requests, onClose, onSelectRequest }
             <polyline points="20 6 9 17 4 12" />
           </svg>
         } />
-        <StatCard label="Upvotes Given" value={myUpvotesGiven} icon={
+        <StatCard label="Likes Given" value={myLikesGiven} icon={
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
         } />
       </div>
 
-      {/* Recent posts */}
-      <h3 className="text-sm font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wide mb-3">
-        Your Posts
-      </h3>
+      {/* Tabs */}
+      <div className="flex border-b border-slate-200 dark:border-[#3a3a3a] mb-3">
+        <button
+          onClick={() => setActiveTab("yours")}
+          className={`flex-1 text-xs font-medium py-2.5 cursor-pointer transition-colors border-b-2 -mb-px ${
+            activeTab === "yours"
+              ? "border-blue-500 text-slate-800 dark:text-zinc-200"
+              : "border-transparent text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300"
+          }`}
+        >
+          Your Posts ({myPosts.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("saved")}
+          className={`flex-1 text-xs font-medium py-2.5 cursor-pointer transition-colors border-b-2 -mb-px ${
+            activeTab === "saved"
+              ? "border-blue-500 text-slate-800 dark:text-zinc-200"
+              : "border-transparent text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300"
+          }`}
+        >
+          Saved Posts ({savedPosts.length})
+        </button>
+      </div>
+
+      {activeTab === "yours" ? (
+      <>
       {myPosts.length === 0 ? (
         <p className="text-sm text-slate-400 dark:text-zinc-500 text-center py-8">
           You haven't posted any requests yet.
@@ -87,37 +112,58 @@ export default function ProfilePage({ user, requests, onClose, onSelectRequest }
       ) : (
         <div className="flex flex-col gap-2">
           {myPosts.map((r) => (
-            <button
-              key={r.id}
-              onClick={() => onSelectRequest(r)}
-              className="text-left p-3 rounded-lg border border-slate-200 dark:border-[#3a3a3a] bg-white dark:bg-[#272727] hover:border-blue-300 dark:hover:border-blue-700 cursor-pointer transition-colors"
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="flex-1 text-sm font-semibold truncate">{r.title}</span>
-                <span
-                  className="text-[11px] font-semibold text-white px-2 py-0.5 rounded-full shrink-0"
-                  style={{ backgroundColor: STATUS_COLORS[r.status] }}
-                >
-                  {r.status === "in-progress" ? "In Progress" : r.status.charAt(0).toUpperCase() + r.status.slice(1)}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-[#6e6e79]">
-                <span>{CATEGORY_LABELS[r.category]}</span>
-                <span>&middot;</span>
-                <span>{new Date(r.createdAt).toLocaleDateString()}</span>
-                <span>&middot;</span>
-                <span className="flex items-center gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="18 15 12 9 6 15" />
-                  </svg>
-                  {(r.upvoters || []).length}
-                </span>
-              </div>
-            </button>
+            <PostCard key={r.id} request={r} onSelect={onSelectRequest} />
           ))}
         </div>
       )}
+      </>
+      ) : (
+      <>
+      {savedPosts.length === 0 ? (
+        <p className="text-sm text-slate-400 dark:text-zinc-500 text-center py-8">
+          You haven't saved any posts yet.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {savedPosts.map((r) => (
+            <PostCard key={r.id} request={r} onSelect={onSelectRequest} />
+          ))}
+        </div>
+      )}
+      </>
+      )}
     </div>
+  );
+}
+
+function PostCard({ request: r, onSelect }: { request: Request; onSelect: (r: Request) => void }) {
+  return (
+    <button
+      onClick={() => onSelect(r)}
+      className="text-left p-3 rounded-lg border border-slate-200 dark:border-[#3a3a3a] bg-white dark:bg-[#272727] hover:border-blue-300 dark:hover:border-blue-700 cursor-pointer transition-colors"
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <span className="flex-1 text-sm font-semibold truncate">{r.title}</span>
+        <span
+          className="text-[11px] font-semibold text-white px-2 py-0.5 rounded-full shrink-0"
+          style={{ backgroundColor: STATUS_COLORS[r.status] }}
+        >
+          {r.status === "in-progress" ? "In Progress" : r.status.charAt(0).toUpperCase() + r.status.slice(1)}
+        </span>
+      </div>
+      <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-[#6e6e79]">
+        <span>{CATEGORY_LABELS[r.category]}</span>
+        <span>&middot;</span>
+        <span>{new Date(r.createdAt).toLocaleDateString()}</span>
+        <span>&middot;</span>
+        <span className="flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+          {(r.likers || []).length}
+        </span>
+      </div>
+    </button>
   );
 }
 

@@ -9,7 +9,9 @@ import {
   getAllRequests,
   getRequestById,
   createRequest as createRequestDoc,
-  toggleUpvote,
+  toggleLike,
+  toggleSave,
+  toggleCommentLike,
   addComment as addCommentDoc,
   deleteRequest as deleteRequestDoc,
   RequestDoc,
@@ -17,7 +19,7 @@ import {
 import { uploadImage } from "../storage.js";
 import { parseMultipart } from "../multipart.js";
 
-// GET /api/complaints
+// GET /api/posts
 async function listRequests(
   _req: HttpRequest,
   _ctx: InvocationContext
@@ -30,7 +32,7 @@ async function listRequests(
   }
 }
 
-// GET /api/complaints/{id}
+// GET /api/posts/{id}
 async function getRequest(
   req: HttpRequest,
   _ctx: InvocationContext
@@ -44,7 +46,7 @@ async function getRequest(
   return { status: 200, jsonBody: request };
 }
 
-// POST /api/complaints
+// POST /api/posts
 async function postRequest(
   req: HttpRequest,
   ctx: InvocationContext
@@ -72,12 +74,14 @@ async function postRequest(
     const location = getField("location").slice(0, 200);
 
     // Extract reporter identity from SWA auth header
-    let reporterId = "";
+    let visitorUserId = "";
+    let visitorUserName = "Anonymous";
     const principal = req.headers.get("x-ms-client-principal");
     if (principal) {
       try {
         const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
-        reporterId = decoded.userId || "";
+        visitorUserId = decoded.userId || "";
+        visitorUserName = decoded.userDetails || "Anonymous";
       } catch {
         // ignore decode errors
       }
@@ -106,6 +110,7 @@ async function postRequest(
 
     const doc: RequestDoc = {
       id: uuidv4(),
+      type: "complaint",
       title,
       description,
       category,
@@ -115,9 +120,11 @@ async function postRequest(
       location: location || undefined,
       imageUrls,
       createdAt: new Date().toISOString(),
-      upvotes: 0,
-      upvoters: [],
-      reporterId,
+      likes: 0,
+      likers: [],
+      savedBy: [],
+      userId: visitorUserId,
+      userName: visitorUserName,
       comments: [],
     };
 
@@ -129,8 +136,8 @@ async function postRequest(
   }
 }
 
-// POST /api/complaints/{id}/upvote
-async function upvote(
+// POST /api/posts/{id}/like
+async function like(
   req: HttpRequest,
   _ctx: InvocationContext
 ): Promise<HttpResponseInit> {
@@ -149,13 +156,13 @@ async function upvote(
   }
   if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
 
-  const updated = await toggleUpvote(id, userId);
+  const updated = await toggleLike(id, userId);
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
   return { status: 200, jsonBody: updated };
 }
 
-// POST /api/complaints/{id}/comments
+// POST /api/posts/{id}/comments
 async function postComment(
   req: HttpRequest,
   _ctx: InvocationContext
@@ -167,17 +174,19 @@ async function postComment(
   if (!principal) return { status: 401, jsonBody: { error: "Not authenticated" } };
 
   let userId: string;
+  let userName: string;
   try {
     const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
     userId = decoded.userId;
+    userName = decoded.userDetails || "Anonymous";
   } catch {
     return { status: 401, jsonBody: { error: "Invalid auth token" } };
   }
   if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
 
-  let body: { text?: string };
+  let body: { text?: string; parentId?: string };
   try {
-    body = await req.json() as { text?: string };
+    body = await req.json() as { text?: string; parentId?: string };
   } catch {
     return { status: 400, jsonBody: { error: "Invalid JSON" } };
   }
@@ -188,8 +197,11 @@ async function postComment(
   const comment = {
     id: uuidv4(),
     userId,
+    userName,
     text,
     createdAt: new Date().toISOString(),
+    likers: [] as string[],
+    ...(body.parentId ? { parentId: body.parentId } : {}),
   };
 
   const updated = await addCommentDoc(id, comment);
@@ -198,7 +210,7 @@ async function postComment(
   return { status: 201, jsonBody: updated };
 }
 
-// DELETE /api/complaints/{id}
+// DELETE /api/posts/{id}
 async function removeRequest(
   req: HttpRequest,
   _ctx: InvocationContext
@@ -212,45 +224,112 @@ async function removeRequest(
   return { status: 204 };
 }
 
+// POST /api/posts/{id}/save
+async function saveRequest(
+  req: HttpRequest,
+  _ctx: InvocationContext
+): Promise<HttpResponseInit> {
+  const id = req.params.id;
+  if (!id) return { status: 400, jsonBody: { error: "Missing id" } };
+
+  const principal = req.headers.get("x-ms-client-principal");
+  if (!principal) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  let userId: string;
+  try {
+    const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
+    userId = decoded.userId;
+  } catch {
+    return { status: 401, jsonBody: { error: "Invalid auth token" } };
+  }
+  if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
+
+  const updated = await toggleSave(id, userId);
+  if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
+
+  return { status: 200, jsonBody: updated };
+}
+
 // Register routes
 app.http("listRequests", {
   methods: ["GET"],
   authLevel: "anonymous",
-  route: "complaints",
+  route: "posts",
   handler: listRequests,
 });
 
 app.http("getRequest", {
   methods: ["GET"],
   authLevel: "anonymous",
-  route: "complaints/{id}",
+  route: "posts/{id}",
   handler: getRequest,
 });
 
 app.http("createRequest", {
   methods: ["POST"],
   authLevel: "anonymous",
-  route: "complaints",
+  route: "posts",
   handler: postRequest,
 });
 
-app.http("upvoteRequest", {
+app.http("likeRequest", {
   methods: ["POST"],
   authLevel: "anonymous",
-  route: "complaints/{id}/upvote",
-  handler: upvote,
+  route: "posts/{id}/like",
+  handler: like,
 });
 
 app.http("deleteRequest", {
   methods: ["DELETE"],
   authLevel: "anonymous",
-  route: "complaints/{id}",
+  route: "posts/{id}",
   handler: removeRequest,
 });
 
 app.http("postComment", {
   methods: ["POST"],
   authLevel: "anonymous",
-  route: "complaints/{id}/comments",
+  route: "posts/{id}/comments",
   handler: postComment,
+});
+
+app.http("saveRequest", {
+  methods: ["POST"],
+  authLevel: "anonymous",
+  route: "posts/{id}/save",
+  handler: saveRequest,
+});
+
+// POST /api/posts/{id}/comments/{commentId}/like
+async function likeComment(
+  req: HttpRequest,
+  _ctx: InvocationContext
+): Promise<HttpResponseInit> {
+  const id = req.params.id;
+  const commentId = req.params.commentId;
+  if (!id || !commentId) return { status: 400, jsonBody: { error: "Missing id" } };
+
+  const principal = req.headers.get("x-ms-client-principal");
+  if (!principal) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  let userId: string;
+  try {
+    const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
+    userId = decoded.userId;
+  } catch {
+    return { status: 401, jsonBody: { error: "Invalid auth token" } };
+  }
+  if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
+
+  const updated = await toggleCommentLike(id, commentId, userId);
+  if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
+
+  return { status: 200, jsonBody: updated };
+}
+
+app.http("likeComment", {
+  methods: ["POST"],
+  authLevel: "anonymous",
+  route: "posts/{id}/comments/{commentId}/like",
+  handler: likeComment,
 });

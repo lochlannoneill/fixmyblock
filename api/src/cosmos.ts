@@ -12,7 +12,7 @@ function getContainer(): Container {
     }
     client = new CosmosClient(connectionString);
     database = client.database(process.env.COSMOS_DATABASE || "fixmyblock");
-    container = database.container(process.env.COSMOS_CONTAINER || "complaints");
+    container = database.container(process.env.COSMOS_CONTAINER || "posts");
   }
   return container;
 }
@@ -20,12 +20,16 @@ function getContainer(): Container {
 export interface Comment {
   id: string;
   userId: string;
+  userName: string;
   text: string;
   createdAt: string;
+  likers: string[];
+  parentId?: string;
 }
 
 export interface RequestDoc {
   id: string;
+  type: string;
   title: string;
   description: string;
   category: string;
@@ -35,17 +39,26 @@ export interface RequestDoc {
   location?: string;
   imageUrls: string[];
   createdAt: string;
-  upvotes: number;
-  upvoters: string[];
-  reporterId: string;
+  likes: number;
+  likers: string[];
+  savedBy: string[];
+  userId: string;
+  userName: string;
   comments: Comment[];
+}
+
+function migrateDoc(doc: RequestDoc & { reporterId?: string; reporterName?: string }): RequestDoc {
+  if (!doc.type) doc.type = "complaint";
+  if (!doc.userId && doc.reporterId) doc.userId = doc.reporterId;
+  if (!doc.userName && doc.reporterName) doc.userName = doc.reporterName;
+  return doc;
 }
 
 export async function getAllRequests(): Promise<RequestDoc[]> {
   const { resources } = await getContainer()
     .items.query<RequestDoc>("SELECT * FROM c ORDER BY c.createdAt DESC")
     .fetchAll();
-  return resources;
+  return resources.map(migrateDoc);
 }
 
 export async function getRequestById(
@@ -53,7 +66,7 @@ export async function getRequestById(
 ): Promise<RequestDoc | null> {
   try {
     const { resource } = await getContainer().item(id, id).read<RequestDoc>();
-    return resource ?? null;
+    return resource ? migrateDoc(resource) : null;
   } catch {
     return null;
   }
@@ -66,19 +79,19 @@ export async function createRequest(
   return resource!;
 }
 
-export async function toggleUpvote(id: string, userId: string): Promise<RequestDoc | null> {
+export async function toggleLike(id: string, userId: string): Promise<RequestDoc | null> {
   const existing = await getRequestById(id);
   if (!existing) return null;
 
-  const upvoters = existing.upvoters || [];
-  const index = upvoters.indexOf(userId);
+  const likers = existing.likers || [];
+  const index = likers.indexOf(userId);
   if (index === -1) {
-    upvoters.push(userId);
+    likers.push(userId);
   } else {
-    upvoters.splice(index, 1);
+    likers.splice(index, 1);
   }
-  existing.upvoters = upvoters;
-  existing.upvotes = upvoters.length;
+  existing.likers = likers;
+  existing.likes = likers.length;
 
   const { resource } = await getContainer()
     .item(id, id)
@@ -106,4 +119,45 @@ export async function deleteRequest(id: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export async function toggleCommentLike(requestId: string, commentId: string, userId: string): Promise<RequestDoc | null> {
+  const existing = await getRequestById(requestId);
+  if (!existing) return null;
+
+  const comment = (existing.comments || []).find(c => c.id === commentId);
+  if (!comment) return null;
+
+  const likers = comment.likers || [];
+  const index = likers.indexOf(userId);
+  if (index === -1) {
+    likers.push(userId);
+  } else {
+    likers.splice(index, 1);
+  }
+  comment.likers = likers;
+
+  const { resource } = await getContainer()
+    .item(requestId, requestId)
+    .replace<RequestDoc>(existing);
+  return resource ?? null;
+}
+
+export async function toggleSave(id: string, userId: string): Promise<RequestDoc | null> {
+  const existing = await getRequestById(id);
+  if (!existing) return null;
+
+  const savedBy = existing.savedBy || [];
+  const index = savedBy.indexOf(userId);
+  if (index === -1) {
+    savedBy.push(userId);
+  } else {
+    savedBy.splice(index, 1);
+  }
+  existing.savedBy = savedBy;
+
+  const { resource } = await getContainer()
+    .item(id, id)
+    .replace<RequestDoc>(existing);
+  return resource ?? null;
 }

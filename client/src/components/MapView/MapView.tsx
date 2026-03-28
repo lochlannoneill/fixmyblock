@@ -12,13 +12,14 @@ interface MapViewProps {
   onMapClick: (lng: number, lat: number) => void;
   selectedRequest: Request | null;
   onSelectRequest: (c: Request | null) => void;
-  onUpvote: (id: string) => void;
+  onLike: (id: string) => void;
   reportMode: boolean;
   dropPinLocation: { lng: number; lat: number } | null;
   darkMode: boolean;
   onUserLocation?: (lng: number, lat: number) => void;
   currentUserId?: string;
   usedGeolocation?: boolean;
+  highAccuracy?: boolean;
 }
 
 export default function MapView({
@@ -26,13 +27,14 @@ export default function MapView({
   onMapClick,
   selectedRequest,
   onSelectRequest,
-  onUpvote,
+  onLike,
   reportMode,
   dropPinLocation,
   darkMode,
   onUserLocation,
   currentUserId,
   usedGeolocation,
+  highAccuracy = true,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -135,7 +137,7 @@ export default function MapView({
     if (!azureMapsKey) (map.current as unknown as { _styleUrl?: string })._styleUrl = defaultStyle;
 
     const geolocate = new maplibregl.GeolocateControl({
-      positionOptions: { enableHighAccuracy: true },
+      positionOptions: { enableHighAccuracy: highAccuracy },
       trackUserLocation: true,
     });
     map.current.addControl(geolocate, "top-right");
@@ -217,7 +219,7 @@ export default function MapView({
         color: white;
         font-weight: bold;
       `;
-      inner.textContent = `${(req.upvoters || []).length}`;
+      inner.textContent = `${(req.likers || []).length}`;
       el.appendChild(inner);
 
       el.addEventListener("click", (e) => {
@@ -244,19 +246,25 @@ export default function MapView({
       }
 
       const isMobile = window.innerWidth < 640;
-      const thumbs = req.imageUrls.length
-        ? `<div style="margin-top:6px;border-radius:8px;overflow:hidden;height:${isMobile ? '80px' : '120px'}">
-            <img src="${req.imageUrls[0]}" style="width:100%;height:100%;object-fit:cover" />
+      const locationText = req.location || `${req.latitude.toFixed(4)}, ${req.longitude.toFixed(4)}`;
+      const images = req.imageUrls || [];
+      const thumbs = images.length
+        ? `<div style="margin-top:6px;border-radius:8px;overflow:hidden;height:${isMobile ? '80px' : '120px'};position:relative">
+            <img src="${images[0]}" style="width:100%;height:100%;object-fit:cover" />
+            <div style="position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:4px;padding:4px 0;font-size:11px;color:#fff;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 384 512" fill="currentColor"><path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/></svg>
+              ${locationText}
+            </div>
           </div>`
         : "";
 
       const statusColor = STATUS_COLORS[req.status] || "#ef4444";
       const statusLabel = req.status === "in-progress" ? "In Progress" : req.status.charAt(0).toUpperCase() + req.status.slice(1);
 
-      const hasUpvoted = currentUserId && (req.upvoters || []).includes(currentUserId);
-      const upvoteCount = (req.upvoters || []).length;
+      const hasLiked = currentUserId && (req.likers || []).includes(currentUserId);
+      const likeCount = (req.likers || []).length;
       const commentCount = (req.comments || []).length;
-      const upvoteColor = hasUpvoted ? "color:#3b82f6;font-weight:600" : "";
+      const likeColor = hasLiked ? "color:#ef4444;font-weight:600" : "";
 
       // Time since
       const seconds = Math.floor((Date.now() - new Date(req.createdAt).getTime()) / 1000);
@@ -279,18 +287,22 @@ export default function MapView({
             <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap">${statusLabel}</span>
           </div>
           <div class="popup-meta" style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-            <span style="display:flex;align-items:center;gap:4px"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 384 512" fill="currentColor"><path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/></svg>${req.location || `${req.latitude.toFixed(4)}, ${req.longitude.toFixed(4)}`}</span>
+            ${!images.length ? `<span style="display:flex;align-items:center;gap:4px"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 384 512" fill="currentColor"><path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/></svg>${locationText}</span>` : '<span></span>'}
             <span>${timeSince}</span>
           </div>
           ${thumbs}
           <p class="popup-desc" style="margin:6px 0 0;line-height:1.4">${req.description.slice(0, isMobile ? 120 : 200)}${req.description.length > (isMobile ? 120 : 200) ? "..." : ""}</p></p>
           <div style="display:flex;align-items:center;gap:12px;margin-top:8px;font-size:12px">
-            <button id="popup-upvote-${req.id}" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;font-size:12px;${upvoteColor}" class="popup-metric-btn">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"/></svg>
-              ${upvoteCount}
+            <button id="popup-like-${req.id}" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;font-size:12px;${likeColor}" class="popup-metric-btn">
+              ${likeCount > 0
+                ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
+                : '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'}
+              ${likeCount}
             </button>
             <span style="display:flex;align-items:center;gap:4px" class="popup-metric">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M512 240c0 114.9-114.6 208-256 208c-37.1 0-72.3-6.4-104.1-17.9c-11.9 8.7-31.3 20.6-54.3 30.6C73.6 471.1 44.7 480 16 480c-6.5 0-12.3-3.9-14.8-9.9c-2.5-6-1.1-12.8 3.4-17.4c0 0 0 0 0 0s0 0 0 0s0 0 0 0c0 0 0 0 0 0l.3-.3c.3-.3 .7-.7 1.3-1.4c1.1-1.2 2.8-3.1 4.9-5.7c4.1-5 9.6-12.4 15.2-21.6c10-16.6 19.5-38.4 21.4-62.9C17.7 326.8 0 285.1 0 240C0 125.1 114.6 32 256 32s256 93.1 256 208z"/></svg>
+              ${commentCount > 0
+                ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M512 240c0 114.9-114.6 208-256 208c-37.1 0-72.3-6.4-104.1-17.9c-11.9 8.7-31.3 20.6-54.3 30.6C73.6 471.1 44.7 480 16 480c-6.5 0-12.3-3.9-14.8-9.9c-2.5-6-1.1-12.8 3.4-17.4c0 0 0 0 0 0s0 0 0 0s0 0 0 0c0 0 0 0 0 0l.3-.3c.3-.3 .7-.7 1.3-1.4c1.1-1.2 2.8-3.1 4.9-5.7c4.1-5 9.6-12.4 15.2-21.6c10-16.6 19.5-38.4 21.4-62.9C17.7 326.8 0 285.1 0 240C0 125.1 114.6 32 256 32s256 93.1 256 208z"/></svg>'
+                : '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M123.6 391.3c12.9-9.4 29.6-11.8 44.6-6.4c26.5 9.6 56.2 15.1 87.8 15.1c124.7 0 208-80.5 208-160s-83.3-160-208-160S48 160.5 48 240c0 32 12.4 62.8 35.7 89.2c8.6 9.7 12.8 22.5 11.8 35.5c-1.4 18.1-5.7 34.7-11.3 49.4c17-7.9 31.1-16.7 39.4-22.7zM21.2 431.9c1.8-2.7 3.5-5.4 5.1-8.1c10-16.6 19.5-38.4 21.4-62.9C17.7 326.8 0 285.1 0 240C0 125.1 114.6 32 256 32s256 93.1 256 208s-114.6 208-256 208c-37.1 0-72.3-6.4-104.1-17.9c-11.9 8.7-31.3 20.6-54.3 30.6C73.6 471.1 44.7 480 16 480c-6.5 0-12.3-3.9-14.8-9.9c-2.5-6-1.1-12.8 3.4-17.4l0 0 0 0 0 0 .3-.3c.3-.3 .7-.7 1.3-1.4c1.1-1.2 2.8-3.1 4.9-5.7z"/></svg>'}
               ${commentCount}
             </span>
           </div>
@@ -311,18 +323,18 @@ export default function MapView({
       popupCloseHandlerRef.current = closeHandler;
       popup.on("close", closeHandler);
 
-      // Attach upvote handler after DOM insertion
+      // Attach like handler after DOM insertion
       setTimeout(() => {
-        const btn = document.getElementById(`popup-upvote-${req.id}`);
+        const btn = document.getElementById(`popup-like-${req.id}`);
         btn?.addEventListener("click", (e) => {
           e.stopPropagation();
-          onUpvote(req.id);
+          onLike(req.id);
         });
       }, 0);
 
       popupRef.current = popup;
     },
-    [onSelectRequest, onUpvote, currentUserId]
+    [onSelectRequest, onLike, currentUserId]
   );
 
   const selectedIdRef = useRef<string | null>(null);

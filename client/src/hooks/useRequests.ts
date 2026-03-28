@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Request, NewRequest } from "../types/request";
-import { fetchRequests, createRequest, upvoteRequest, deleteRequest, addComment as addCommentApi } from "../services/api";
+import { fetchRequests, createRequest, likeRequest, deleteRequest, addComment as addCommentApi, likeComment as likeCommentApi, saveRequest as saveRequestApi } from "../services/api";
 
 export function useRequests() {
   const [requests, setRequests] = useState<Request[]>([]);
@@ -18,9 +18,9 @@ export function useRequests() {
     setSelectedRequest(c);
   }, []);
 
-  const upvote = useCallback(async (id: string) => {
+  const like = useCallback(async (id: string) => {
     try {
-      const updated = await upvoteRequest(id);
+      const updated = await likeRequest(id);
       setRequests((prev) =>
         prev.map((c) => (c.id === updated.id ? updated : c))
       );
@@ -28,7 +28,7 @@ export function useRequests() {
         prev?.id === updated.id ? updated : prev
       );
     } catch {
-      console.error("Failed to upvote");
+      console.error("Failed to like");
     }
   }, []);
 
@@ -49,9 +49,9 @@ export function useRequests() {
     return created;
   }, []);
 
-  const addComment = useCallback(async (id: string, text: string) => {
+  const addComment = useCallback(async (id: string, text: string, parentId?: string) => {
     try {
-      const updated = await addCommentApi(id, text);
+      const updated = await addCommentApi(id, text, parentId);
       setRequests((prev) =>
         prev.map((c) => (c.id === updated.id ? updated : c))
       );
@@ -63,5 +63,33 @@ export function useRequests() {
     }
   }, []);
 
-  return { requests, loading, selectedRequest, selectRequest, upvote, remove, create, addComment };
+  const likeComment = useCallback(async (requestId: string, commentId: string) => {
+    try {
+      const updated = await likeCommentApi(requestId, commentId);
+      setRequests((prev) =>
+        prev.map((c) => (c.id === updated.id ? updated : c))
+      );
+      setSelectedRequest((prev) =>
+        prev?.id === updated.id ? updated : prev
+      );
+    } catch {
+      console.error("Failed to like comment");
+    }
+  }, []);
+
+  const save = useCallback(async (id: string) => {
+    try {
+      const updated = await saveRequestApi(id);
+      setRequests((prev) =>
+        prev.map((c) => (c.id === updated.id ? updated : c))
+      );
+      setSelectedRequest((prev) =>
+        prev?.id === updated.id ? updated : prev
+      );
+    } catch {
+      console.error("Failed to save");
+    }
+  }, []);
+
+  return { requests, loading, selectedRequest, selectRequest, like, remove, create, addComment, likeComment, save };
 }

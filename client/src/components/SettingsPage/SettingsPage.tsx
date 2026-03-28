@@ -3,10 +3,12 @@ import { useState } from "react";
 interface SettingsPageProps {
   darkMode: boolean;
   onToggleTheme: () => void;
+  highAccuracy: boolean;
+  onToggleHighAccuracy: () => void;
   onClose: () => void;
 }
 
-export default function SettingsPage({ darkMode, onToggleTheme, onClose }: SettingsPageProps) {
+export default function SettingsPage({ darkMode, onToggleTheme, highAccuracy, onToggleHighAccuracy, onClose }: SettingsPageProps) {
   const [notifications, setNotifications] = useState(false);
 
   return (
@@ -77,7 +79,12 @@ export default function SettingsPage({ darkMode, onToggleTheme, onClose }: Setti
               <p className="text-xs text-slate-400 dark:text-zinc-500">Use GPS for precise pin placement</p>
             </div>
           </div>
-          <span className="text-xs text-blue-500 font-medium">On</span>
+          <button
+            onClick={onToggleHighAccuracy}
+            className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${highAccuracy ? "bg-blue-500" : "bg-slate-300"}`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${highAccuracy ? "translate-x-5" : "translate-x-0"}`} />
+          </button>
         </div>
 
         {/* About section */}
