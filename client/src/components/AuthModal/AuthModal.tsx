@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+
 interface AuthModalProps {
   open: boolean;
   onClose: () => void;
@@ -5,12 +7,34 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ open, onClose, onLogin }: AuthModalProps) {
-  if (!open) return null;
+  const [visible, setVisible] = useState(false);
+  const [animate, setAnimate] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setVisible(true);
+      requestAnimationFrame(() => requestAnimationFrame(() => setAnimate(true)));
+    } else {
+      setAnimate(false);
+      const timer = setTimeout(() => setVisible(false), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
+
+  if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-100 flex items-center justify-center backdrop-blur-sm transition-colors duration-200"
+      style={{ backgroundColor: animate ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0)" }}
+      onClick={onClose}
+    >
       <div
-        className="bg-white dark:bg-[#272727] rounded-2xl shadow-2xl w-[90vw] max-w-sm p-6 relative"
+        className="bg-white/80 dark:bg-[#272727]/80 backdrop-blur-xl rounded-2xl shadow-2xl w-[90vw] max-w-sm p-6 relative transition-all duration-200"
+        style={{
+          opacity: animate ? 1 : 0,
+          transform: animate ? "scale(1)" : "scale(0.95)",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <button
