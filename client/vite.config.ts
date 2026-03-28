@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { execSync } from 'child_process'
 
 function getAppVersion(): string {
-  const major = 1;
+  const major = 0;
   try {
     const mergeLog = execSync('git log origin/main --oneline --merges --grep="Merge pull request" -1', { encoding: 'utf-8' }).trim();
     const prMatch = mergeLog.match(/#(\d+)/);
