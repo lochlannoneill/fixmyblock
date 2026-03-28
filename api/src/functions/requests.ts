@@ -9,7 +9,8 @@ import {
   getAllRequests,
   getRequestById,
   createRequest as createRequestDoc,
-  incrementUpvote,
+  toggleUpvote,
+  addComment as addCommentDoc,
   deleteRequest as deleteRequestDoc,
   RequestDoc,
 } from "../cosmos.js";
@@ -68,7 +69,19 @@ async function postRequest(
     const category = getField("category");
     const latitude = parseFloat(getField("latitude"));
     const longitude = parseFloat(getField("longitude"));
-    const reporterName = getField("reporterName").slice(0, 100);
+    const location = getField("location").slice(0, 200);
+
+    // Extract reporter identity from SWA auth header
+    let reporterId = "";
+    const principal = req.headers.get("x-ms-client-principal");
+    if (principal) {
+      try {
+        const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
+        reporterId = decoded.userId || "";
+      } catch {
+        // ignore decode errors
+      }
+    }
 
     if (!title || !description || isNaN(latitude) || isNaN(longitude)) {
       return {
@@ -77,7 +90,7 @@ async function postRequest(
       };
     }
 
-    // Upload images (max 5)
+    // Upload images (max 1)
     const imageFiles = parsed.files.filter((f) => f.name === "images").slice(0, 5);
     const imageUrls: string[] = [];
 
@@ -99,10 +112,13 @@ async function postRequest(
       status: "open",
       latitude,
       longitude,
+      location: location || undefined,
       imageUrls,
       createdAt: new Date().toISOString(),
       upvotes: 0,
-      reporterName,
+      upvoters: [],
+      reporterId,
+      comments: [],
     };
 
     const created = await createRequestDoc(doc);
@@ -121,10 +137,65 @@ async function upvote(
   const id = req.params.id;
   if (!id) return { status: 400, jsonBody: { error: "Missing id" } };
 
-  const updated = await incrementUpvote(id);
+  const principal = req.headers.get("x-ms-client-principal");
+  if (!principal) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  let userId: string;
+  try {
+    const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
+    userId = decoded.userId;
+  } catch {
+    return { status: 401, jsonBody: { error: "Invalid auth token" } };
+  }
+  if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
+
+  const updated = await toggleUpvote(id, userId);
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
   return { status: 200, jsonBody: updated };
+}
+
+// POST /api/complaints/{id}/comments
+async function postComment(
+  req: HttpRequest,
+  _ctx: InvocationContext
+): Promise<HttpResponseInit> {
+  const id = req.params.id;
+  if (!id) return { status: 400, jsonBody: { error: "Missing id" } };
+
+  const principal = req.headers.get("x-ms-client-principal");
+  if (!principal) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  let userId: string;
+  try {
+    const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
+    userId = decoded.userId;
+  } catch {
+    return { status: 401, jsonBody: { error: "Invalid auth token" } };
+  }
+  if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
+
+  let body: { text?: string };
+  try {
+    body = await req.json() as { text?: string };
+  } catch {
+    return { status: 400, jsonBody: { error: "Invalid JSON" } };
+  }
+
+  const text = (body.text || "").trim().slice(0, 1000);
+  if (!text) return { status: 400, jsonBody: { error: "Comment text is required" } };
+
+  const comment = {
+    id: uuidv4(),
+    userId,
+    text,
+    createdAt: new Date().toISOString(),
+  };
+
+  const updated = await addCommentDoc(id, comment);
+  if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
+
+  return { status: 201, jsonBody: updated };
 }
 
 // DELETE /api/complaints/{id}
@@ -175,4 +246,11 @@ app.http("deleteRequest", {
   authLevel: "anonymous",
   route: "complaints/{id}",
   handler: removeRequest,
+});
+
+app.http("postComment", {
+  methods: ["POST"],
+  authLevel: "anonymous",
+  route: "complaints/{id}/comments",
+  handler: postComment,
 });

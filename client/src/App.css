@@ -10,6 +10,8 @@
   --accent-hover: #2563eb;
   --accent-focus-ring: rgba(59, 130, 246, 0.1);
   --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --pin-border: #ffffff;
+  --map-bg: #ffffff;
 }
 
 .dark {
@@ -23,13 +25,17 @@
   --accent-hover: #60a5fa;
   --accent-focus-ring: rgba(59, 130, 246, 0.25);
   --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --pin-border: #2a2a2a;
+  --map-bg: #121212;
 }
 
 /* ===== Smooth dark/light mode transition ===== */
 *,
 *::before,
 *::after {
-  transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, fill 200ms ease, stroke 200ms ease, box-shadow 200ms ease;
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow, opacity;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
 }
 
 /* ===== Sidebar scrollbar ===== */

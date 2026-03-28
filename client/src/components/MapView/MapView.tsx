@@ -3,7 +3,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./MapView.css";
 import type { Request } from "../../types/request";
-import { STATUS_COLORS, CATEGORY_LABELS } from "../../types/request";
+import { STATUS_COLORS } from "../../types/request";
 import Layers from "../Layers";
 import type { MapLayer } from "../Layers";
 
@@ -17,6 +17,8 @@ interface MapViewProps {
   dropPinLocation: { lng: number; lat: number } | null;
   darkMode: boolean;
   onUserLocation?: (lng: number, lat: number) => void;
+  currentUserId?: string;
+  usedGeolocation?: boolean;
 }
 
 export default function MapView({
@@ -29,6 +31,8 @@ export default function MapView({
   dropPinLocation,
   darkMode,
   onUserLocation,
+  currentUserId,
+  usedGeolocation,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -199,7 +203,7 @@ export default function MapView({
         height: 32px;
         border-radius: 50% 50% 50% 0;
         background: ${STATUS_COLORS[req.status]};
-        border: 2px solid ${darkMode ? "#2a2a2a" : "white"};
+        border: 2px solid var(--pin-border);
         cursor: pointer;
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         display: flex;
@@ -213,7 +217,7 @@ export default function MapView({
         color: white;
         font-weight: bold;
       `;
-      inner.textContent = `${req.upvotes}`;
+      inner.textContent = `${(req.upvoters || []).length}`;
       el.appendChild(inner);
 
       el.addEventListener("click", (e) => {
@@ -239,39 +243,57 @@ export default function MapView({
         popupRef.current.remove();
       }
 
+      const isMobile = window.innerWidth < 640;
       const thumbs = req.imageUrls.length
-        ? `<div style="display:flex;gap:4px;margin:8px 0;overflow-x:auto">
-            ${req.imageUrls
-              .slice(0, 3)
-              .map(
-                (url) =>
-                  `<img src="${url}" style="width:80px;height:60px;object-fit:cover;border-radius:4px" />`
-              )
-              .join("")}
+        ? `<div style="margin-top:6px;border-radius:8px;overflow:hidden;height:${isMobile ? '80px' : '120px'}">
+            <img src="${req.imageUrls[0]}" style="width:100%;height:100%;object-fit:cover" />
           </div>`
         : "";
 
-      const statusColors: Record<string, string> = { open: "#ef4444", "in-progress": "#eab308", resolved: "#22c55e" };
-      const statusLabels: Record<string, string> = { open: "Open", "in-progress": "In Progress", resolved: "Resolved" };
-      const statusColor = statusColors[req.status] || "#ef4444";
-      const statusLabel = statusLabels[req.status] || req.status;
+      const statusColor = STATUS_COLORS[req.status] || "#ef4444";
+      const statusLabel = req.status === "in-progress" ? "In Progress" : req.status.charAt(0).toUpperCase() + req.status.slice(1);
+
+      const hasUpvoted = currentUserId && (req.upvoters || []).includes(currentUserId);
+      const upvoteCount = (req.upvoters || []).length;
+      const commentCount = (req.comments || []).length;
+      const upvoteColor = hasUpvoted ? "color:#3b82f6;font-weight:600" : "";
+
+      // Time since
+      const seconds = Math.floor((Date.now() - new Date(req.createdAt).getTime()) / 1000);
+      let timeSince = "just now";
+      if (seconds >= 60) {
+        const minutes = Math.floor(seconds / 60);
+        if (minutes >= 60) {
+          const hours = Math.floor(minutes / 60);
+          if (hours >= 24) {
+            const days = Math.floor(hours / 24);
+            timeSince = days >= 30 ? new Date(req.createdAt).toLocaleDateString() : `${days}d ago`;
+          } else timeSince = `${hours}h ago`;
+        } else timeSince = `${minutes}m ago`;
+      }
 
       const html = `
-        <div class="popup-content" style="position:relative;min-width:260px;min-height:120px">
-          <span style="position:absolute;top:0;right:0;display:flex;align-items:center;gap:6px">
-            <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px">${statusLabel}</span>
-            <button id="popup-upvote-${req.id}" class="popup-upvote-btn" style="margin:0">${req.upvotes} <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"/></svg></button>
-          </span>
-          <div class="popup-meta" style="margin-bottom:4px">
-            <div>${new Date(req.createdAt).toLocaleDateString()} · ${new Date(req.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
-            <div>${CATEGORY_LABELS[req.category]}</div>
+        <div class="popup-content" style="font-family:system-ui,sans-serif">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="flex:1;font-weight:600;font-size:14px" class="popup-title">${req.title.length > 30 ? `${req.title.slice(0, 30)}...` : req.title}</span>
+            <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap">${statusLabel}</span>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;padding-right:80px">
-            <strong class="popup-title">${req.title}</strong>
+          <div class="popup-meta" style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+            <span style="display:flex;align-items:center;gap:4px"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 384 512" fill="currentColor"><path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/></svg>${req.location || `${req.latitude.toFixed(4)}, ${req.longitude.toFixed(4)}`}</span>
+            <span>${timeSince}</span>
           </div>
           ${thumbs}
-          <p class="popup-desc">${req.description.slice(0, 150)}${req.description.length > 150 ? "..." : ""}</p>
-          <span class="popup-reporter" style="display:block;margin-top:8px">Reported by ${req.reporterName}</span>
+          <p class="popup-desc" style="margin:6px 0 0;line-height:1.4">${req.description.slice(0, isMobile ? 120 : 200)}${req.description.length > (isMobile ? 120 : 200) ? "..." : ""}</p></p>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:8px;font-size:12px">
+            <button id="popup-upvote-${req.id}" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;font-size:12px;${upvoteColor}" class="popup-metric-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"/></svg>
+              ${upvoteCount}
+            </button>
+            <span style="display:flex;align-items:center;gap:4px" class="popup-metric">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M512 240c0 114.9-114.6 208-256 208c-37.1 0-72.3-6.4-104.1-17.9c-11.9 8.7-31.3 20.6-54.3 30.6C73.6 471.1 44.7 480 16 480c-6.5 0-12.3-3.9-14.8-9.9c-2.5-6-1.1-12.8 3.4-17.4c0 0 0 0 0 0s0 0 0 0s0 0 0 0c0 0 0 0 0 0l.3-.3c.3-.3 .7-.7 1.3-1.4c1.1-1.2 2.8-3.1 4.9-5.7c4.1-5 9.6-12.4 15.2-21.6c10-16.6 19.5-38.4 21.4-62.9C17.7 326.8 0 285.1 0 240C0 125.1 114.6 32 256 32s256 93.1 256 208z"/></svg>
+              ${commentCount}
+            </span>
+          </div>
         </div>
       `;
 
@@ -279,7 +301,7 @@ export default function MapView({
         offset: 25,
         closeOnClick: true,
         closeButton: false,
-        maxWidth: "320px",
+        maxWidth: isMobile ? "220px" : "320px",
       })
         .setLngLat([req.longitude, req.latitude])
         .setHTML(html)
@@ -300,7 +322,7 @@ export default function MapView({
 
       popupRef.current = popup;
     },
-    [onSelectRequest, onUpvote]
+    [onSelectRequest, onUpvote, currentUserId]
   );
 
   const selectedIdRef = useRef<string | null>(null);
@@ -338,34 +360,49 @@ export default function MapView({
     if (!map.current || !mapReady) return;
 
     if (reportMode && dropPinLocation) {
+      const pinColor = usedGeolocation ? "#06b6d4" : "#a855f7";
+
       if (dropPinRef.current) {
         dropPinRef.current.setLngLat([dropPinLocation.lng, dropPinLocation.lat]);
+        const pathEl = dropPinRef.current.getElement().querySelector("path");
+        if (pathEl) pathEl.setAttribute("fill", pinColor);
+        map.current?.flyTo({
+          center: [dropPinLocation.lng, dropPinLocation.lat],
+          zoom: Math.max(map.current?.getZoom() ?? 0, 15),
+        });
       } else {
         const el = document.createElement("div");
         el.className = "drop-pin-marker";
         el.innerHTML = `<svg width="36" height="48" viewBox="0 0 36 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M18 0C8.06 0 0 8.06 0 18c0 12.63 16.37 28.87 17.08 29.54a1.35 1.35 0 001.84 0C19.63 46.87 36 30.63 36 18 36 8.06 27.94 0 18 0z" fill="#3b82f6"/>
+          <path d="M18 0C8.06 0 0 8.06 0 18c0 12.63 16.37 28.87 17.08 29.54a1.35 1.35 0 001.84 0C19.63 46.87 36 30.63 36 18 36 8.06 27.94 0 18 0z" fill="${pinColor}"/>
           <circle cx="18" cy="18" r="8" fill="white"/>
         </svg>`;
 
-        dropPinRef.current = new maplibregl.Marker({
+        const marker = new maplibregl.Marker({
           element: el,
           draggable: true,
           anchor: "bottom",
         })
-          .setLngLat([dropPinLocation.lng, dropPinLocation.lat])
-          .addTo(map.current!);
+          .setLngLat([dropPinLocation.lng, dropPinLocation.lat]);
 
-        dropPinRef.current.on("dragend", () => {
-          const lngLat = dropPinRef.current!.getLngLat();
+        marker.on("dragend", () => {
+          const lngLat = marker.getLngLat();
           onMapClickRef.current(lngLat.lng, lngLat.lat);
+        });
+
+        dropPinRef.current = marker;
+
+        marker.addTo(map.current!);
+        map.current?.flyTo({
+          center: [dropPinLocation.lng, dropPinLocation.lat],
+          zoom: Math.max(map.current?.getZoom() ?? 0, 15),
         });
       }
     } else {
       dropPinRef.current?.remove();
       dropPinRef.current = null;
     }
-  }, [reportMode, dropPinLocation, mapReady]);
+  }, [reportMode, dropPinLocation, mapReady, usedGeolocation]);
 
   const handleLayerChange = useCallback((layer: MapLayer) => {
     if (!map.current) return;
@@ -470,7 +507,7 @@ export default function MapView({
         style={{
           position: "absolute",
           inset: 0,
-          backgroundColor: darkMode ? "#121212" : "#ffffff",
+          backgroundColor: "var(--map-bg)",
           opacity: mapFading ? 1 : 0,
           transition: "opacity 200ms ease",
           pointerEvents: "none",

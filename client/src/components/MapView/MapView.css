@@ -1,4 +1,20 @@
 /* ===== MapLibre control dark mode ===== */
+.maplibregl-ctrl-group {
+  transition: background-color 200ms ease, border-color 200ms ease !important;
+}
+
+.maplibregl-ctrl-group button {
+  transition: background-color 200ms ease, border-color 200ms ease !important;
+}
+
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  transition: filter 200ms ease !important;
+}
+
+.maplibregl-ctrl-geolocate .maplibregl-ctrl-icon {
+  transition: filter 200ms ease !important;
+}
+
 .dark .maplibregl-ctrl-group {
   background: #2a2a2a !important;
   border-color: #3a3a3a !important;
@@ -51,6 +67,7 @@
 
 /* Popup content (injected via innerHTML) */
 .popup-content {
+  min-width: 200px;
   max-width: 280px;
   font-family: system-ui, sans-serif;
 }
@@ -70,6 +87,26 @@
   font-size: 13px;
   color: var(--text-secondary);
   margin: 4px 0;
+}
+
+@media (max-width: 639px) {
+  .maplibregl-popup-content {
+    padding: 10px !important;
+  }
+  .popup-content {
+    min-width: 160px;
+    max-width: 200px;
+  }
+  .popup-title {
+    font-size: 13px;
+  }
+  .popup-meta {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+  .popup-desc {
+    font-size: 12px;
+  }
 }
 
 .popup-upvote-btn {
@@ -92,24 +129,36 @@
   background: var(--accent-focus-ring);
 }
 
+.popup-upvote-active {
+  color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  background: var(--accent-focus-ring) !important;
+}
+
 .popup-reporter {
   font-size: 11px;
   color: var(--text-faint);
+}
+
+.popup-metric-btn {
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+
+.popup-metric-btn:hover {
+  color: var(--accent);
+}
+
+.popup-metric {
+  color: var(--text-muted);
 }
 
 /* ===== Drop pin marker ===== */
 .drop-pin-marker {
   cursor: grab;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-  animation: drop-bounce 0.4s ease-out;
 }
 
 .drop-pin-marker:active {
   cursor: grabbing;
-}
-
-@keyframes drop-bounce {
-  0% { transform: translateY(-40px); opacity: 0; }
-  60% { transform: translateY(4px); opacity: 1; }
-  100% { transform: translateY(0); }
 }

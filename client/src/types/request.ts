@@ -1,3 +1,10 @@
+export interface Comment {
+  id: string;
+  userId: string;
+  text: string;
+  createdAt: string;
+}
+
 export interface Request {
   id: string;
   title: string;
@@ -6,10 +13,13 @@ export interface Request {
   status: RequestStatus;
   latitude: number;
   longitude: number;
+  location?: string;
   imageUrls: string[];
   createdAt: string;
   upvotes: number;
-  reporterName: string;
+  upvoters: string[];
+  reporterId: string;
+  comments: Comment[];
 }
 
 export type RequestCategory =
@@ -30,8 +40,8 @@ export interface NewRequest {
   category: RequestCategory;
   latitude: number;
   longitude: number;
+  location?: string;
   images: File[];
-  reporterName: string;
 }
 
 export const CATEGORY_LABELS: Record<RequestCategory, string> = {

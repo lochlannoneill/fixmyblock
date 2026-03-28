@@ -3,14 +3,22 @@ import Header from "./components/Header";
 import MapView from "./components/MapView";
 import RequestForm from "./components/RequestForm";
 import RequestToolbar from "./components/RequestToolbar";
+import RequestDetail from "./components/RequestDetail";
+import AuthModal from "./components/AuthModal";
+import ProfilePage from "./components/ProfilePage";
+import { SettingsPage } from "./components/SettingsPage";
+import { FeedbackPage } from "./components/FeedbackPage";
 import { useTheme } from "./hooks/useTheme";
 import { useRequests } from "./hooks/useRequests";
+import { useAuth } from "./hooks/useAuth";
 import type { Request, NewRequest } from "./types/request";
 import "./App.css";
 
 export default function App() {
   const { darkMode, toggleTheme } = useTheme();
-  const { requests, loading, selectedRequest, selectRequest, upvote, remove, create } = useRequests();
+  const { requests, loading, selectedRequest, selectRequest, upvote, remove, create, addComment } = useRequests();
+  const { user, login, logout } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const [showForm, setShowForm] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -20,7 +28,7 @@ export default function App() {
   const [geolocating, setGeolocating] = useState(false);
   const [usedGeolocation, setUsedGeolocation] = useState(false);
   const [selectingOnMap, setSelectingOnMap] = useState(false);
-  const [sidebarView, setSidebarView] = useState<"list" | "form">("list");
+  const [sidebarView, setSidebarView] = useState<"list" | "form" | "profile" | "detail" | "settings" | "feedback">("list");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
   const geoAbortRef = useRef(false);
   const userLocationRef = useRef<{ lng: number; lat: number } | null>(null);
@@ -44,11 +52,11 @@ export default function App() {
   const handleSelectRequest = useCallback((c: Request | null) => {
     selectRequest(c);
     if (c) {
-      setSidebarView("list");
+      setSidebarView("detail");
       setShowForm(false);
-      if (window.innerWidth < 768) {
-        setSidebarCollapsed(true);
-      }
+      setSidebarCollapsed(false);
+    } else {
+      setSidebarView("list");
     }
   }, [selectRequest]);
 
@@ -60,6 +68,10 @@ export default function App() {
   };
 
   const handleStartRequest = () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
     setShowForm(true);
     setSidebarView("form");
     setSidebarCollapsed(false);
@@ -116,6 +128,32 @@ export default function App() {
       <Header
         darkMode={darkMode}
         onToggleTheme={toggleTheme}
+        user={user}
+        onLoginClick={() => setShowAuthModal(true)}
+        onLogout={logout}
+        onProfileClick={() => {
+          setShowForm(false);
+          setSidebarView("profile");
+          setSidebarCollapsed(false);
+          selectRequest(null);
+        }}
+        onSettingsClick={() => {
+          setShowForm(false);
+          setSidebarView("settings");
+          setSidebarCollapsed(false);
+          selectRequest(null);
+        }}
+        onFeedbackClick={() => {
+          setShowForm(false);
+          setSidebarView("feedback");
+          setSidebarCollapsed(false);
+          selectRequest(null);
+        }}
+      />
+      <AuthModal
+        open={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onLogin={(provider) => { login(provider); setShowAuthModal(false); }}
       />
       <div className="flex flex-col-reverse md:flex-row flex-1 overflow-hidden">
         <aside className={`sidebar border-t border-slate-200 dark:border-[#2a2a2a] md:border-r md:border-t-0 bg-slate-50 dark:bg-[#1e1e1e] overflow-y-auto z-10 transition-all duration-300 ${
@@ -134,18 +172,44 @@ export default function App() {
               onUseCurrentLocation={handleUseCurrentLocation}
               onSelectOnMap={handleSelectOnMap}
             />
+          ) : sidebarView === "profile" && user ? (
+            <ProfilePage
+              user={user}
+              requests={requests}
+              onClose={() => setSidebarView("list")}
+              onSelectRequest={(r) => {
+                setSidebarView("list");
+                handleSelectRequest(r);
+              }}
+            />
+          ) : sidebarView === "settings" ? (
+            <SettingsPage
+              darkMode={darkMode}
+              onToggleTheme={toggleTheme}
+              onClose={() => setSidebarView("list")}
+            />
+          ) : sidebarView === "feedback" ? (
+            <FeedbackPage
+              onClose={() => setSidebarView("list")}
+            />
+          ) : sidebarView === "detail" && selectedRequest ? (
+            <RequestDetail
+              request={selectedRequest}
+              onBack={() => { selectRequest(null); setSidebarView("list"); }}
+              onUpvote={(id: string) => { if (!user) { setShowAuthModal(true); return; } upvote(id); }}
+              onAddComment={(id: string, text: string) => { if (!user) { setShowAuthModal(true); return; } addComment(id, text); }}
+              onDelete={(id: string) => { remove(id); setSidebarView("list"); }}
+              currentUserId={user?.userId}
+            />
           ) : (
-            <>
-              <RequestToolbar
-                requests={requests}
-                loading={loading}
-                onNewRequest={handleStartRequest}
-                showingForm={showForm}
-                onSelectRequest={handleSelectRequest}
-                onDeleteRequest={remove}
-                selectedId={selectedRequest?.id ?? null}
-              />
-            </>
+            <RequestToolbar
+              requests={requests}
+              loading={loading}
+              onNewRequest={handleStartRequest}
+              showingForm={showForm}
+              onSelectRequest={handleSelectRequest}
+              selectedId={selectedRequest?.id ?? null}
+            />
           )}
         </aside>
         <main className={`md:flex-1 md:h-auto md:min-h-0 relative transition-all duration-300 ${
@@ -186,11 +250,13 @@ export default function App() {
             onMapClick={handleMapClick}
             selectedRequest={selectedRequest}
             onSelectRequest={handleSelectRequest}
-            onUpvote={upvote}
+            onUpvote={(id: string) => { if (!user) { setShowAuthModal(true); return; } upvote(id); }}
             reportMode={showForm}
             dropPinLocation={selectedLocation}
             darkMode={darkMode}
             onUserLocation={handleUserLocation}
+            currentUserId={user?.userId}
+            usedGeolocation={usedGeolocation}
           />
         </main>
       </div>

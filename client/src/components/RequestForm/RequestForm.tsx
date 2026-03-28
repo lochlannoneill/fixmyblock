@@ -26,7 +26,6 @@ export default function RequestForm({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<RequestCategory>("pothole");
-  const [reporterName, setReporterName] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -65,26 +64,44 @@ export default function RequestForm({
       setError("Click on the map to select a location first");
       return;
     }
-    if (!title.trim() || !description.trim() || !reporterName.trim()) {
+    if (!title.trim() || !description.trim()) {
       setError("Please fill in all required fields");
       return;
     }
     setSubmitting(true);
     setError("");
     try {
+      // Reverse geocode to get human-readable location
+      let location = "";
+      try {
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${selectedLocation.lat}&lon=${selectedLocation.lng}&format=json&zoom=14`
+        );
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          const addr = geoData.address;
+          const parts = [
+            addr?.suburb || addr?.neighbourhood || addr?.village || addr?.town || "",
+            addr?.city || addr?.county || "",
+          ].filter(Boolean);
+          location = parts.join(", ") || geoData.display_name?.split(",").slice(0, 2).join(",").trim() || "";
+        }
+      } catch {
+        // Geocoding is best-effort
+      }
+
       await onSubmit({
         title: title.trim(),
         description: description.trim(),
         category,
         latitude: selectedLocation.lat,
         longitude: selectedLocation.lng,
+        location,
         images,
-        reporterName: reporterName.trim(),
       });
       setTitle("");
       setDescription("");
       setCategory("pothole");
-      setReporterName("");
       setImages([]);
       setPreviews([]);
     } catch {
@@ -124,9 +141,9 @@ export default function RequestForm({
           onClick={onSelectOnMap}
           className={`flex-1 flex items-center justify-center py-2.5 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
             selectedLocation && !usedGeolocation
-              ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40"
+              ? "border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/40"
               : selectingOnMap
-                ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40"
+                ? "border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/40"
                 : "border-slate-200 dark:border-zinc-700 bg-white dark:bg-[#2a2a2a] text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
           }`}
         >
@@ -141,26 +158,13 @@ export default function RequestForm({
       </div>
 
       {selectedLocation && !selectingOnMap && !geolocating && !usedGeolocation && (
-        <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm">
+        <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-400 text-sm">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 6L9 17l-5-5" />
           </svg>
           Location: {selectedLocation.lat.toFixed(5)}, {selectedLocation.lng.toFixed(5)}
         </div>
       )}
-
-      <label className="block text-[13px] font-semibold text-slate-600 dark:text-[#b4b4bb] mb-3.5">
-        Your Name *
-        <input
-          type="text"
-          className={inputClasses}
-          value={reporterName}
-          onChange={(e) => setReporterName(e.target.value)}
-          placeholder="Jane Doe"
-          maxLength={100}
-          required
-        />
-      </label>
 
       <label className="block text-[13px] font-semibold text-slate-600 dark:text-[#b4b4bb] mb-3.5">
         Title *

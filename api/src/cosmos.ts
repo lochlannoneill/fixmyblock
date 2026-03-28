@@ -17,6 +17,13 @@ function getContainer(): Container {
   return container;
 }
 
+export interface Comment {
+  id: string;
+  userId: string;
+  text: string;
+  createdAt: string;
+}
+
 export interface RequestDoc {
   id: string;
   title: string;
@@ -25,10 +32,13 @@ export interface RequestDoc {
   status: string;
   latitude: number;
   longitude: number;
+  location?: string;
   imageUrls: string[];
   createdAt: string;
   upvotes: number;
-  reporterName: string;
+  upvoters: string[];
+  reporterId: string;
+  comments: Comment[];
 }
 
 export async function getAllRequests(): Promise<RequestDoc[]> {
@@ -56,11 +66,33 @@ export async function createRequest(
   return resource!;
 }
 
-export async function incrementUpvote(id: string): Promise<RequestDoc | null> {
+export async function toggleUpvote(id: string, userId: string): Promise<RequestDoc | null> {
   const existing = await getRequestById(id);
   if (!existing) return null;
 
-  existing.upvotes = (existing.upvotes || 0) + 1;
+  const upvoters = existing.upvoters || [];
+  const index = upvoters.indexOf(userId);
+  if (index === -1) {
+    upvoters.push(userId);
+  } else {
+    upvoters.splice(index, 1);
+  }
+  existing.upvoters = upvoters;
+  existing.upvotes = upvoters.length;
+
+  const { resource } = await getContainer()
+    .item(id, id)
+    .replace<RequestDoc>(existing);
+  return resource ?? null;
+}
+
+export async function addComment(id: string, comment: Comment): Promise<RequestDoc | null> {
+  const existing = await getRequestById(id);
+  if (!existing) return null;
+
+  existing.comments = existing.comments || [];
+  existing.comments.push(comment);
+
   const { resource } = await getContainer()
     .item(id, id)
     .replace<RequestDoc>(existing);

@@ -21,7 +21,7 @@ export async function createRequest(data: NewRequest): Promise<Request> {
   formData.append("category", data.category);
   formData.append("latitude", data.latitude.toString());
   formData.append("longitude", data.longitude.toString());
-  formData.append("reporterName", data.reporterName);
+  if (data.location) formData.append("location", data.location);
 
   for (const image of data.images) {
     formData.append("images", image);
@@ -50,4 +50,17 @@ export async function deleteRequest(id: string): Promise<void> {
     { method: "DELETE" }
   );
   if (!res.ok) throw new Error("Failed to delete request");
+}
+
+export async function addComment(id: string, text: string): Promise<Request> {
+  const res = await fetch(
+    `${API_BASE}/complaints/${encodeURIComponent(id)}/comments`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    }
+  );
+  if (!res.ok) throw new Error("Failed to add comment");
+  return res.json();
 }
