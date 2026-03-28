@@ -6,13 +6,30 @@ import { CATEGORY_LABELS, STATUS_COLORS } from "../../types/request";
 
 interface RequestListProps {
   requests: Request[];
+  loading?: boolean;
   onSelect: (c: Request) => void;
   onDelete: (id: string) => void;
   selectedId: string | null;
 }
 
+function SkeletonCard() {
+  return (
+    <div className="bg-white dark:bg-[#272727] rounded-xl p-3.5 mb-2.5 border-2 border-transparent animate-pulse">
+      <div className="flex items-center gap-2">
+        <div className="flex-1 h-4 bg-slate-200 dark:bg-zinc-700 rounded-full" />
+        <div className="w-16 h-5 bg-slate-200 dark:bg-zinc-700 rounded-full" />
+      </div>
+      <div className="h-3 w-2/3 bg-slate-200 dark:bg-zinc-700 rounded-full mt-2" />
+      <div className="h-24 bg-slate-200 dark:bg-zinc-700 rounded-lg mt-2" />
+      <div className="h-3 w-full bg-slate-200 dark:bg-zinc-700 rounded-full mt-2" />
+      <div className="h-3 w-4/5 bg-slate-200 dark:bg-zinc-700 rounded-full mt-1" />
+    </div>
+  );
+}
+
 export default function RequestList({
   requests,
+  loading,
   onSelect,
   onDelete,
   selectedId,
@@ -38,6 +55,16 @@ export default function RequestList({
     const el = listRef.current?.closest(".sidebar");
     el?.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  if (loading) {
+    return (
+      <div className="p-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <SkeletonCard key={i} />
+        ))}
+      </div>
+    );
+  }
 
   if (requests.length === 0) {
     return (

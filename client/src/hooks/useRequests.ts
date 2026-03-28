@@ -4,12 +4,14 @@ import { fetchRequests, createRequest, upvoteRequest, deleteRequest } from "../s
 
 export function useRequests() {
   const [requests, setRequests] = useState<Request[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
 
   useEffect(() => {
     fetchRequests()
       .then(setRequests)
-      .catch(() => console.warn("API not connected. Running in demo mode."));
+      .catch(() => console.warn("API not connected. Running in demo mode."))
+      .finally(() => setLoading(false));
   }, []);
 
   const selectRequest = useCallback((c: Request | null) => {
@@ -47,5 +49,5 @@ export function useRequests() {
     return created;
   }, []);
 
-  return { requests, selectedRequest, selectRequest, upvote, remove, create };
+  return { requests, loading, selectedRequest, selectRequest, upvote, remove, create };
 }

@@ -5,6 +5,7 @@ import { CATEGORY_LABELS } from "../../types/request";
 interface RequestFormProps {
   selectedLocation: { lng: number; lat: number } | null;
   geolocating: boolean;
+  usedGeolocation: boolean;
   selectingOnMap: boolean;
   onSubmit: (data: NewRequest) => Promise<void>;
   onCancel: () => void;
@@ -15,6 +16,7 @@ interface RequestFormProps {
 export default function RequestForm({
   selectedLocation,
   geolocating,
+  usedGeolocation,
   selectingOnMap,
   onSubmit,
   onCancel,
@@ -103,36 +105,42 @@ export default function RequestForm({
         <button
           type="button"
           onClick={onUseCurrentLocation}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
-            geolocating
+          className={`flex-1 flex items-center justify-center py-2.5 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
+            geolocating || usedGeolocation
               ? "border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/40"
               : "border-slate-200 dark:border-zinc-700 bg-white dark:bg-[#2a2a2a] text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
           }`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 2v4m0 12v4m10-10h-4M6 12H2" />
-          </svg>
-          {geolocating ? "Getting location..." : "Use Current Location"}
+          <span className="inline-flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline shrink-0 mr-1.5">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v4m0 12v4m10-10h-4M6 12H2" />
+            </svg>
+            {geolocating ? "Getting location..." : "Current Location"}
+          </span>
         </button>
         <button
           type="button"
           onClick={onSelectOnMap}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
-            selectedLocation
-              ? "border-slate-200 dark:border-zinc-700 bg-white dark:bg-[#2a2a2a] text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
-              : "border-slate-200 dark:border-zinc-700 bg-white dark:bg-[#2a2a2a] text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
+          className={`flex-1 flex items-center justify-center py-2.5 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
+            selectedLocation && !usedGeolocation
+              ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40"
+              : selectingOnMap
+                ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40"
+                : "border-slate-200 dark:border-zinc-700 bg-white dark:bg-[#2a2a2a] text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
           }`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
-            <circle cx="12" cy="10" r="3" />
-          </svg>
-          Select on Map
+          <span className="inline-flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline shrink-0 mr-1.5">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+            Select on Map
+          </span>
         </button>
       </div>
 
-      {selectedLocation && !selectingOnMap && !geolocating && (
+      {selectedLocation && !selectingOnMap && !geolocating && !usedGeolocation && (
         <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 6L9 17l-5-5" />
@@ -202,7 +210,7 @@ export default function RequestForm({
         style={{ display: "none" }}
       />
 
-      <span className="block text-[13px] font-semibold text-slate-600 dark:text-[#b4b4bb] mb-1.5">Images <span className="font-normal text-slate-400 dark:text-zinc-500">(max 5)</span></span>
+      <span className="block text-[13px] font-semibold text-slate-600 dark:text-[#b4b4bb] mb-1.5">Images <span className="font-normal text-slate-400 dark:text-zinc-500">(max 1)</span></span>
       <div className="flex gap-2 flex-wrap mb-4">
         {previews.map((src, i) => (
           <div key={i} className="relative w-18 h-18 rounded-lg overflow-hidden">
