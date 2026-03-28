@@ -35,7 +35,7 @@
   },
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/api/*", "/assets/*", "/favicon.svg"]
+    "exclude": ["/assets/*.js", "/assets/*.css", "/assets/*.png", "/assets/*.jpg", "/assets/*.svg", "/assets/*.woff2", "/assets/*.woff", "/assets/*.ttf", "/favicon.svg"]
   },
   "routes": [
     {
@@ -45,41 +45,6 @@
     {
       "route": "/.auth/login/twitter",
       "statusCode": 404
-    },
-    {
-      "route": "/api/*",
-      "methods": ["GET"],
-      "allowedRoles": ["anonymous"]
-    },
-    {
-      "route": "/api/posts",
-      "methods": ["POST"],
-      "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/api/posts/*/like",
-      "methods": ["POST"],
-      "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/api/posts/*/comments/*/like",
-      "methods": ["POST"],
-      "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/api/posts/*/comments",
-      "methods": ["POST"],
-      "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/api/posts/*/save",
-      "methods": ["POST"],
-      "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/api/posts/*",
-      "methods": ["DELETE"],
-      "allowedRoles": ["authenticated"]
     }
   ],
   "responseOverrides": {
