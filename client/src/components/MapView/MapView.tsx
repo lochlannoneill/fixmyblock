@@ -136,6 +136,18 @@ export default function MapView({
     map.current.addControl(new maplibregl.NavigationControl(), "top-right");
     if (!azureMapsKey) (map.current as unknown as { _styleUrl?: string })._styleUrl = defaultStyle;
 
+    // Invert horizontal drag-rotate so left-right feels natural
+    const hm = (map.current as unknown as { handlers: { _handlers: { handlerName: string; handler: { _move: (...args: unknown[]) => unknown } }[] } }).handlers;
+    const rotateEntry = hm._handlers.find((h) => h.handlerName === "mouseRotate");
+    if (rotateEntry) {
+      const origMove = rotateEntry.handler._move.bind(rotateEntry.handler);
+      rotateEntry.handler._move = (...args: unknown[]) => {
+        const result = origMove(...args) as { bearingDelta?: number } | undefined;
+        if (result?.bearingDelta != null) result.bearingDelta = -result.bearingDelta;
+        return result;
+      };
+    }
+
     const geolocate = new maplibregl.GeolocateControl({
       positionOptions: { enableHighAccuracy: highAccuracy },
       trackUserLocation: true,
