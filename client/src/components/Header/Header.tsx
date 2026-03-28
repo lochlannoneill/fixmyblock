@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from "react";
 import type { AuthUser } from "../../hooks/useAuth";
 
 interface HeaderProps {
@@ -9,6 +10,33 @@ interface HeaderProps {
 }
 
 export default function Header({ darkMode, onToggleTheme, user, onLoginClick, onLogout }: HeaderProps) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [dropdownAnimate, setDropdownAnimate] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (dropdownOpen) {
+      setDropdownVisible(true);
+      requestAnimationFrame(() => requestAnimationFrame(() => setDropdownAnimate(true)));
+    } else {
+      setDropdownAnimate(false);
+      const timer = setTimeout(() => setDropdownVisible(false), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [dropdownOpen]);
+
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [dropdownOpen]);
+
   return (
     <header className="flex items-center justify-between px-6 h-14 bg-white dark:bg-[#272727] text-slate-800 dark:text-zinc-200 z-50 shadow-sm border-b border-slate-200 dark:border-[#2a2a2a]">
       <div>
@@ -25,8 +53,9 @@ export default function Header({ darkMode, onToggleTheme, user, onLoginClick, on
       </div>
       <div className="flex items-center gap-3">
         {user ? (
-          <div className="relative group">
+          <div className="relative" ref={dropdownRef}>
             <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-[#333] hover:bg-slate-200 dark:hover:bg-[#3a3a3a] cursor-pointer transition-colors"
             >
               <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">
@@ -36,18 +65,27 @@ export default function Header({ darkMode, onToggleTheme, user, onLoginClick, on
                 {user.userDetails}
               </span>
             </button>
-            <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-[#272727] border border-slate-200 dark:border-[#3a3a3a] rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+            {dropdownVisible && (
+            <div
+              className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-[#272727] border border-slate-200 dark:border-[#3a3a3a] rounded-xl shadow-lg origin-top-right z-50"
+              style={{
+                transition: "opacity 150ms ease, transform 150ms ease",
+                opacity: dropdownAnimate ? 1 : 0,
+                transform: dropdownAnimate ? "scale(1) translateY(0)" : "scale(0.95) translateY(-4px)",
+              }}
+            >
               <div className="px-4 py-3 border-b border-slate-100 dark:border-[#3a3a3a]">
                 <p className="text-sm font-medium truncate">{user.userDetails}</p>
                 <p className="text-xs text-slate-400 dark:text-zinc-500 capitalize">{{ aad: "Microsoft", google: "Google", apple: "Apple", facebook: "Facebook" }[user.identityProvider] ?? user.identityProvider}</p>
               </div>
               <button
-                onClick={onLogout}
+                onClick={() => { setDropdownOpen(false); onLogout(); }}
                 className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-slate-50 dark:hover:bg-[#333] cursor-pointer transition-colors rounded-b-xl"
               >
                 Sign out
               </button>
             </div>
+            )}
           </div>
         ) : (
           <button
