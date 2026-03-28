@@ -103,32 +103,36 @@ export default function RequestForm({
         <button
           type="button"
           onClick={onUseCurrentLocation}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
+          className={`flex-1 flex items-center justify-center py-2.5 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
             geolocating
               ? "border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/40"
               : "border-slate-200 dark:border-zinc-700 bg-white dark:bg-[#2a2a2a] text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
           }`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 2v4m0 12v4m10-10h-4M6 12H2" />
-          </svg>
-          {geolocating ? "Getting location..." : "Use Current Location"}
+          <span className="inline-flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline shrink-0 mr-1.5">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v4m0 12v4m10-10h-4M6 12H2" />
+            </svg>
+            {geolocating ? "Getting location..." : "Use Current Location"}
+          </span>
         </button>
         <button
           type="button"
           onClick={onSelectOnMap}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
+          className={`flex-1 flex items-center justify-center py-2.5 rounded-lg border text-sm font-medium transition-colors cursor-pointer ${
             selectedLocation
               ? "border-slate-200 dark:border-zinc-700 bg-white dark:bg-[#2a2a2a] text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
               : "border-slate-200 dark:border-zinc-700 bg-white dark:bg-[#2a2a2a] text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
           }`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
-            <circle cx="12" cy="10" r="3" />
-          </svg>
-          Select on Map
+          <span className="inline-flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline shrink-0 mr-1.5">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+            Select on Map
+          </span>
         </button>
       </div>
 
