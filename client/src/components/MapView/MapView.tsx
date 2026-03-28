@@ -275,7 +275,7 @@ export default function MapView({
       const html = `
         <div class="popup-content" style="font-family:system-ui,sans-serif">
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="flex:1;font-weight:600;font-size:14px" class="popup-title">${req.title}</span>
+            <span style="flex:1;font-weight:600;font-size:14px" class="popup-title">${req.title.length > 30 ? `${req.title.slice(0, 30)}...` : req.title}</span>
             <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap">${statusLabel}</span>
           </div>
           <div class="popup-meta" style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
@@ -283,7 +283,7 @@ export default function MapView({
             <span>${timeSince}</span>
           </div>
           ${thumbs}
-          <p class="popup-desc" style="margin:6px 0 0;line-height:1.4">${req.description.slice(0, isMobile ? 80 : 150)}${req.description.length > (isMobile ? 80 : 150) ? "..." : ""}</p>
+          <p class="popup-desc" style="margin:6px 0 0;line-height:1.4">${req.description.slice(0, isMobile ? 120 : 200)}${req.description.length > (isMobile ? 120 : 200) ? "..." : ""}</p></p>
           <div style="display:flex;align-items:center;gap:12px;margin-top:8px;font-size:12px">
             <button id="popup-upvote-${req.id}" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;font-size:12px;${upvoteColor}" class="popup-metric-btn">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"/></svg>

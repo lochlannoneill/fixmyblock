@@ -41,7 +41,9 @@ export default function RequestDetail({
         >
           <FontAwesomeIcon icon={faArrowLeft} />
         </button>
-        <span className="flex-1 font-semibold text-base text-slate-800 dark:text-zinc-200 truncate">{request.title}</span>
+        <span className="flex-1 font-semibold text-base text-slate-800 dark:text-zinc-200 truncate">
+          {request.title.length > 30 ? `${request.title.slice(0, 30)}...` : request.title}
+        </span>
         <span
           className="text-[11px] font-semibold text-white px-2.5 py-0.5 rounded-full shrink-0"
           style={{ backgroundColor: STATUS_COLORS[request.status] }}

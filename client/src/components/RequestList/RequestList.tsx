@@ -120,8 +120,8 @@ export default function RequestList({
               </div>
             )}
             <p className="text-[13px] text-slate-500 dark:text-[#8c8c96] mt-2 leading-relaxed">
-              {c.description.slice(0, 100)}
-              {c.description.length > 100 ? "..." : ""}
+              {c.description.slice(0, 200)}
+              {c.description.length > 200 ? "..." : ""}
             </p>
           </div>
           <div className="flex items-center gap-3 px-3.5 pb-2.5 text-xs text-slate-400 dark:text-[#8c8c96]">
