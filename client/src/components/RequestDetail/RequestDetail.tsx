@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart as faHeartSolid, faComment as faCommentSolid, faMapMarkerAlt, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as faHeartRegular, faComment as faCommentRegular } from "@fortawesome/free-regular-svg-icons";
@@ -29,7 +29,33 @@ export default function RequestDetail({
   const [commentText, setCommentText] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [showMenu, setShowMenu] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [menuAnimate, setMenuAnimate] = useState(false);
   const commentInputRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const isOwner = currentUserId && currentUserId === request.reporterId;
+
+  useEffect(() => {
+    if (showMenu) {
+      setMenuVisible(true);
+      requestAnimationFrame(() => requestAnimationFrame(() => setMenuAnimate(true)));
+    } else {
+      setMenuAnimate(false);
+      const timer = setTimeout(() => setMenuVisible(false), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [showMenu]);
+
+  useEffect(() => {
+    if (!showMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowMenu(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showMenu]);
 
   const comments = request.comments || [];
   const topLevelComments = comments.filter(c => !c.parentId);
@@ -77,11 +103,60 @@ export default function RequestDetail({
             <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
               {((request.reporterName || "A")[0] ?? "A").toUpperCase()}
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col flex-1 min-w-0">
               <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">
                 {request.reporterName || "Anonymous"}
               </span>
               <span className="text-xs text-slate-400 dark:text-[#6e6e79]">{getTimeSince(request.createdAt)}</span>
+            </div>
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setShowMenu(v => !v)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-[#2a2a2a] transition-colors cursor-pointer text-slate-400 dark:text-zinc-500"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="5" r="2"/>
+                  <circle cx="12" cy="12" r="2"/>
+                  <circle cx="12" cy="19" r="2"/>
+                </svg>
+              </button>
+              {menuVisible && (
+                <div
+                  className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-[#272727] border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden origin-top-right"
+                  style={{
+                    transition: "opacity 150ms ease, transform 150ms ease",
+                    opacity: menuAnimate ? 1 : 0,
+                    transform: menuAnimate ? "scale(1) translateY(0)" : "scale(0.95) translateY(-4px)",
+                  }}
+                >
+                  {isOwner ? (
+                    <>
+                      <button
+                        className="w-full text-left px-3 py-2 text-[13px] text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333] cursor-pointer transition-colors"
+                        onClick={() => { setShowMenu(false); /* TODO: edit handler */ }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="w-full text-left px-3 py-2 text-[13px] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors"
+                        onClick={() => {
+                          setShowMenu(false);
+                          if (confirm("Delete this request?")) onDelete(request.id);
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      className="w-full text-left px-3 py-2 text-[13px] text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333] cursor-pointer transition-colors"
+                      onClick={() => { setShowMenu(false); /* TODO: report handler */ }}
+                    >
+                      Report
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -185,18 +260,6 @@ export default function RequestDetail({
             </button>
             </div>
           </div>
-
-          {/* Delete — only visible to the post author */}
-          {currentUserId && currentUserId === request.reporterId && (
-            <button
-              className="mt-3 w-full py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer border border-red-200 dark:border-red-900/30"
-              onClick={() => {
-                if (confirm("Delete this request?")) onDelete(request.id);
-              }}
-            >
-              Delete request
-            </button>
-          )}
 
           {/* Comments */}
           <div className="mt-8">
