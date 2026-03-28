@@ -202,7 +202,7 @@ export default function App() {
             onMapClick={handleMapClick}
             selectedRequest={selectedRequest}
             onSelectRequest={handleSelectRequest}
-            onUpvote={upvote}
+            onUpvote={(id: string) => { if (!user) { setShowAuthModal(true); return; } upvote(id); }}
             reportMode={showForm}
             dropPinLocation={selectedLocation}
             darkMode={darkMode}
