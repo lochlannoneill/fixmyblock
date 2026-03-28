@@ -169,9 +169,11 @@ async function postComment(
   if (!principal) return { status: 401, jsonBody: { error: "Not authenticated" } };
 
   let userId: string;
+  let userName: string;
   try {
     const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
     userId = decoded.userId;
+    userName = decoded.userDetails || "Anonymous";
   } catch {
     return { status: 401, jsonBody: { error: "Invalid auth token" } };
   }
@@ -190,6 +192,7 @@ async function postComment(
   const comment = {
     id: uuidv4(),
     userId,
+    userName,
     text,
     createdAt: new Date().toISOString(),
   };

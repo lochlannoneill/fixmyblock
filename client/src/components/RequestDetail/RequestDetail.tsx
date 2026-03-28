@@ -200,11 +200,17 @@ export default function RequestDetail({
             ) : (
               <div className="flex flex-col gap-2">
                 {comments.map((comment) => (
-                  <div key={comment.id} className="p-2.5 rounded-lg bg-slate-50 dark:bg-[#2a2a2a] text-xs">
-                    <p className="text-slate-700 dark:text-zinc-300">{comment.text}</p>
-                    <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-1">
-                      {getTimeSince(comment.createdAt)}
-                    </p>
+                  <div key={comment.id} className="flex gap-2.5 p-2.5 text-xs">
+                    <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-[#3a3a3a] text-slate-500 dark:text-zinc-400 flex items-center justify-center text-[10px] font-semibold shrink-0">
+                      {((comment.userName || "U")[0] ?? "U").toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{comment.userName || "Anonymous"}</span>
+                        <span className="text-[10px] text-slate-400 dark:text-zinc-500 shrink-0">{getTimeSince(comment.createdAt)}</span>
+                      </div>
+                      <p className="text-slate-600 dark:text-zinc-400 mt-0.5">{comment.text}</p>
+                    </div>
                   </div>
                 ))}
               </div>
