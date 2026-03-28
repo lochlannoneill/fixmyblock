@@ -74,7 +74,7 @@ export default function RequestToolbar({
       <div className="flex flex-col items-end px-3 py-2 mx-3 mt-3">
         <div className="flex gap-1.5 justify-end">
           <button
-            className={`flex items-center justify-center w-9 h-9 border rounded-lg text-[15px] cursor-pointer transition-colors
+            className={`flex items-center gap-1.5 h-9 px-2.5 border rounded-lg text-[13px] cursor-pointer transition-colors
               ${showFilter
                 ? "text-blue-500 border-blue-500 bg-blue-500/10"
                 : isFiltering
@@ -84,7 +84,8 @@ export default function RequestToolbar({
             onClick={() => { setShowFilter((v) => !v); setShowSort(false); }}
             title="Filter"
           >
-            <FontAwesomeIcon icon={faSliders} />
+            <FontAwesomeIcon icon={faSliders} className="text-[14px]" />
+            <span className="font-medium">Filters</span>
           </button>
           <div className="relative" ref={sortRef}>
             <button
