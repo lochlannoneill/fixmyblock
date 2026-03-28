@@ -8,7 +8,8 @@ interface RequestDetailProps {
   request: Request;
   onBack: () => void;
   onUpvote: (id: string) => void;
-  onAddComment: (id: string, text: string) => void;
+  onAddComment: (id: string, text: string, parentId?: string) => void;
+  onUpvoteComment: (requestId: string, commentId: string) => void;
   onSave: (id: string) => void;
   onDelete: (id: string) => void;
   currentUserId?: string;
@@ -19,20 +20,32 @@ export default function RequestDetail({
   onBack,
   onUpvote,
   onAddComment,
+  onUpvoteComment,
   onSave,
   onDelete,
   currentUserId,
 }: RequestDetailProps) {
   const [commentText, setCommentText] = useState("");
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
   const commentInputRef = useRef<HTMLInputElement>(null);
 
   const comments = request.comments || [];
+  const topLevelComments = comments.filter(c => !c.parentId);
+  const getReplies = (parentId: string) => comments.filter(c => c.parentId === parentId);
   const upvoteCount = (request.upvoters || []).length;
   const hasUpvoted = currentUserId && (request.upvoters || []).includes(currentUserId);
   const hasSaved = currentUserId && (request.savedBy || []).includes(currentUserId);
 
   const displayLocation = request.location || `${request.latitude.toFixed(4)}, ${request.longitude.toFixed(4)}`;
   const statusLabel = request.status === "in-progress" ? "In Progress" : request.status.charAt(0).toUpperCase() + request.status.slice(1);
+
+  const formatCommentText = (text: string) => {
+    const parts = text.split(/(@\S+)/g);
+    return parts.map((part, i) =>
+      part.startsWith("@") ? <span key={i} className="text-blue-500 font-medium">{part}</span> : part
+    );
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -199,20 +212,131 @@ export default function RequestDetail({
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                {comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-2.5 p-2.5 text-xs">
-                    <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-[#3a3a3a] text-slate-500 dark:text-zinc-400 flex items-center justify-center text-[10px] font-semibold shrink-0">
+                {topLevelComments.map((comment) => {
+                  const commentUpvotes = (comment.upvoters || []).length;
+                  const hasUpvotedComment = currentUserId && (comment.upvoters || []).includes(currentUserId);
+                  const replies = getReplies(comment.id);
+                  return (
+                  <div key={comment.id}>
+                  <div className="flex gap-2.5 p-2.5 text-xs">
+                    <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-[#3a3a3a] text-slate-500 dark:text-zinc-400 flex items-center justify-center text-[10px] font-semibold shrink-0 mt-0.5">
                       {((comment.userName || "U")[0] ?? "U").toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{comment.userName || "Anonymous"}</span>
-                        <span className="text-[10px] text-slate-400 dark:text-zinc-500 shrink-0">{getTimeSince(comment.createdAt)}</span>
-                      </div>
+                      <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{comment.userName || "Anonymous"}</span>
                       <p className="text-slate-600 dark:text-zinc-400 mt-0.5">{comment.text}</p>
+                      <div className="flex items-center justify-between mt-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-slate-400 dark:text-zinc-500">{getTimeSince(comment.createdAt)}</span>
+                          <button
+                            className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 hover:text-blue-500 cursor-pointer transition-colors"
+                            onClick={() => { setReplyingTo(replyingTo === comment.id ? null : comment.id); setReplyText(`@${comment.userName || "Anonymous"} `); }}
+                          >
+                            Reply
+                          </button>
+                        </div>
+                        <button
+                          className={`flex items-center gap-1 transition-colors cursor-pointer text-[11px] ${
+                            hasUpvotedComment
+                              ? "text-blue-500 font-semibold"
+                              : "text-slate-400 dark:text-zinc-500 hover:text-blue-500"
+                          }`}
+                          onClick={() => onUpvoteComment(request.id, comment.id)}
+                        >
+                          <FontAwesomeIcon icon={faChevronUp} className="text-[9px]" />
+                          <span>{commentUpvotes}</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                ))}
+                  {/* Replies */}
+                  <div className="ml-9 border-l-2 border-slate-100 dark:border-[#333] pl-2">
+                  {replies.length > 0 && (
+                    <>
+                      {replies.map((reply) => {
+                        const replyUpvotes = (reply.upvoters || []).length;
+                        const hasUpvotedReply = currentUserId && (reply.upvoters || []).includes(currentUserId);
+                        return (
+                        <div key={reply.id} className="flex gap-2.5 p-2.5 text-xs">
+                          <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-[#3a3a3a] text-slate-500 dark:text-zinc-400 flex items-center justify-center text-[9px] font-semibold shrink-0 mt-0.5">
+                            {((reply.userName || "U")[0] ?? "U").toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{reply.userName || "Anonymous"}</span>
+                            <p className="text-slate-600 dark:text-zinc-400 mt-0.5">{formatCommentText(reply.text)}</p>
+                            <div className="flex items-center justify-between mt-1.5">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-slate-400 dark:text-zinc-500">{getTimeSince(reply.createdAt)}</span>
+                                <button
+                                  className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 hover:text-blue-500 cursor-pointer transition-colors"
+                                  onClick={() => { setReplyingTo(replyingTo === comment.id ? null : comment.id); setReplyText(`@${reply.userName || "Anonymous"} `); }}
+                                >
+                                  Reply
+                                </button>
+                              </div>
+                              <button
+                                className={`flex items-center gap-1 transition-colors cursor-pointer text-[11px] ${
+                                  hasUpvotedReply
+                                    ? "text-blue-500 font-semibold"
+                                    : "text-slate-400 dark:text-zinc-500 hover:text-blue-500"
+                                }`}
+                                onClick={() => onUpvoteComment(request.id, reply.id)}
+                              >
+                                <FontAwesomeIcon icon={faChevronUp} className="text-[9px]" />
+                                <span>{replyUpvotes}</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        );
+                      })}
+                    </>
+                  )}
+                  {/* Inline reply input */}
+                  {replyingTo === comment.id && (
+                    <div className="flex gap-2 items-center p-2.5">
+                      <input
+                        autoFocus
+                        type="text"
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        placeholder="Write a reply..."
+                        className="flex-1 px-0 py-1 text-xs border-0 border-b border-slate-200 dark:border-zinc-700 bg-transparent text-slate-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 transition-colors"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && replyText.trim()) {
+                            onAddComment(request.id, replyText.trim(), comment.id);
+                            setReplyText("");
+                            setReplyingTo(null);
+                          }
+                          if (e.key === "Escape") {
+                            setReplyingTo(null);
+                          }
+                        }}
+                      />
+                      {replyText.trim() && (
+                        <button
+                          className="text-xs font-medium text-blue-500 hover:text-blue-600 transition-colors cursor-pointer"
+                          onClick={() => {
+                            onAddComment(request.id, replyText.trim(), comment.id);
+                            setReplyText("");
+                            setReplyingTo(null);
+                          }}
+                        >
+                          Post
+                        </button>
+                      )}
+                      <button
+                        className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300 transition-colors cursor-pointer"
+                        onClick={() => setReplyingTo(null)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                  </div>
+                  </div>
+                  );
+                })}
               </div>
             )}
           </div>

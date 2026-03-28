@@ -23,6 +23,8 @@ export interface Comment {
   userName: string;
   text: string;
   createdAt: string;
+  upvoters: string[];
+  parentId?: string;
 }
 
 export interface RequestDoc {
@@ -108,6 +110,28 @@ export async function deleteRequest(id: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export async function toggleCommentUpvote(requestId: string, commentId: string, userId: string): Promise<RequestDoc | null> {
+  const existing = await getRequestById(requestId);
+  if (!existing) return null;
+
+  const comment = (existing.comments || []).find(c => c.id === commentId);
+  if (!comment) return null;
+
+  const upvoters = comment.upvoters || [];
+  const index = upvoters.indexOf(userId);
+  if (index === -1) {
+    upvoters.push(userId);
+  } else {
+    upvoters.splice(index, 1);
+  }
+  comment.upvoters = upvoters;
+
+  const { resource } = await getContainer()
+    .item(requestId, requestId)
+    .replace<RequestDoc>(existing);
+  return resource ?? null;
 }
 
 export async function toggleSave(id: string, userId: string): Promise<RequestDoc | null> {

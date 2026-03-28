@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Request, NewRequest } from "../types/request";
-import { fetchRequests, createRequest, upvoteRequest, deleteRequest, addComment as addCommentApi, saveRequest as saveRequestApi } from "../services/api";
+import { fetchRequests, createRequest, upvoteRequest, deleteRequest, addComment as addCommentApi, upvoteComment as upvoteCommentApi, saveRequest as saveRequestApi } from "../services/api";
 
 export function useRequests() {
   const [requests, setRequests] = useState<Request[]>([]);
@@ -49,9 +49,9 @@ export function useRequests() {
     return created;
   }, []);
 
-  const addComment = useCallback(async (id: string, text: string) => {
+  const addComment = useCallback(async (id: string, text: string, parentId?: string) => {
     try {
-      const updated = await addCommentApi(id, text);
+      const updated = await addCommentApi(id, text, parentId);
       setRequests((prev) =>
         prev.map((c) => (c.id === updated.id ? updated : c))
       );
@@ -60,6 +60,20 @@ export function useRequests() {
       );
     } catch {
       console.error("Failed to add comment");
+    }
+  }, []);
+
+  const upvoteComment = useCallback(async (requestId: string, commentId: string) => {
+    try {
+      const updated = await upvoteCommentApi(requestId, commentId);
+      setRequests((prev) =>
+        prev.map((c) => (c.id === updated.id ? updated : c))
+      );
+      setSelectedRequest((prev) =>
+        prev?.id === updated.id ? updated : prev
+      );
+    } catch {
+      console.error("Failed to upvote comment");
     }
   }, []);
 
@@ -77,5 +91,5 @@ export function useRequests() {
     }
   }, []);
 
-  return { requests, loading, selectedRequest, selectRequest, upvote, remove, create, addComment, save };
+  return { requests, loading, selectedRequest, selectRequest, upvote, remove, create, addComment, upvoteComment, save };
 }

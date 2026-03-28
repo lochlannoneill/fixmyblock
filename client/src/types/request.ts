@@ -4,6 +4,8 @@ export interface Comment {
   userName: string;
   text: string;
   createdAt: string;
+  upvoters: string[];
+  parentId?: string;
 }
 
 export interface Request {

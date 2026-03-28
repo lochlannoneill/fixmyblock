@@ -11,6 +11,7 @@ import {
   createRequest as createRequestDoc,
   toggleUpvote,
   toggleSave,
+  toggleCommentUpvote,
   addComment as addCommentDoc,
   deleteRequest as deleteRequestDoc,
   RequestDoc,
@@ -179,9 +180,9 @@ async function postComment(
   }
   if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
 
-  let body: { text?: string };
+  let body: { text?: string; parentId?: string };
   try {
-    body = await req.json() as { text?: string };
+    body = await req.json() as { text?: string; parentId?: string };
   } catch {
     return { status: 400, jsonBody: { error: "Invalid JSON" } };
   }
@@ -195,6 +196,8 @@ async function postComment(
     userName,
     text,
     createdAt: new Date().toISOString(),
+    upvoters: [] as string[],
+    ...(body.parentId ? { parentId: body.parentId } : {}),
   };
 
   const updated = await addCommentDoc(id, comment);
@@ -291,4 +294,38 @@ app.http("saveRequest", {
   authLevel: "anonymous",
   route: "complaints/{id}/save",
   handler: saveRequest,
+});
+
+// POST /api/complaints/{id}/comments/{commentId}/upvote
+async function upvoteComment(
+  req: HttpRequest,
+  _ctx: InvocationContext
+): Promise<HttpResponseInit> {
+  const id = req.params.id;
+  const commentId = req.params.commentId;
+  if (!id || !commentId) return { status: 400, jsonBody: { error: "Missing id" } };
+
+  const principal = req.headers.get("x-ms-client-principal");
+  if (!principal) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  let userId: string;
+  try {
+    const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
+    userId = decoded.userId;
+  } catch {
+    return { status: 401, jsonBody: { error: "Invalid auth token" } };
+  }
+  if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
+
+  const updated = await toggleCommentUpvote(id, commentId, userId);
+  if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
+
+  return { status: 200, jsonBody: updated };
+}
+
+app.http("upvoteComment", {
+  methods: ["POST"],
+  authLevel: "anonymous",
+  route: "complaints/{id}/comments/{commentId}/upvote",
+  handler: upvoteComment,
 });

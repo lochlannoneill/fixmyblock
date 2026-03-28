@@ -52,16 +52,25 @@ export async function deleteRequest(id: string): Promise<void> {
   if (!res.ok) throw new Error("Failed to delete request");
 }
 
-export async function addComment(id: string, text: string): Promise<Request> {
+export async function addComment(id: string, text: string, parentId?: string): Promise<Request> {
   const res = await fetch(
     `${API_BASE}/complaints/${encodeURIComponent(id)}/comments`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, ...(parentId ? { parentId } : {}) }),
     }
   );
   if (!res.ok) throw new Error("Failed to add comment");
+  return res.json();
+}
+
+export async function upvoteComment(requestId: string, commentId: string): Promise<Request> {
+  const res = await fetch(
+    `${API_BASE}/complaints/${encodeURIComponent(requestId)}/comments/${encodeURIComponent(commentId)}/upvote`,
+    { method: "POST" }
+  );
+  if (!res.ok) throw new Error("Failed to upvote comment");
   return res.json();
 }
 
