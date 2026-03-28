@@ -1,9 +1,14 @@
+import type { AuthUser } from "../../hooks/useAuth";
+
 interface HeaderProps {
   darkMode: boolean;
   onToggleTheme: () => void;
+  user: AuthUser | null;
+  onLoginClick: () => void;
+  onLogout: () => void;
 }
 
-export default function Header({ darkMode, onToggleTheme }: HeaderProps) {
+export default function Header({ darkMode, onToggleTheme, user, onLoginClick, onLogout }: HeaderProps) {
   return (
     <header className="flex items-center justify-between px-6 h-14 bg-white dark:bg-[#272727] text-slate-800 dark:text-zinc-200 z-50 shadow-sm border-b border-slate-200 dark:border-[#2a2a2a]">
       <div>
@@ -18,7 +23,45 @@ export default function Header({ darkMode, onToggleTheme }: HeaderProps) {
           </span> FixMyBlock
         </h1>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        {user ? (
+          <div className="relative group">
+            <button
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-[#333] hover:bg-slate-200 dark:hover:bg-[#3a3a3a] cursor-pointer transition-colors"
+            >
+              <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">
+                {(user.userDetails?.[0] ?? "U").toUpperCase()}
+              </div>
+              <span className="hidden sm:inline text-sm font-medium truncate max-w-30">
+                {user.userDetails}
+              </span>
+            </button>
+            <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-[#272727] border border-slate-200 dark:border-[#3a3a3a] rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+              <div className="px-4 py-3 border-b border-slate-100 dark:border-[#3a3a3a]">
+                <p className="text-sm font-medium truncate">{user.userDetails}</p>
+                <p className="text-xs text-slate-400 dark:text-zinc-500 capitalize">{{ aad: "Microsoft", google: "Google", apple: "Apple", facebook: "Facebook" }[user.identityProvider] ?? user.identityProvider}</p>
+              </div>
+              <button
+                onClick={onLogout}
+                className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-slate-50 dark:hover:bg-[#333] cursor-pointer transition-colors rounded-b-xl"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={onLoginClick}
+            className="w-8 h-8 rounded-full bg-slate-200 dark:bg-[#444] hover:bg-slate-300 dark:hover:bg-[#555] flex items-center justify-center cursor-pointer transition-colors"
+            aria-label="Sign in"
+            title="Sign in"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 dark:text-zinc-400">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M20 21a8 8 0 0 0-16 0" />
+            </svg>
+          </button>
+        )}
         <button
           type="button"
           aria-label="Toggle dark mode"

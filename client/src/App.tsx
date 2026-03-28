@@ -3,14 +3,18 @@ import Header from "./components/Header";
 import MapView from "./components/MapView";
 import RequestForm from "./components/RequestForm";
 import RequestToolbar from "./components/RequestToolbar";
+import AuthModal from "./components/AuthModal";
 import { useTheme } from "./hooks/useTheme";
 import { useRequests } from "./hooks/useRequests";
+import { useAuth } from "./hooks/useAuth";
 import type { Request, NewRequest } from "./types/request";
 import "./App.css";
 
 export default function App() {
   const { darkMode, toggleTheme } = useTheme();
   const { requests, loading, selectedRequest, selectRequest, upvote, remove, create } = useRequests();
+  const { user, login, logout } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const [showForm, setShowForm] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -60,6 +64,10 @@ export default function App() {
   };
 
   const handleStartRequest = () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
     setShowForm(true);
     setSidebarView("form");
     setSidebarCollapsed(false);
@@ -116,6 +124,14 @@ export default function App() {
       <Header
         darkMode={darkMode}
         onToggleTheme={toggleTheme}
+        user={user}
+        onLoginClick={() => setShowAuthModal(true)}
+        onLogout={logout}
+      />
+      <AuthModal
+        open={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onLogin={(provider) => { login(provider); setShowAuthModal(false); }}
       />
       <div className="flex flex-col-reverse md:flex-row flex-1 overflow-hidden">
         <aside className={`sidebar border-t border-slate-200 dark:border-[#2a2a2a] md:border-r md:border-t-0 bg-slate-50 dark:bg-[#1e1e1e] overflow-y-auto z-10 transition-all duration-300 ${

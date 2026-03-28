@@ -1,17 +1,76 @@
 {
   "$schema": "https://json.schemastore.org/staticwebapp.config.json",
+  "auth": {
+    "identityProviders": {
+      "google": {
+        "registration": {
+          "clientIdSettingName": "GOOGLE_CLIENT_ID",
+          "clientSecretSettingName": "GOOGLE_CLIENT_SECRET"
+        }
+      },
+      "apple": {
+        "registration": {
+          "clientIdSettingName": "APPLE_CLIENT_ID",
+          "clientSecretSettingName": "APPLE_CLIENT_SECRET"
+        }
+      },
+      "customOpenIdConnectProviders": {
+        "facebook": {
+          "registration": {
+            "clientIdSettingName": "FACEBOOK_CLIENT_ID",
+            "clientCredential": {
+              "clientSecretSettingName": "FACEBOOK_CLIENT_SECRET"
+            },
+            "openIdConnectConfiguration": {
+              "wellKnownOpenIdConfiguration": "https://www.facebook.com/.well-known/openid-configuration"
+            }
+          },
+          "login": {
+            "nameClaimType": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
+            "scopes": ["openid", "email", "public_profile"]
+          }
+        }
+      }
+    }
+  },
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": ["/api/*", "/assets/*"]
   },
   "routes": [
     {
+      "route": "/.auth/login/github",
+      "statusCode": 404
+    },
+    {
+      "route": "/.auth/login/twitter",
+      "statusCode": 404
+    },
+    {
       "route": "/api/*",
-      "methods": ["GET", "POST", "DELETE"],
+      "methods": ["GET"],
       "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/api/complaints",
+      "methods": ["POST"],
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/api/complaints/*/upvote",
+      "methods": ["POST"],
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/api/complaints/*",
+      "methods": ["DELETE"],
+      "allowedRoles": ["authenticated"]
     }
   ],
   "responseOverrides": {
+    "401": {
+      "statusCode": 401
+    },
     "404": {
       "rewrite": "/index.html"
     }
