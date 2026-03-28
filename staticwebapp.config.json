@@ -62,6 +62,11 @@
       "allowedRoles": ["authenticated"]
     },
     {
+      "route": "/api/complaints/*/comments",
+      "methods": ["POST"],
+      "allowedRoles": ["authenticated"]
+    },
+    {
       "route": "/api/complaints/*",
       "methods": ["DELETE"],
       "allowedRoles": ["authenticated"]

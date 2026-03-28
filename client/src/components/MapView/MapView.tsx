@@ -3,7 +3,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./MapView.css";
 import type { Request } from "../../types/request";
-import { STATUS_COLORS, CATEGORY_LABELS } from "../../types/request";
+import { STATUS_COLORS } from "../../types/request";
 import Layers from "../Layers";
 import type { MapLayer } from "../Layers";
 
@@ -278,7 +278,7 @@ export default function MapView({
             <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap">${statusLabel}</span>
           </div>
           <div class="popup-meta" style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-            <span>${req.latitude.toFixed(4)}, ${req.longitude.toFixed(4)}</span>
+            <span style="display:flex;align-items:center;gap:4px"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 384 512" fill="currentColor"><path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/></svg>${req.location || `${req.latitude.toFixed(4)}, ${req.longitude.toFixed(4)}`}</span>
             <span>${timeSince}</span>
           </div>
           ${thumbs}

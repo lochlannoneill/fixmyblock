@@ -32,6 +32,7 @@ export interface RequestDoc {
   status: string;
   latitude: number;
   longitude: number;
+  location?: string;
   imageUrls: string[];
   createdAt: string;
   upvotes: number;

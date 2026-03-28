@@ -71,12 +71,32 @@ export default function RequestForm({
     setSubmitting(true);
     setError("");
     try {
+      // Reverse geocode to get human-readable location
+      let location = "";
+      try {
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${selectedLocation.lat}&lon=${selectedLocation.lng}&format=json&zoom=14`
+        );
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          const addr = geoData.address;
+          const parts = [
+            addr?.suburb || addr?.neighbourhood || addr?.village || addr?.town || "",
+            addr?.city || addr?.county || "",
+          ].filter(Boolean);
+          location = parts.join(", ") || geoData.display_name?.split(",").slice(0, 2).join(",").trim() || "";
+        }
+      } catch {
+        // Geocoding is best-effort
+      }
+
       await onSubmit({
         title: title.trim(),
         description: description.trim(),
         category,
         latitude: selectedLocation.lat,
         longitude: selectedLocation.lng,
+        location,
         images,
       });
       setTitle("");

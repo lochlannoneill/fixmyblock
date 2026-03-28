@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronUp, faComment, faMapMarkerAlt, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import type { Request } from "../../types/request";
@@ -22,37 +22,13 @@ export default function RequestDetail({
   currentUserId,
 }: RequestDetailProps) {
   const [commentText, setCommentText] = useState("");
-  const [locationName, setLocationName] = useState("");
   const commentInputRef = useRef<HTMLInputElement>(null);
 
   const comments = request.comments || [];
   const upvoteCount = (request.upvoters || []).length;
   const hasUpvoted = currentUserId && (request.upvoters || []).includes(currentUserId);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${request.latitude}&lon=${request.longitude}&format=json&zoom=14`
-        );
-        if (res.ok && !cancelled) {
-          const data = await res.json();
-          const addr = data.address;
-          const parts = [
-            addr?.suburb || addr?.neighbourhood || addr?.village || addr?.town || "",
-            addr?.city || addr?.county || "",
-          ].filter(Boolean);
-          setLocationName(parts.join(", ") || data.display_name?.split(",").slice(0, 2).join(",").trim() || "");
-        }
-      } catch {
-        // best-effort
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [request.latitude, request.longitude]);
-
-  const displayLocation = locationName || `${request.latitude.toFixed(4)}, ${request.longitude.toFixed(4)}`;
+  const displayLocation = request.location || `${request.latitude.toFixed(4)}, ${request.longitude.toFixed(4)}`;
   const statusLabel = request.status === "in-progress" ? "In Progress" : request.status.charAt(0).toUpperCase() + request.status.slice(1);
 
   return (

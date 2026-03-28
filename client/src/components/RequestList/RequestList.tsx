@@ -10,7 +10,6 @@ interface RequestListProps {
   onSelect: (c: Request) => void;
   selectedId: string | null;
 }
-
 function SkeletonCard() {
   return (
     <div className="bg-white dark:bg-[#272727] rounded-xl p-3.5 mb-2.5 border-2 border-transparent animate-pulse">
@@ -34,49 +33,6 @@ export default function RequestList({
 }: RequestListProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [locationNames, setLocationNames] = useState<Record<string, string>>({});
-
-  // Reverse geocode locations on mount / when requests change
-  useEffect(() => {
-    const cache: Record<string, string> = { ...locationNames };
-    const toFetch = requests.filter((r) => {
-      const key = `${r.latitude.toFixed(4)},${r.longitude.toFixed(4)}`;
-      return !cache[key];
-    });
-
-    // Deduplicate by coordinate key
-    const unique = new Map<string, { lat: number; lng: number }>();
-    for (const r of toFetch) {
-      const key = `${r.latitude.toFixed(4)},${r.longitude.toFixed(4)}`;
-      if (!unique.has(key)) unique.set(key, { lat: r.latitude, lng: r.longitude });
-    }
-
-    let cancelled = false;
-    (async () => {
-      for (const [key, { lat, lng }] of unique) {
-        if (cancelled) break;
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=14`
-          );
-          if (res.ok) {
-            const data = await res.json();
-            const addr = data.address;
-            const parts = [
-              addr?.suburb || addr?.neighbourhood || addr?.village || addr?.town || "",
-              addr?.city || addr?.county || "",
-            ].filter(Boolean);
-            cache[key] = parts.join(", ") || data.display_name?.split(",").slice(0, 2).join(",").trim() || "";
-          }
-        } catch {
-          // best-effort
-        }
-      }
-      if (!cancelled) setLocationNames({ ...cache });
-    })();
-
-    return () => { cancelled = true; };
-  }, [requests]);
 
   const handleScroll = useCallback(() => {
     const el = listRef.current?.closest(".sidebar");
@@ -129,8 +85,7 @@ export default function RequestList({
         const comments = c.comments || [];
         const upvoteCount = (c.upvoters || []).length;
         const timeSince = getTimeSince(c.createdAt);
-        const locKey = `${c.latitude.toFixed(4)},${c.longitude.toFixed(4)}`;
-        const locationName = locationNames[locKey] || `${c.latitude.toFixed(4)}, ${c.longitude.toFixed(4)}`;
+        const locationName = c.location || `${c.latitude.toFixed(4)}, ${c.longitude.toFixed(4)}`;
 
         return (
         <div

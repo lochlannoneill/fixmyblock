@@ -69,6 +69,7 @@ async function postRequest(
     const category = getField("category");
     const latitude = parseFloat(getField("latitude"));
     const longitude = parseFloat(getField("longitude"));
+    const location = getField("location").slice(0, 200);
 
     // Extract reporter identity from SWA auth header
     let reporterId = "";
@@ -111,6 +112,7 @@ async function postRequest(
       status: "open",
       latitude,
       longitude,
+      location: location || undefined,
       imageUrls,
       createdAt: new Date().toISOString(),
       upvotes: 0,

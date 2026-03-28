@@ -13,6 +13,7 @@ export interface Request {
   status: RequestStatus;
   latitude: number;
   longitude: number;
+  location?: string;
   imageUrls: string[];
   createdAt: string;
   upvotes: number;
@@ -39,6 +40,7 @@ export interface NewRequest {
   category: RequestCategory;
   latitude: number;
   longitude: number;
+  location?: string;
   images: File[];
 }
 
