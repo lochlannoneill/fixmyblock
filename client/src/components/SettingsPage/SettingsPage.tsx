@@ -85,7 +85,8 @@ export default function SettingsPage({ darkMode, onToggleTheme, onClose }: Setti
           <h3 className="text-sm font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wide mb-3">About</h3>
           <div className="p-4 rounded-xl bg-white dark:bg-[#272727] border border-slate-200 dark:border-[#3a3a3a]">
             <p className="text-sm font-medium text-slate-700 dark:text-zinc-300">FixMyBlock</p>
-            <p className="text-xs text-slate-400 dark:text-zinc-500 mt-1">Version 1.0.0</p>
+            <p className="text-xs text-slate-400 dark:text-zinc-500 mt-1">Version {__APP_VERSION__}</p>
+            <p className="text-xs text-slate-400 dark:text-zinc-500 mt-1">Author: <a href="https://lochlannoneill.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Lochlann O Neill</a></p>
             <p className="text-xs text-slate-400 dark:text-zinc-500 mt-1">A community platform for reporting and tracking local issues in your neighbourhood.</p>
           </div>
         </div>
