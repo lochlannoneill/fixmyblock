@@ -74,7 +74,7 @@ export default function Header({ darkMode, onToggleTheme, user, onLoginClick, on
             style={{
               transition: "transform 300ms ease, background-color 300ms ease",
               transform: darkMode ? "translateX(2rem)" : "translateX(0)",
-              backgroundColor: darkMode ? "#3a3a3a" : "#ffffff",
+              backgroundColor: darkMode ? "#272727" : "#ffffff",
             }}
           />
         </button>
