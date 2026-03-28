@@ -1,7 +1,7 @@
 ﻿import { useRef, useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart as faHeartSolid, faComment, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
-import { faHeart as faHeartRegular } from "@fortawesome/free-regular-svg-icons";
+import { faHeart as faHeartSolid, faComment as faCommentSolid, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
+import { faHeart as faHeartRegular, faComment as faCommentRegular } from "@fortawesome/free-regular-svg-icons";
 import type { Request } from "../../types/request";
 import { STATUS_COLORS } from "../../types/request";
 
@@ -130,7 +130,7 @@ export default function RequestList({
               <FontAwesomeIcon icon={likeCount > 0 ? faHeartSolid : faHeartRegular} /> {likeCount}
             </span>
             <span className="flex items-center gap-1">
-              <FontAwesomeIcon icon={faComment} /> {comments.length}
+              <FontAwesomeIcon icon={comments.length > 0 ? faCommentSolid : faCommentRegular} /> {comments.length}
             </span>
           </div>
         </div>

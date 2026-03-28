@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart as faHeartSolid, faComment, faMapMarkerAlt, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
-import { faHeart as faHeartRegular } from "@fortawesome/free-regular-svg-icons";
+import { faHeart as faHeartSolid, faComment as faCommentSolid, faMapMarkerAlt, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { faHeart as faHeartRegular, faComment as faCommentRegular } from "@fortawesome/free-regular-svg-icons";
 import type { Request } from "../../types/request";
 import { STATUS_COLORS } from "../../types/request";
 
@@ -143,7 +143,7 @@ export default function RequestDetail({
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-[#2a2a2a] text-slate-500 dark:text-[#8c8c96] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer"
               onClick={() => commentInputRef.current?.focus()}
             >
-              <FontAwesomeIcon icon={faComment} /> {comments.length}
+              <FontAwesomeIcon icon={comments.length > 0 ? faCommentSolid : faCommentRegular} /> {comments.length}
             </button>
             </div>
             <div className="flex items-center gap-2">
@@ -244,7 +244,7 @@ export default function RequestDetail({
                           }`}
                           onClick={() => onLikeComment(request.id, comment.id)}
                         >
-                          <FontAwesomeIcon icon={hasLikedComment ? faHeartSolid : faHeartRegular} className="text-[9px]" />
+                          <FontAwesomeIcon icon={hasLikedComment || commentLikes > 0 ? faHeartSolid : faHeartRegular} className="text-[9px]" />
                           <span>{commentLikes}</span>
                         </button>
                       </div>
@@ -283,7 +283,7 @@ export default function RequestDetail({
                                 }`}
                                 onClick={() => onLikeComment(request.id, reply.id)}
                               >
-                                <FontAwesomeIcon icon={hasLikedReply ? faHeartSolid : faHeartRegular} className="text-[9px]" />
+                                <FontAwesomeIcon icon={hasLikedReply || replyLikes > 0 ? faHeartSolid : faHeartRegular} className="text-[9px]" />
                                 <span>{replyLikes}</span>
                               </button>
                             </div>
