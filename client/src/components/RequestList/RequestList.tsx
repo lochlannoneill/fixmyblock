@@ -114,7 +114,7 @@ export default function RequestList({
               </span>
               <span>{timeSince}</span>
             </div>
-            {c.imageUrls.length > 0 && (
+            {(c.imageUrls || []).length > 0 && (
               <div className="mt-2 rounded-lg overflow-hidden h-30">
                 <img className="w-full h-full object-cover" src={c.imageUrls[0]} alt={c.title} />
               </div>

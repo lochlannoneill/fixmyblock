@@ -244,9 +244,10 @@ export default function MapView({
       }
 
       const isMobile = window.innerWidth < 640;
-      const thumbs = req.imageUrls.length
+      const images = req.imageUrls || [];
+      const thumbs = images.length
         ? `<div style="margin-top:6px;border-radius:8px;overflow:hidden;height:${isMobile ? '80px' : '120px'}">
-            <img src="${req.imageUrls[0]}" style="width:100%;height:100%;object-fit:cover" />
+            <img src="${images[0]}" style="width:100%;height:100%;object-fit:cover" />
           </div>`
         : "";
 

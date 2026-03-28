@@ -65,7 +65,7 @@ export default function RequestDetail({
           </div>
 
           {/* Images */}
-          {request.imageUrls.length > 0 && (
+          {(request.imageUrls || []).length > 0 && (
             <div className="mt-3 flex flex-col gap-2">
               {request.imageUrls.map((url, i) => (
                 <img
