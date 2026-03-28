@@ -33,7 +33,7 @@ export default function Layers({ activeLayer, onLayerChange, darkMode }: LayersP
   const thumbnails = darkMode ? LAYER_THUMBNAILS_DARK : LAYER_THUMBNAILS_LIGHT;
 
   const LAYERS: LayerOption[] = [
-    { id: "terrain", label: "3D", thumbnail: thumbnails.terrain },
+    { id: "terrain", label: "Terrain", thumbnail: thumbnails.terrain },
     { id: "satellite", label: "Satellite", thumbnail: thumbnails.satellite },
     { id: "default", label: "2D", thumbnail: thumbnails.default },
   ];

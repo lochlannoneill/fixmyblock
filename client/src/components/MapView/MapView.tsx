@@ -41,6 +41,7 @@ export default function MapView({
   const onUserLocationRef = useRef(onUserLocation);
   const [mapReady, setMapReady] = useState(false);
   const [activeLayer, setActiveLayer] = useState<MapLayer>("terrain");
+  const lastDarkModeApplied = useRef(darkMode);
 
   // Keep refs in sync so the map click handler always has latest values
   useEffect(() => { onMapClickRef.current = onMapClick; }, [onMapClick]);
@@ -91,6 +92,7 @@ export default function MapView({
     });
 
     map.current.addControl(new maplibregl.NavigationControl(), "top-right");
+    if (!azureMapsKey) (map.current as unknown as { _styleUrl?: string })._styleUrl = defaultStyle;
 
     const geolocate = new maplibregl.GeolocateControl({
       positionOptions: { enableHighAccuracy: true },
@@ -168,6 +170,8 @@ export default function MapView({
   // Switch map style on dark mode toggle
   useEffect(() => {
     if (!map.current || !mapReady) return;
+    if (lastDarkModeApplied.current === darkMode) return;
+    lastDarkModeApplied.current = darkMode;
     const azureMapsKey = import.meta.env.VITE_AZURE_MAPS_KEY || "";
     if (azureMapsKey) return; // Azure Maps doesn't support style switching this way
     if (activeLayer !== "default" && activeLayer !== "terrain") return; // Don't override layer selection
@@ -177,6 +181,7 @@ export default function MapView({
         ? "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json"
         : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
     map.current.setStyle(style);
+    (map.current as unknown as { _styleUrl?: string })._styleUrl = style;
 
     if (activeLayer === "terrain") {
       map.current.once("style.load", () => {
@@ -430,42 +435,56 @@ export default function MapView({
         : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
     };
 
-    map.current.setStyle(styles[layer] as string);
+    const newStyle = styles[layer];
+    const newStyleUrl = typeof newStyle === "string" ? newStyle : null;
+    const prevStyleUrl = (map.current as unknown as { _styleUrl?: string })._styleUrl;
+    const isSameStyle = !!newStyleUrl && newStyleUrl === prevStyleUrl;
+    if (newStyleUrl) (map.current as unknown as { _styleUrl?: string })._styleUrl = newStyleUrl;
 
-    map.current.once("style.load", () => {
-      if (!map.current) return;
-      if (layer === "terrain") {
-        const newLayers = map.current.getStyle().layers;
-        const newSources = map.current.getStyle().sources;
-        if (newLayers && (newSources["openmaptiles"] || newSources["carto"])) {
-          const sourceId = newSources["openmaptiles"] ? "openmaptiles" : "carto";
-          for (const l of newLayers) {
-            if ((l as Record<string, unknown>)["source-layer"] === "building" && (l.type === "fill" || l.type === "line")) {
-              map.current.setLayoutProperty(l.id, "visibility", "none");
-            }
-          }
-          const labelLayer = newLayers.find(
-            (l) => l.type === "symbol" && l.layout && "text-field" in l.layout
-          );
-          map.current.addLayer(
-            {
-              id: "3d-buildings",
-              source: sourceId,
-              "source-layer": "building",
-              type: "fill-extrusion",
-              minzoom: 14,
-              paint: {
-                "fill-extrusion-color": "#c4b5a2",
-                "fill-extrusion-height": ["get", "render_height"],
-                "fill-extrusion-base": ["get", "render_min_height"],
-                "fill-extrusion-opacity": 0.85,
-              },
-            },
-            labelLayer?.id
-          );
+    map.current.setStyle(newStyle as string);
+
+    const add3dBuildings = () => {
+      if (!map.current || layer !== "terrain") return;
+      const newLayers = map.current.getStyle().layers;
+      const newSources = map.current.getStyle().sources;
+      if (newLayers && (newSources["openmaptiles"] || newSources["carto"])) {
+        const sourceId = newSources["openmaptiles"] ? "openmaptiles" : "carto";
+        // Remove existing 3d-buildings layer if present
+        if (map.current.getLayer("3d-buildings")) {
+          map.current.removeLayer("3d-buildings");
         }
+        for (const l of newLayers) {
+          if ((l as Record<string, unknown>)["source-layer"] === "building" && (l.type === "fill" || l.type === "line")) {
+            map.current.setLayoutProperty(l.id, "visibility", "none");
+          }
+        }
+        const labelLayer = newLayers.find(
+          (l) => l.type === "symbol" && l.layout && "text-field" in l.layout
+        );
+        map.current.addLayer(
+          {
+            id: "3d-buildings",
+            source: sourceId,
+            "source-layer": "building",
+            type: "fill-extrusion",
+            minzoom: 14,
+            paint: {
+              "fill-extrusion-color": "#c4b5a2",
+              "fill-extrusion-height": ["get", "render_height"],
+              "fill-extrusion-base": ["get", "render_min_height"],
+              "fill-extrusion-opacity": 0.85,
+            },
+          },
+          labelLayer?.id
+        );
       }
-    });
+    };
+
+    if (isSameStyle && layer === "terrain") {
+      add3dBuildings();
+    } else {
+      map.current.once("style.load", add3dBuildings);
+    }
 
     if (layer === "flat") {
       map.current.easeTo({ pitch: 0, bearing: 0, duration: 500 });
