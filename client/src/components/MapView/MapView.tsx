@@ -292,18 +292,24 @@ export default function MapView({
         } else timeSince = `${minutes}m ago`;
       }
 
+      const userName = req.userName || "Anonymous";
+      const userInitial = (userName[0] ?? "A").toUpperCase();
+
       const html = `
         <div class="popup-content" style="font-family:system-ui,sans-serif">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="flex:1;font-weight:600;font-size:14px" class="popup-title">${req.title.length > 30 ? `${req.title.slice(0, 30)}...` : req.title}</span>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <div style="width:28px;height:28px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">${userInitial}</div>
+            <div style="display:flex;flex-direction:column;flex:1;min-width:0;line-height:1.2">
+              <span class="popup-title" style="font-size:13px;font-weight:600">${userName}</span>
+              <span style="font-size:11px;color:var(--text-muted)">${timeSince}${!images.length ? ` &middot; ${locationText}` : ''}</span>
+            </div>
             <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap">${statusLabel}</span>
           </div>
-          <div class="popup-meta" style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-            ${!images.length ? `<span style="display:flex;align-items:center;gap:4px"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 384 512" fill="currentColor"><path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/></svg>${locationText}</span>` : '<span></span>'}
-            <span>${timeSince}</span>
-          </div>
           ${thumbs}
-          <p class="popup-desc" style="margin:6px 0 0;line-height:1.4">${req.description.slice(0, isMobile ? 120 : 200)}${req.description.length > (isMobile ? 120 : 200) ? "..." : ""}</p></p>
+          <div style="margin-top:6px">
+            <span style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block" class="popup-title">${req.title}</span>
+          </div>
+          <p class="popup-desc" style="margin:6px 0 0;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${req.description}</p>
           <div style="display:flex;align-items:center;gap:12px;margin-top:8px;font-size:12px">
             <button id="popup-like-${req.id}" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;font-size:12px;${likeColor}" class="popup-metric-btn">
               ${likeCount > 0
