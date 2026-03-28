@@ -42,6 +42,41 @@ export default function MapView({
   const [mapReady, setMapReady] = useState(false);
   const [activeLayer, setActiveLayer] = useState<MapLayer>("terrain");
   const lastDarkModeApplied = useRef(darkMode);
+  const activeLayerRef = useRef<MapLayer>("terrain");
+
+  const add3dBuildings = useCallback(() => {
+    if (!map.current) return;
+    if (activeLayerRef.current !== "terrain") return;
+    if (map.current.getLayer("3d-buildings")) return; // already added
+    const layers = map.current.getStyle().layers;
+    const sources = map.current.getStyle().sources;
+    if (!layers || !(sources["openmaptiles"] || sources["carto"])) return;
+    const sourceId = sources["openmaptiles"] ? "openmaptiles" : "carto";
+    for (const l of layers) {
+      if ((l as Record<string, unknown>)["source-layer"] === "building" && (l.type === "fill" || l.type === "line")) {
+        map.current.setLayoutProperty(l.id, "visibility", "none");
+      }
+    }
+    const labelLayer = layers.find(
+      (l) => l.type === "symbol" && l.layout && "text-field" in l.layout
+    );
+    map.current.addLayer(
+      {
+        id: "3d-buildings",
+        source: sourceId,
+        "source-layer": "building",
+        type: "fill-extrusion",
+        minzoom: 14,
+        paint: {
+          "fill-extrusion-color": "#c4b5a2",
+          "fill-extrusion-height": ["get", "render_height"],
+          "fill-extrusion-base": ["get", "render_min_height"],
+          "fill-extrusion-opacity": 0.85,
+        },
+      },
+      labelLayer?.id
+    );
+  }, []);
 
   // Keep refs in sync so the map click handler always has latest values
   useEffect(() => { onMapClickRef.current = onMapClick; }, [onMapClick]);
@@ -108,50 +143,7 @@ export default function MapView({
     map.current.on("load", () => {
       setMapReady(true);
       geolocate.trigger();
-
-      // Add 3D building layer if using styles that support it
-      const layers = map.current!.getStyle().layers;
-      if (layers) {
-        const labelLayer = layers.find(
-          (l) => l.type === "symbol" && l.layout && "text-field" in l.layout
-        );
-        const firstLabelId = labelLayer?.id;
-
-        // Only add 3D buildings if the source exists
-        const sources = map.current!.getStyle().sources;
-        if (sources["openmaptiles"] || sources["carto"]) {
-          const sourceId = sources["openmaptiles"]
-            ? "openmaptiles"
-            : "carto";
-
-          // Hide flat 2D building layers so they don't show through
-          for (const layer of layers) {
-            if (
-              (layer as Record<string, unknown>)["source-layer"] === "building" &&
-              (layer.type === "fill" || layer.type === "line")
-            ) {
-              map.current!.setLayoutProperty(layer.id, "visibility", "none");
-            }
-          }
-
-          map.current!.addLayer(
-            {
-              id: "3d-buildings",
-              source: sourceId,
-              "source-layer": "building",
-              type: "fill-extrusion",
-              minzoom: 14,
-              paint: {
-                "fill-extrusion-color": "#c4b5a2",
-                "fill-extrusion-height": ["get", "render_height"],
-                "fill-extrusion-base": ["get", "render_min_height"],
-                "fill-extrusion-opacity": 0.85,
-              },
-            },
-            firstLabelId
-          );
-        }
-      }
+      add3dBuildings();
     });
 
     map.current.on("click", (e) => {
@@ -174,7 +166,7 @@ export default function MapView({
     lastDarkModeApplied.current = darkMode;
     const azureMapsKey = import.meta.env.VITE_AZURE_MAPS_KEY || "";
     if (azureMapsKey) return; // Azure Maps doesn't support style switching this way
-    if (activeLayer !== "default" && activeLayer !== "terrain") return; // Don't override layer selection
+    if (activeLayer !== "default" && activeLayer !== "terrain") return; // Don't override raster layer selections
     const style = darkMode
       ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
       : activeLayer === "terrain"
@@ -183,41 +175,8 @@ export default function MapView({
     map.current.setStyle(style);
     (map.current as unknown as { _styleUrl?: string })._styleUrl = style;
 
-    if (activeLayer === "terrain") {
-      map.current.once("style.load", () => {
-        if (!map.current) return;
-        const newLayers = map.current.getStyle().layers;
-        const newSources = map.current.getStyle().sources;
-        if (newLayers && (newSources["openmaptiles"] || newSources["carto"])) {
-          const sourceId = newSources["openmaptiles"] ? "openmaptiles" : "carto";
-          for (const l of newLayers) {
-            if ((l as Record<string, unknown>)["source-layer"] === "building" && (l.type === "fill" || l.type === "line")) {
-              map.current.setLayoutProperty(l.id, "visibility", "none");
-            }
-          }
-          const labelLayer = newLayers.find(
-            (l) => l.type === "symbol" && l.layout && "text-field" in l.layout
-          );
-          map.current.addLayer(
-            {
-              id: "3d-buildings",
-              source: sourceId,
-              "source-layer": "building",
-              type: "fill-extrusion",
-              minzoom: 14,
-              paint: {
-                "fill-extrusion-color": "#c4b5a2",
-                "fill-extrusion-height": ["get", "render_height"],
-                "fill-extrusion-base": ["get", "render_min_height"],
-                "fill-extrusion-opacity": 0.85,
-              },
-            },
-            labelLayer?.id
-          );
-        }
-      });
-    }
-  }, [darkMode, mapReady, activeLayer]);
+    map.current.once("style.load", add3dBuildings);
+  }, [darkMode, mapReady, activeLayer, add3dBuildings]);
 
   // Sync markers with requests
   useEffect(() => {
@@ -406,6 +365,7 @@ export default function MapView({
   const handleLayerChange = useCallback((layer: MapLayer) => {
     if (!map.current) return;
     setActiveLayer(layer);
+    activeLayerRef.current = layer;
 
     const styles: Record<MapLayer, string | object> = {
       default: darkMode
@@ -433,58 +393,41 @@ export default function MapView({
       flat: darkMode
         ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
         : "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+      topo: {
+        version: 8,
+        sources: {
+          "opentopomap": {
+            type: "raster",
+            tiles: [
+              "https://a.tile.opentopomap.org/{z}/{x}/{y}.png",
+              "https://b.tile.opentopomap.org/{z}/{x}/{y}.png",
+              "https://c.tile.opentopomap.org/{z}/{x}/{y}.png",
+            ],
+            tileSize: 256,
+            maxzoom: 17,
+          },
+        },
+        layers: [
+          { id: "opentopomap-layer", type: "raster", source: "opentopomap" },
+        ],
+      },
     };
 
     const newStyle = styles[layer];
     const newStyleUrl = typeof newStyle === "string" ? newStyle : null;
-    const prevStyleUrl = (map.current as unknown as { _styleUrl?: string })._styleUrl;
-    const isSameStyle = !!newStyleUrl && newStyleUrl === prevStyleUrl;
     if (newStyleUrl) (map.current as unknown as { _styleUrl?: string })._styleUrl = newStyleUrl;
+
+    // Remove existing 3d-buildings before style change
+    if (map.current.getLayer("3d-buildings")) {
+      map.current.removeLayer("3d-buildings");
+    }
 
     map.current.setStyle(newStyle as string);
 
-    const add3dBuildings = () => {
-      if (!map.current || layer !== "terrain") return;
-      const newLayers = map.current.getStyle().layers;
-      const newSources = map.current.getStyle().sources;
-      if (newLayers && (newSources["openmaptiles"] || newSources["carto"])) {
-        const sourceId = newSources["openmaptiles"] ? "openmaptiles" : "carto";
-        // Remove existing 3d-buildings layer if present
-        if (map.current.getLayer("3d-buildings")) {
-          map.current.removeLayer("3d-buildings");
-        }
-        for (const l of newLayers) {
-          if ((l as Record<string, unknown>)["source-layer"] === "building" && (l.type === "fill" || l.type === "line")) {
-            map.current.setLayoutProperty(l.id, "visibility", "none");
-          }
-        }
-        const labelLayer = newLayers.find(
-          (l) => l.type === "symbol" && l.layout && "text-field" in l.layout
-        );
-        map.current.addLayer(
-          {
-            id: "3d-buildings",
-            source: sourceId,
-            "source-layer": "building",
-            type: "fill-extrusion",
-            minzoom: 14,
-            paint: {
-              "fill-extrusion-color": "#c4b5a2",
-              "fill-extrusion-height": ["get", "render_height"],
-              "fill-extrusion-base": ["get", "render_min_height"],
-              "fill-extrusion-opacity": 0.85,
-            },
-          },
-          labelLayer?.id
-        );
-      }
-    };
-
-    if (isSameStyle && layer === "terrain") {
-      add3dBuildings();
-    } else {
-      map.current.once("style.load", add3dBuildings);
-    }
+    // Always listen for style.load, and also try immediately (for same-style cases)
+    map.current.once("style.load", add3dBuildings);
+    // Defer to let MapLibre process the setStyle — if style didn't change, style.load won't fire
+    setTimeout(add3dBuildings, 100);
 
     if (layer === "flat") {
       map.current.easeTo({ pitch: 0, bearing: 0, duration: 500 });
