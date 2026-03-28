@@ -9,9 +9,9 @@ import {
   getAllRequests,
   getRequestById,
   createRequest as createRequestDoc,
-  toggleUpvote,
+  toggleLike,
   toggleSave,
-  toggleCommentUpvote,
+  toggleCommentLike,
   addComment as addCommentDoc,
   deleteRequest as deleteRequestDoc,
   RequestDoc,
@@ -117,8 +117,8 @@ async function postRequest(
       location: location || undefined,
       imageUrls,
       createdAt: new Date().toISOString(),
-      upvotes: 0,
-      upvoters: [],
+      likes: 0,
+      likers: [],
       savedBy: [],
       reporterId,
       comments: [],
@@ -132,8 +132,8 @@ async function postRequest(
   }
 }
 
-// POST /api/complaints/{id}/upvote
-async function upvote(
+// POST /api/complaints/{id}/like
+async function like(
   req: HttpRequest,
   _ctx: InvocationContext
 ): Promise<HttpResponseInit> {
@@ -152,7 +152,7 @@ async function upvote(
   }
   if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
 
-  const updated = await toggleUpvote(id, userId);
+  const updated = await toggleLike(id, userId);
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
   return { status: 200, jsonBody: updated };
@@ -196,7 +196,7 @@ async function postComment(
     userName,
     text,
     createdAt: new Date().toISOString(),
-    upvoters: [] as string[],
+    likers: [] as string[],
     ...(body.parentId ? { parentId: body.parentId } : {}),
   };
 
@@ -268,11 +268,11 @@ app.http("createRequest", {
   handler: postRequest,
 });
 
-app.http("upvoteRequest", {
+app.http("likeRequest", {
   methods: ["POST"],
   authLevel: "anonymous",
-  route: "complaints/{id}/upvote",
-  handler: upvote,
+  route: "complaints/{id}/like",
+  handler: like,
 });
 
 app.http("deleteRequest", {
@@ -296,8 +296,8 @@ app.http("saveRequest", {
   handler: saveRequest,
 });
 
-// POST /api/complaints/{id}/comments/{commentId}/upvote
-async function upvoteComment(
+// POST /api/complaints/{id}/comments/{commentId}/like
+async function likeComment(
   req: HttpRequest,
   _ctx: InvocationContext
 ): Promise<HttpResponseInit> {
@@ -317,15 +317,15 @@ async function upvoteComment(
   }
   if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
 
-  const updated = await toggleCommentUpvote(id, commentId, userId);
+  const updated = await toggleCommentLike(id, commentId, userId);
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
   return { status: 200, jsonBody: updated };
 }
 
-app.http("upvoteComment", {
+app.http("likeComment", {
   methods: ["POST"],
   authLevel: "anonymous",
-  route: "complaints/{id}/comments/{commentId}/upvote",
-  handler: upvoteComment,
+  route: "complaints/{id}/comments/{commentId}/like",
+  handler: likeComment,
 });

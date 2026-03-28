@@ -1,6 +1,7 @@
 ﻿import { useRef, useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronUp, faComment, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
+import { faHeart as faHeartSolid, faComment, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
+import { faHeart as faHeartRegular } from "@fortawesome/free-regular-svg-icons";
 import type { Request } from "../../types/request";
 import { STATUS_COLORS } from "../../types/request";
 
@@ -83,7 +84,7 @@ export default function RequestList({
       )}
       {requests.map((c) => {
         const comments = c.comments || [];
-        const upvoteCount = (c.upvoters || []).length;
+        const likeCount = (c.likers || []).length;
         const timeSince = getTimeSince(c.createdAt);
         const locationName = c.location || `${c.latitude.toFixed(4)}, ${c.longitude.toFixed(4)}`;
 
@@ -126,7 +127,7 @@ export default function RequestList({
           </div>
           <div className="flex items-center gap-3 px-3.5 pb-2.5 text-xs text-slate-400 dark:text-[#8c8c96]">
             <span className="flex items-center gap-1">
-              <FontAwesomeIcon icon={faChevronUp} /> {upvoteCount}
+              <FontAwesomeIcon icon={likeCount > 0 ? faHeartSolid : faHeartRegular} /> {likeCount}
             </span>
             <span className="flex items-center gap-1">
               <FontAwesomeIcon icon={faComment} /> {comments.length}

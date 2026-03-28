@@ -49,7 +49,7 @@ export default function AuthModal({ open, onClose, onLogin }: AuthModalProps) {
 
         <h2 className="text-lg font-bold mb-1 text-slate-800 dark:text-zinc-100 text-center">Sign in</h2>
         <p className="text-sm text-slate-500 dark:text-zinc-400 mb-6 text-center">
-          Sign in to report issues, upvote, and comment.
+          Sign in to report issues, like, and comment.
         </p>
 
         <div className="flex flex-col gap-3 items-center">

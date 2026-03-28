@@ -1,15 +1,16 @@
 import { useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronUp, faComment, faMapMarkerAlt, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { faHeart as faHeartSolid, faComment, faMapMarkerAlt, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { faHeart as faHeartRegular } from "@fortawesome/free-regular-svg-icons";
 import type { Request } from "../../types/request";
 import { STATUS_COLORS } from "../../types/request";
 
 interface RequestDetailProps {
   request: Request;
   onBack: () => void;
-  onUpvote: (id: string) => void;
+  onLike: (id: string) => void;
   onAddComment: (id: string, text: string, parentId?: string) => void;
-  onUpvoteComment: (requestId: string, commentId: string) => void;
+  onLikeComment: (requestId: string, commentId: string) => void;
   onSave: (id: string) => void;
   onDelete: (id: string) => void;
   currentUserId?: string;
@@ -18,9 +19,9 @@ interface RequestDetailProps {
 export default function RequestDetail({
   request,
   onBack,
-  onUpvote,
+  onLike,
   onAddComment,
-  onUpvoteComment,
+  onLikeComment,
   onSave,
   onDelete,
   currentUserId,
@@ -33,8 +34,8 @@ export default function RequestDetail({
   const comments = request.comments || [];
   const topLevelComments = comments.filter(c => !c.parentId);
   const getReplies = (parentId: string) => comments.filter(c => c.parentId === parentId);
-  const upvoteCount = (request.upvoters || []).length;
-  const hasUpvoted = currentUserId && (request.upvoters || []).includes(currentUserId);
+  const likeCount = (request.likers || []).length;
+  const hasLiked = currentUserId && (request.likers || []).includes(currentUserId);
   const hasSaved = currentUserId && (request.savedBy || []).includes(currentUserId);
 
   const displayLocation = request.location || `${request.latitude.toFixed(4)}, ${request.longitude.toFixed(4)}`;
@@ -129,14 +130,14 @@ export default function RequestDetail({
             <div className="flex items-center gap-2">
             <button
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
-                hasUpvoted
-                  ? "text-blue-500 font-semibold bg-blue-50 dark:bg-blue-500/10"
-                  : "text-slate-500 dark:text-[#8c8c96] bg-slate-100 dark:bg-[#2a2a2a] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+                hasLiked
+                  ? "text-red-500 font-semibold bg-red-50 dark:bg-red-500/10"
+                  : "text-slate-500 dark:text-[#8c8c96] bg-slate-100 dark:bg-[#2a2a2a] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
               }`}
-              onClick={() => onUpvote(request.id)}
-              title={hasUpvoted ? "Remove upvote" : "Upvote"}
+              onClick={() => onLike(request.id)}
+              title={hasLiked ? "Unlike" : "Like"}
             >
-              <FontAwesomeIcon icon={faChevronUp} /> {upvoteCount}
+              <FontAwesomeIcon icon={hasLiked ? faHeartSolid : faHeartRegular} /> {likeCount}
             </button>
             <button
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-[#2a2a2a] text-slate-500 dark:text-[#8c8c96] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer"
@@ -213,8 +214,8 @@ export default function RequestDetail({
             ) : (
               <div className="flex flex-col gap-2">
                 {topLevelComments.map((comment) => {
-                  const commentUpvotes = (comment.upvoters || []).length;
-                  const hasUpvotedComment = currentUserId && (comment.upvoters || []).includes(currentUserId);
+                  const commentLikes = (comment.likers || []).length;
+                  const hasLikedComment = currentUserId && (comment.likers || []).includes(currentUserId);
                   const replies = getReplies(comment.id);
                   return (
                   <div key={comment.id}>
@@ -237,14 +238,14 @@ export default function RequestDetail({
                         </div>
                         <button
                           className={`flex items-center gap-1 transition-colors cursor-pointer text-[11px] ${
-                            hasUpvotedComment
-                              ? "text-blue-500 font-semibold"
-                              : "text-slate-400 dark:text-zinc-500 hover:text-blue-500"
+                            hasLikedComment
+                              ? "text-red-500 font-semibold"
+                              : "text-slate-400 dark:text-zinc-500 hover:text-red-500"
                           }`}
-                          onClick={() => onUpvoteComment(request.id, comment.id)}
+                          onClick={() => onLikeComment(request.id, comment.id)}
                         >
-                          <FontAwesomeIcon icon={faChevronUp} className="text-[9px]" />
-                          <span>{commentUpvotes}</span>
+                          <FontAwesomeIcon icon={hasLikedComment ? faHeartSolid : faHeartRegular} className="text-[9px]" />
+                          <span>{commentLikes}</span>
                         </button>
                       </div>
                     </div>
@@ -254,8 +255,8 @@ export default function RequestDetail({
                   {replies.length > 0 && (
                     <>
                       {replies.map((reply) => {
-                        const replyUpvotes = (reply.upvoters || []).length;
-                        const hasUpvotedReply = currentUserId && (reply.upvoters || []).includes(currentUserId);
+                        const replyLikes = (reply.likers || []).length;
+                        const hasLikedReply = currentUserId && (reply.likers || []).includes(currentUserId);
                         return (
                         <div key={reply.id} className="flex gap-2.5 p-2.5 text-xs">
                           <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-[#3a3a3a] text-slate-500 dark:text-zinc-400 flex items-center justify-center text-[9px] font-semibold shrink-0 mt-0.5">
@@ -276,14 +277,14 @@ export default function RequestDetail({
                               </div>
                               <button
                                 className={`flex items-center gap-1 transition-colors cursor-pointer text-[11px] ${
-                                  hasUpvotedReply
-                                    ? "text-blue-500 font-semibold"
-                                    : "text-slate-400 dark:text-zinc-500 hover:text-blue-500"
+                                  hasLikedReply
+                                    ? "text-red-500 font-semibold"
+                                    : "text-slate-400 dark:text-zinc-500 hover:text-red-500"
                                 }`}
-                                onClick={() => onUpvoteComment(request.id, reply.id)}
+                                onClick={() => onLikeComment(request.id, reply.id)}
                               >
-                                <FontAwesomeIcon icon={faChevronUp} className="text-[9px]" />
-                                <span>{replyUpvotes}</span>
+                                <FontAwesomeIcon icon={hasLikedReply ? faHeartSolid : faHeartRegular} className="text-[9px]" />
+                                <span>{replyLikes}</span>
                               </button>
                             </div>
                           </div>

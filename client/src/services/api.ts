@@ -35,12 +35,12 @@ export async function createRequest(data: NewRequest): Promise<Request> {
   return res.json();
 }
 
-export async function upvoteRequest(id: string): Promise<Request> {
+export async function likeRequest(id: string): Promise<Request> {
   const res = await fetch(
-    `${API_BASE}/complaints/${encodeURIComponent(id)}/upvote`,
+    `${API_BASE}/complaints/${encodeURIComponent(id)}/like`,
     { method: "POST" }
   );
-  if (!res.ok) throw new Error("Failed to upvote request");
+  if (!res.ok) throw new Error("Failed to like request");
   return res.json();
 }
 
@@ -65,12 +65,12 @@ export async function addComment(id: string, text: string, parentId?: string): P
   return res.json();
 }
 
-export async function upvoteComment(requestId: string, commentId: string): Promise<Request> {
+export async function likeComment(requestId: string, commentId: string): Promise<Request> {
   const res = await fetch(
-    `${API_BASE}/complaints/${encodeURIComponent(requestId)}/comments/${encodeURIComponent(commentId)}/upvote`,
+    `${API_BASE}/complaints/${encodeURIComponent(requestId)}/comments/${encodeURIComponent(commentId)}/like`,
     { method: "POST" }
   );
-  if (!res.ok) throw new Error("Failed to upvote comment");
+  if (!res.ok) throw new Error("Failed to like comment");
   return res.json();
 }
 

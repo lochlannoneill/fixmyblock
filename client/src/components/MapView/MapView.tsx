@@ -12,7 +12,7 @@ interface MapViewProps {
   onMapClick: (lng: number, lat: number) => void;
   selectedRequest: Request | null;
   onSelectRequest: (c: Request | null) => void;
-  onUpvote: (id: string) => void;
+  onLike: (id: string) => void;
   reportMode: boolean;
   dropPinLocation: { lng: number; lat: number } | null;
   darkMode: boolean;
@@ -26,7 +26,7 @@ export default function MapView({
   onMapClick,
   selectedRequest,
   onSelectRequest,
-  onUpvote,
+  onLike,
   reportMode,
   dropPinLocation,
   darkMode,
@@ -217,7 +217,7 @@ export default function MapView({
         color: white;
         font-weight: bold;
       `;
-      inner.textContent = `${(req.upvoters || []).length}`;
+      inner.textContent = `${(req.likers || []).length}`;
       el.appendChild(inner);
 
       el.addEventListener("click", (e) => {
@@ -254,10 +254,10 @@ export default function MapView({
       const statusColor = STATUS_COLORS[req.status] || "#ef4444";
       const statusLabel = req.status === "in-progress" ? "In Progress" : req.status.charAt(0).toUpperCase() + req.status.slice(1);
 
-      const hasUpvoted = currentUserId && (req.upvoters || []).includes(currentUserId);
-      const upvoteCount = (req.upvoters || []).length;
+      const hasLiked = currentUserId && (req.likers || []).includes(currentUserId);
+      const likeCount = (req.likers || []).length;
       const commentCount = (req.comments || []).length;
-      const upvoteColor = hasUpvoted ? "color:#3b82f6;font-weight:600" : "";
+      const likeColor = hasLiked ? "color:#ef4444;font-weight:600" : "";
 
       // Time since
       const seconds = Math.floor((Date.now() - new Date(req.createdAt).getTime()) / 1000);
@@ -286,9 +286,11 @@ export default function MapView({
           ${thumbs}
           <p class="popup-desc" style="margin:6px 0 0;line-height:1.4">${req.description.slice(0, isMobile ? 120 : 200)}${req.description.length > (isMobile ? 120 : 200) ? "..." : ""}</p></p>
           <div style="display:flex;align-items:center;gap:12px;margin-top:8px;font-size:12px">
-            <button id="popup-upvote-${req.id}" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;font-size:12px;${upvoteColor}" class="popup-metric-btn">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"/></svg>
-              ${upvoteCount}
+            <button id="popup-like-${req.id}" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;font-size:12px;${likeColor}" class="popup-metric-btn">
+              ${likeCount > 0
+                ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M47.6 300.4L228.3 469.1c7.5 7 17.4 10.9 27.7 10.9s20.2-3.9 27.7-10.9L464.4 300.4c30.4-28.3 47.6-68 47.6-109.5v-5.8c0-69.9-50.5-129.5-119.4-141C347 36.5 300.6 51.4 268 84L256 96 244 84c-32.6-32.6-79-47.5-124.6-39.9C50.5 55.6 0 115.2 0 185.1v5.8c0 41.5 17.2 81.2 47.6 109.5z"/></svg>'
+                : '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M225.8 468.2l-2.5-2.3L48.1 303.2C17.4 274.7 0 234.7 0 192.8v-3.3c0-70.4 50-130.8 119.2-144C158.6 37.9 198.9 47 231 69.6c9 6.3 17.3 13.5 25 21.4c7.7-7.9 16-15.1 25-21.4c32.1-22.6 72.4-31.7 111.8-24.2C461 58.6 512 119.1 512 189.5v3.3c0 41.9-17.4 81.9-48.1 110.4L288.7 465.9l-2.5 2.3c-8.2 7.6-19 11.9-30.2 11.9s-22-4.2-30.2-11.9zM239.1 145c-.4-.3-.7-.7-1-1.1l-17.8-20c-11.5-12.9-27.1-20.1-43.4-20.1-33.1 0-60.9 26.9-60.9 60.2v3.3c0 24.1 10.1 47.2 27.8 63.6l170.3 156.1 170.3-156.1c17.7-16.4 27.8-39.5 27.8-63.6v-3.3c0-33.3-27.8-60.2-60.9-60.2c-16.3 0-31.9 7.2-43.4 20.1l-17.8 20c-.3.4-.7.7-1 1.1c-4.5 4.5-10.6 7-16.9 7s-12.4-2.5-16.9-7z"/></svg>'}
+              ${likeCount}
             </button>
             <span style="display:flex;align-items:center;gap:4px" class="popup-metric">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M512 240c0 114.9-114.6 208-256 208c-37.1 0-72.3-6.4-104.1-17.9c-11.9 8.7-31.3 20.6-54.3 30.6C73.6 471.1 44.7 480 16 480c-6.5 0-12.3-3.9-14.8-9.9c-2.5-6-1.1-12.8 3.4-17.4c0 0 0 0 0 0s0 0 0 0s0 0 0 0c0 0 0 0 0 0l.3-.3c.3-.3 .7-.7 1.3-1.4c1.1-1.2 2.8-3.1 4.9-5.7c4.1-5 9.6-12.4 15.2-21.6c10-16.6 19.5-38.4 21.4-62.9C17.7 326.8 0 285.1 0 240C0 125.1 114.6 32 256 32s256 93.1 256 208z"/></svg>
@@ -312,18 +314,18 @@ export default function MapView({
       popupCloseHandlerRef.current = closeHandler;
       popup.on("close", closeHandler);
 
-      // Attach upvote handler after DOM insertion
+      // Attach like handler after DOM insertion
       setTimeout(() => {
-        const btn = document.getElementById(`popup-upvote-${req.id}`);
+        const btn = document.getElementById(`popup-like-${req.id}`);
         btn?.addEventListener("click", (e) => {
           e.stopPropagation();
-          onUpvote(req.id);
+          onLike(req.id);
         });
       }, 0);
 
       popupRef.current = popup;
     },
-    [onSelectRequest, onUpvote, currentUserId]
+    [onSelectRequest, onLike, currentUserId]
   );
 
   const selectedIdRef = useRef<string | null>(null);

@@ -57,12 +57,12 @@
       "allowedRoles": ["authenticated"]
     },
     {
-      "route": "/api/complaints/*/upvote",
+      "route": "/api/complaints/*/like",
       "methods": ["POST"],
       "allowedRoles": ["authenticated"]
     },
     {
-      "route": "/api/complaints/*/comments/*/upvote",
+      "route": "/api/complaints/*/comments/*/like",
       "methods": ["POST"],
       "allowedRoles": ["authenticated"]
     },

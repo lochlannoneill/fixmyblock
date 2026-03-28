@@ -23,7 +23,7 @@ export interface Comment {
   userName: string;
   text: string;
   createdAt: string;
-  upvoters: string[];
+  likers: string[];
   parentId?: string;
 }
 
@@ -38,8 +38,8 @@ export interface RequestDoc {
   location?: string;
   imageUrls: string[];
   createdAt: string;
-  upvotes: number;
-  upvoters: string[];
+  likes: number;
+  likers: string[];
   savedBy: string[];
   reporterId: string;
   comments: Comment[];
@@ -70,19 +70,19 @@ export async function createRequest(
   return resource!;
 }
 
-export async function toggleUpvote(id: string, userId: string): Promise<RequestDoc | null> {
+export async function toggleLike(id: string, userId: string): Promise<RequestDoc | null> {
   const existing = await getRequestById(id);
   if (!existing) return null;
 
-  const upvoters = existing.upvoters || [];
-  const index = upvoters.indexOf(userId);
+  const likers = existing.likers || [];
+  const index = likers.indexOf(userId);
   if (index === -1) {
-    upvoters.push(userId);
+    likers.push(userId);
   } else {
-    upvoters.splice(index, 1);
+    likers.splice(index, 1);
   }
-  existing.upvoters = upvoters;
-  existing.upvotes = upvoters.length;
+  existing.likers = likers;
+  existing.likes = likers.length;
 
   const { resource } = await getContainer()
     .item(id, id)
@@ -112,21 +112,21 @@ export async function deleteRequest(id: string): Promise<boolean> {
   }
 }
 
-export async function toggleCommentUpvote(requestId: string, commentId: string, userId: string): Promise<RequestDoc | null> {
+export async function toggleCommentLike(requestId: string, commentId: string, userId: string): Promise<RequestDoc | null> {
   const existing = await getRequestById(requestId);
   if (!existing) return null;
 
   const comment = (existing.comments || []).find(c => c.id === commentId);
   if (!comment) return null;
 
-  const upvoters = comment.upvoters || [];
-  const index = upvoters.indexOf(userId);
+  const likers = comment.likers || [];
+  const index = likers.indexOf(userId);
   if (index === -1) {
-    upvoters.push(userId);
+    likers.push(userId);
   } else {
-    upvoters.splice(index, 1);
+    likers.splice(index, 1);
   }
-  comment.upvoters = upvoters;
+  comment.likers = likers;
 
   const { resource } = await getContainer()
     .item(requestId, requestId)

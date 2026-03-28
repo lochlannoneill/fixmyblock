@@ -5,7 +5,7 @@ import type { Request, RequestCategory, RequestStatus } from "../../types/reques
 import { CATEGORY_LABELS } from "../../types/request";
 import RequestList from "../RequestList";
 
-type SortBy = "newest" | "oldest" | "upvotes";
+type SortBy = "newest" | "oldest" | "likes";
 
 interface RequestToolbarProps {
   requests: Request[];
@@ -62,7 +62,7 @@ export default function RequestToolbar({
     return [...filtered].sort((a, b) => {
       if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       if (sortBy === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      return (b.upvoters || []).length - (a.upvoters || []).length;
+      return (b.likers || []).length - (a.likers || []).length;
     });
   }, [requests, filterCategory, filterStatus, sortBy]);
 
@@ -98,7 +98,7 @@ export default function RequestToolbar({
               title="Sort"
             >
               <FontAwesomeIcon icon={faArrowDownUpAcrossLine} className="text-[14px]" />
-              <span className="font-medium">{{ newest: "Newest", oldest: "Oldest", upvotes: "Most Upvoted" }[sortBy]}</span>
+              <span className="font-medium">{{ newest: "Newest", oldest: "Oldest", likes: "Most Liked" }[sortBy]}</span>
               <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${showSort ? "rotate-180" : ""}`}>
                 <polyline points="6 9 12 15 18 9" />
               </svg>
@@ -112,8 +112,8 @@ export default function RequestToolbar({
                   transform: sortAnimate ? "scale(1) translateY(0)" : "scale(0.95) translateY(-4px)",
                 }}
               >
-                {(["newest", "oldest", "upvotes"] as SortBy[]).map((value) => {
-                  const label = { newest: "Newest", oldest: "Oldest", upvotes: "Most Upvoted" }[value];
+                {(["newest", "oldest", "likes"] as SortBy[]).map((value) => {
+                  const label = { newest: "Newest", oldest: "Oldest", likes: "Most Liked" }[value];
                   return (
                     <button
                       key={value}

@@ -4,7 +4,7 @@ export interface Comment {
   userName: string;
   text: string;
   createdAt: string;
-  upvoters: string[];
+  likers: string[];
   parentId?: string;
 }
 
@@ -19,8 +19,8 @@ export interface Request {
   location?: string;
   imageUrls: string[];
   createdAt: string;
-  upvotes: number;
-  upvoters: string[];
+  likes: number;
+  likers: string[];
   savedBy: string[];
   reporterId: string;
   comments: Comment[];

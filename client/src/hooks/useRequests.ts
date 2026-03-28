@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Request, NewRequest } from "../types/request";
-import { fetchRequests, createRequest, upvoteRequest, deleteRequest, addComment as addCommentApi, upvoteComment as upvoteCommentApi, saveRequest as saveRequestApi } from "../services/api";
+import { fetchRequests, createRequest, likeRequest, deleteRequest, addComment as addCommentApi, likeComment as likeCommentApi, saveRequest as saveRequestApi } from "../services/api";
 
 export function useRequests() {
   const [requests, setRequests] = useState<Request[]>([]);
@@ -18,9 +18,9 @@ export function useRequests() {
     setSelectedRequest(c);
   }, []);
 
-  const upvote = useCallback(async (id: string) => {
+  const like = useCallback(async (id: string) => {
     try {
-      const updated = await upvoteRequest(id);
+      const updated = await likeRequest(id);
       setRequests((prev) =>
         prev.map((c) => (c.id === updated.id ? updated : c))
       );
@@ -28,7 +28,7 @@ export function useRequests() {
         prev?.id === updated.id ? updated : prev
       );
     } catch {
-      console.error("Failed to upvote");
+      console.error("Failed to like");
     }
   }, []);
 
@@ -63,9 +63,9 @@ export function useRequests() {
     }
   }, []);
 
-  const upvoteComment = useCallback(async (requestId: string, commentId: string) => {
+  const likeComment = useCallback(async (requestId: string, commentId: string) => {
     try {
-      const updated = await upvoteCommentApi(requestId, commentId);
+      const updated = await likeCommentApi(requestId, commentId);
       setRequests((prev) =>
         prev.map((c) => (c.id === updated.id ? updated : c))
       );
@@ -73,7 +73,7 @@ export function useRequests() {
         prev?.id === updated.id ? updated : prev
       );
     } catch {
-      console.error("Failed to upvote comment");
+      console.error("Failed to like comment");
     }
   }, []);
 
@@ -91,5 +91,5 @@ export function useRequests() {
     }
   }, []);
 
-  return { requests, loading, selectedRequest, selectRequest, upvote, remove, create, addComment, upvoteComment, save };
+  return { requests, loading, selectedRequest, selectRequest, like, remove, create, addComment, likeComment, save };
 }

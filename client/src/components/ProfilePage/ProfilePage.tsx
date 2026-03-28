@@ -21,9 +21,9 @@ export default function ProfilePage({ user, requests, onClose, onSelectRequest }
   const [activeTab, setActiveTab] = useState<"yours" | "saved">("yours");
   const myPosts = requests.filter((r) => r.reporterId === user.userId);
   const savedPosts = requests.filter((r) => (r.savedBy || []).includes(user.userId));
-  const totalUpvotesReceived = myPosts.reduce((sum, r) => sum + (r.upvoters || []).length, 0);
+  const totalLikesReceived = myPosts.reduce((sum, r) => sum + (r.likers || []).length, 0);
   const resolvedCount = myPosts.filter((r) => r.status === "resolved").length;
-  const myUpvotesGiven = requests.filter((r) => (r.upvoters || []).includes(user.userId)).length;
+  const myLikesGiven = requests.filter((r) => (r.likers || []).includes(user.userId)).length;
 
   return (
     <div className="p-6">
@@ -62,9 +62,9 @@ export default function ProfilePage({ user, requests, onClose, onSelectRequest }
             <polyline points="14 2 14 8 20 8" />
           </svg>
         } />
-        <StatCard label="Upvotes Received" value={totalUpvotesReceived} icon={
+        <StatCard label="Likes Received" value={totalLikesReceived} icon={
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="18 15 12 9 6 15" />
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
         } />
         <StatCard label="Issues Resolved" value={resolvedCount} icon={
@@ -72,7 +72,7 @@ export default function ProfilePage({ user, requests, onClose, onSelectRequest }
             <polyline points="20 6 9 17 4 12" />
           </svg>
         } />
-        <StatCard label="Upvotes Given" value={myUpvotesGiven} icon={
+        <StatCard label="Likes Given" value={myLikesGiven} icon={
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
@@ -158,9 +158,9 @@ function PostCard({ request: r, onSelect }: { request: Request; onSelect: (r: Re
         <span>&middot;</span>
         <span className="flex items-center gap-1">
           <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="18 15 12 9 6 15" />
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
-          {(r.upvoters || []).length}
+          {(r.likers || []).length}
         </span>
       </div>
     </button>
