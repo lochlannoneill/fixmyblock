@@ -225,6 +225,7 @@ export default function App() {
             darkMode={darkMode}
             onUserLocation={handleUserLocation}
             currentUserId={user?.userId}
+            usedGeolocation={usedGeolocation}
           />
         </main>
       </div>

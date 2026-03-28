@@ -18,6 +18,7 @@ interface MapViewProps {
   darkMode: boolean;
   onUserLocation?: (lng: number, lat: number) => void;
   currentUserId?: string;
+  usedGeolocation?: boolean;
 }
 
 export default function MapView({
@@ -31,6 +32,7 @@ export default function MapView({
   darkMode,
   onUserLocation,
   currentUserId,
+  usedGeolocation,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -344,34 +346,49 @@ export default function MapView({
     if (!map.current || !mapReady) return;
 
     if (reportMode && dropPinLocation) {
+      const pinColor = usedGeolocation ? "#06b6d4" : "#a855f7";
+
       if (dropPinRef.current) {
         dropPinRef.current.setLngLat([dropPinLocation.lng, dropPinLocation.lat]);
+        const pathEl = dropPinRef.current.getElement().querySelector("path");
+        if (pathEl) pathEl.setAttribute("fill", pinColor);
+        map.current?.flyTo({
+          center: [dropPinLocation.lng, dropPinLocation.lat],
+          zoom: Math.max(map.current?.getZoom() ?? 0, 15),
+        });
       } else {
         const el = document.createElement("div");
         el.className = "drop-pin-marker";
         el.innerHTML = `<svg width="36" height="48" viewBox="0 0 36 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M18 0C8.06 0 0 8.06 0 18c0 12.63 16.37 28.87 17.08 29.54a1.35 1.35 0 001.84 0C19.63 46.87 36 30.63 36 18 36 8.06 27.94 0 18 0z" fill="#3b82f6"/>
+          <path d="M18 0C8.06 0 0 8.06 0 18c0 12.63 16.37 28.87 17.08 29.54a1.35 1.35 0 001.84 0C19.63 46.87 36 30.63 36 18 36 8.06 27.94 0 18 0z" fill="${pinColor}"/>
           <circle cx="18" cy="18" r="8" fill="white"/>
         </svg>`;
 
-        dropPinRef.current = new maplibregl.Marker({
+        const marker = new maplibregl.Marker({
           element: el,
           draggable: true,
           anchor: "bottom",
         })
-          .setLngLat([dropPinLocation.lng, dropPinLocation.lat])
-          .addTo(map.current!);
+          .setLngLat([dropPinLocation.lng, dropPinLocation.lat]);
 
-        dropPinRef.current.on("dragend", () => {
-          const lngLat = dropPinRef.current!.getLngLat();
+        marker.on("dragend", () => {
+          const lngLat = marker.getLngLat();
           onMapClickRef.current(lngLat.lng, lngLat.lat);
+        });
+
+        dropPinRef.current = marker;
+
+        marker.addTo(map.current!);
+        map.current?.flyTo({
+          center: [dropPinLocation.lng, dropPinLocation.lat],
+          zoom: Math.max(map.current?.getZoom() ?? 0, 15),
         });
       }
     } else {
       dropPinRef.current?.remove();
       dropPinRef.current = null;
     }
-  }, [reportMode, dropPinLocation, mapReady]);
+  }, [reportMode, dropPinLocation, mapReady, usedGeolocation]);
 
   const handleLayerChange = useCallback((layer: MapLayer) => {
     if (!map.current) return;
