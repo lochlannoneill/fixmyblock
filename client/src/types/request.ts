@@ -18,6 +18,7 @@ export interface Request {
   createdAt: string;
   upvotes: number;
   upvoters: string[];
+  savedBy: string[];
   reporterId: string;
   comments: Comment[];
 }

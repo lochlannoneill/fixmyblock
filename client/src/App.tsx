@@ -16,7 +16,7 @@ import "./App.css";
 
 export default function App() {
   const { darkMode, toggleTheme } = useTheme();
-  const { requests, loading, selectedRequest, selectRequest, upvote, remove, create, addComment } = useRequests();
+  const { requests, loading, selectedRequest, selectRequest, upvote, remove, create, addComment, save } = useRequests();
   const { user, login, logout } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
@@ -198,6 +198,7 @@ export default function App() {
               onBack={() => { selectRequest(null); setSidebarView("list"); }}
               onUpvote={(id: string) => { if (!user) { setShowAuthModal(true); return; } upvote(id); }}
               onAddComment={(id: string, text: string) => { if (!user) { setShowAuthModal(true); return; } addComment(id, text); }}
+              onSave={(id: string) => { if (!user) { setShowAuthModal(true); return; } save(id); }}
               onDelete={(id: string) => { remove(id); setSidebarView("list"); }}
               currentUserId={user?.userId}
             />

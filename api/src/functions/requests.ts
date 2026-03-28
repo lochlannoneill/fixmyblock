@@ -10,6 +10,7 @@ import {
   getRequestById,
   createRequest as createRequestDoc,
   toggleUpvote,
+  toggleSave,
   addComment as addCommentDoc,
   deleteRequest as deleteRequestDoc,
   RequestDoc,
@@ -117,6 +118,7 @@ async function postRequest(
       createdAt: new Date().toISOString(),
       upvotes: 0,
       upvoters: [],
+      savedBy: [],
       reporterId,
       comments: [],
     };
@@ -212,6 +214,32 @@ async function removeRequest(
   return { status: 204 };
 }
 
+// POST /api/complaints/{id}/save
+async function saveRequest(
+  req: HttpRequest,
+  _ctx: InvocationContext
+): Promise<HttpResponseInit> {
+  const id = req.params.id;
+  if (!id) return { status: 400, jsonBody: { error: "Missing id" } };
+
+  const principal = req.headers.get("x-ms-client-principal");
+  if (!principal) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  let userId: string;
+  try {
+    const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
+    userId = decoded.userId;
+  } catch {
+    return { status: 401, jsonBody: { error: "Invalid auth token" } };
+  }
+  if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
+
+  const updated = await toggleSave(id, userId);
+  if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
+
+  return { status: 200, jsonBody: updated };
+}
+
 // Register routes
 app.http("listRequests", {
   methods: ["GET"],
@@ -253,4 +281,11 @@ app.http("postComment", {
   authLevel: "anonymous",
   route: "complaints/{id}/comments",
   handler: postComment,
+});
+
+app.http("saveRequest", {
+  methods: ["POST"],
+  authLevel: "anonymous",
+  route: "complaints/{id}/save",
+  handler: saveRequest,
 });

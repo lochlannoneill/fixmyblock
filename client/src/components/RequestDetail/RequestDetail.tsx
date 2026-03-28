@@ -9,6 +9,7 @@ interface RequestDetailProps {
   onBack: () => void;
   onUpvote: (id: string) => void;
   onAddComment: (id: string, text: string) => void;
+  onSave: (id: string) => void;
   onDelete: (id: string) => void;
   currentUserId?: string;
 }
@@ -18,16 +19,17 @@ export default function RequestDetail({
   onBack,
   onUpvote,
   onAddComment,
+  onSave,
   onDelete,
   currentUserId,
 }: RequestDetailProps) {
   const [commentText, setCommentText] = useState("");
-  const [saved, setSaved] = useState(false);
   const commentInputRef = useRef<HTMLInputElement>(null);
 
   const comments = request.comments || [];
   const upvoteCount = (request.upvoters || []).length;
   const hasUpvoted = currentUserId && (request.upvoters || []).includes(currentUserId);
+  const hasSaved = currentUserId && (request.savedBy || []).includes(currentUserId);
 
   const displayLocation = request.location || `${request.latitude.toFixed(4)}, ${request.longitude.toFixed(4)}`;
   const statusLabel = request.status === "in-progress" ? "In Progress" : request.status.charAt(0).toUpperCase() + request.status.slice(1);
@@ -133,14 +135,14 @@ export default function RequestDetail({
             <div className="flex items-center gap-2">
             <button
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
-                saved
+                hasSaved
                   ? "text-blue-500 font-semibold bg-blue-50 dark:bg-blue-500/10"
                   : "text-slate-500 dark:text-[#8c8c96] bg-slate-100 dark:bg-[#2a2a2a] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10"
               }`}
-              onClick={() => setSaved(!saved)}
-              title={saved ? "Unsave" : "Save"}
+              onClick={() => onSave(request.id)}
+              title={hasSaved ? "Unsave" : "Save"}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill={hasSaved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
               Save
             </button>
             <button

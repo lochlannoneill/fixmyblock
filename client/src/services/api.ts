@@ -64,3 +64,12 @@ export async function addComment(id: string, text: string): Promise<Request> {
   if (!res.ok) throw new Error("Failed to add comment");
   return res.json();
 }
+
+export async function saveRequest(id: string): Promise<Request> {
+  const res = await fetch(
+    `${API_BASE}/complaints/${encodeURIComponent(id)}/save`,
+    { method: "POST" }
+  );
+  if (!res.ok) throw new Error("Failed to save request");
+  return res.json();
+}

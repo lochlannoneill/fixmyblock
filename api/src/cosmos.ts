@@ -37,6 +37,7 @@ export interface RequestDoc {
   createdAt: string;
   upvotes: number;
   upvoters: string[];
+  savedBy: string[];
   reporterId: string;
   comments: Comment[];
 }
@@ -106,4 +107,23 @@ export async function deleteRequest(id: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export async function toggleSave(id: string, userId: string): Promise<RequestDoc | null> {
+  const existing = await getRequestById(id);
+  if (!existing) return null;
+
+  const savedBy = existing.savedBy || [];
+  const index = savedBy.indexOf(userId);
+  if (index === -1) {
+    savedBy.push(userId);
+  } else {
+    savedBy.splice(index, 1);
+  }
+  existing.savedBy = savedBy;
+
+  const { resource } = await getContainer()
+    .item(id, id)
+    .replace<RequestDoc>(existing);
+  return resource ?? null;
 }
