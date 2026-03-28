@@ -161,16 +161,28 @@ export default function RequestDetail({
           </div>
 
           {/* Images */}
-          {(request.imageUrls || []).length > 0 && (
+          {(request.imageUrls || []).length > 0 ? (
             <div className="mt-3 flex flex-col gap-2">
               {request.imageUrls.map((url, i) => (
-                <img
-                  key={i}
-                  src={url}
-                  alt={`${request.title} ${i + 1}`}
-                  className="w-full rounded-lg object-cover max-h-60"
-                />
+                <div key={i} className="relative rounded-lg overflow-hidden">
+                  <img
+                    src={url}
+                    alt={`${request.title} ${i + 1}`}
+                    className="w-full rounded-lg object-cover max-h-60"
+                  />
+                  {i === request.imageUrls.length - 1 && (
+                    <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1 py-1.5 text-xs text-white bg-black/40 backdrop-blur-sm">
+                      <FontAwesomeIcon icon={faMapMarkerAlt} className="text-[10px]" />
+                      {displayLocation}
+                    </div>
+                  )}
+                </div>
               ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-1 mt-3 text-xs text-slate-400 dark:text-[#6e6e79]">
+              <FontAwesomeIcon icon={faMapMarkerAlt} className="text-[10px]" />
+              {displayLocation}
             </div>
           )}
 
@@ -194,12 +206,6 @@ export default function RequestDetail({
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8c0 4.5-6 12-6 12s-6-7.5-6-12a6 6 0 0 1 12 0z"/><circle cx="12" cy="8" r="2"/></svg>
               Apple Maps
             </a>
-          </div>
-
-          {/* Location */}
-          <div className="flex items-center justify-center gap-1 mt-2 text-xs text-slate-400 dark:text-[#6e6e79]">
-            <FontAwesomeIcon icon={faMapMarkerAlt} className="text-[10px]" />
-            {displayLocation}
           </div>
 
           {/* Title */}
