@@ -28,6 +28,7 @@ export default function App() {
   const [geolocating, setGeolocating] = useState(false);
   const [usedGeolocation, setUsedGeolocation] = useState(false);
   const [selectingOnMap, setSelectingOnMap] = useState(false);
+  const [highAccuracy, setHighAccuracy] = useState(() => localStorage.getItem("highAccuracy") !== "false");
   const [sidebarView, setSidebarView] = useState<"list" | "form" | "profile" | "detail" | "settings" | "feedback">("list");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
   const geoAbortRef = useRef(false);
@@ -108,7 +109,7 @@ export default function App() {
         setGeolocating(false);
         alert("Unable to get your location. Please allow location access or select on the map.");
       },
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: highAccuracy }
     );
   };
 
@@ -186,6 +187,8 @@ export default function App() {
             <SettingsPage
               darkMode={darkMode}
               onToggleTheme={toggleTheme}
+              highAccuracy={highAccuracy}
+              onToggleHighAccuracy={() => { const next = !highAccuracy; setHighAccuracy(next); localStorage.setItem("highAccuracy", String(next)); }}
               onClose={() => setSidebarView("list")}
             />
           ) : sidebarView === "feedback" ? (
@@ -259,6 +262,7 @@ export default function App() {
             onUserLocation={handleUserLocation}
             currentUserId={user?.userId}
             usedGeolocation={usedGeolocation}
+            highAccuracy={highAccuracy}
           />
         </main>
       </div>

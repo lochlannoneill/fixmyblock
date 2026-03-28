@@ -19,6 +19,7 @@ interface MapViewProps {
   onUserLocation?: (lng: number, lat: number) => void;
   currentUserId?: string;
   usedGeolocation?: boolean;
+  highAccuracy?: boolean;
 }
 
 export default function MapView({
@@ -33,6 +34,7 @@ export default function MapView({
   onUserLocation,
   currentUserId,
   usedGeolocation,
+  highAccuracy = true,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -135,7 +137,7 @@ export default function MapView({
     if (!azureMapsKey) (map.current as unknown as { _styleUrl?: string })._styleUrl = defaultStyle;
 
     const geolocate = new maplibregl.GeolocateControl({
-      positionOptions: { enableHighAccuracy: true },
+      positionOptions: { enableHighAccuracy: highAccuracy },
       trackUserLocation: true,
     });
     map.current.addControl(geolocate, "top-right");
