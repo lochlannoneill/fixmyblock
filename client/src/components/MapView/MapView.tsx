@@ -243,8 +243,9 @@ export default function MapView({
         popupRef.current.remove();
       }
 
+      const isMobile = window.innerWidth < 640;
       const thumbs = req.imageUrls.length
-        ? `<div style="margin-top:8px;border-radius:8px;overflow:hidden;height:120px">
+        ? `<div style="margin-top:6px;border-radius:8px;overflow:hidden;height:${isMobile ? '80px' : '120px'}">
             <img src="${req.imageUrls[0]}" style="width:100%;height:100%;object-fit:cover" />
           </div>`
         : "";
@@ -272,7 +273,7 @@ export default function MapView({
       }
 
       const html = `
-        <div class="popup-content" style="min-width:260px;font-family:system-ui,sans-serif">
+        <div class="popup-content" style="font-family:system-ui,sans-serif">
           <div style="display:flex;align-items:center;gap:8px">
             <span style="flex:1;font-weight:600;font-size:14px" class="popup-title">${req.title}</span>
             <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap">${statusLabel}</span>
@@ -282,7 +283,7 @@ export default function MapView({
             <span>${timeSince}</span>
           </div>
           ${thumbs}
-          <p class="popup-desc" style="margin:8px 0 0;line-height:1.5">${req.description.slice(0, 150)}${req.description.length > 150 ? "..." : ""}</p>
+          <p class="popup-desc" style="margin:6px 0 0;line-height:1.4">${req.description.slice(0, isMobile ? 80 : 150)}${req.description.length > (isMobile ? 80 : 150) ? "..." : ""}</p>
           <div style="display:flex;align-items:center;gap:12px;margin-top:8px;font-size:12px">
             <button id="popup-upvote-${req.id}" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;font-size:12px;${upvoteColor}" class="popup-metric-btn">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"/></svg>
@@ -300,7 +301,7 @@ export default function MapView({
         offset: 25,
         closeOnClick: true,
         closeButton: false,
-        maxWidth: "320px",
+        maxWidth: isMobile ? "220px" : "320px",
       })
         .setLngLat([req.longitude, req.latitude])
         .setHTML(html)

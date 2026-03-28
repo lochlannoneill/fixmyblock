@@ -51,6 +51,7 @@
 
 /* Popup content (injected via innerHTML) */
 .popup-content {
+  min-width: 200px;
   max-width: 280px;
   font-family: system-ui, sans-serif;
 }
@@ -70,6 +71,26 @@
   font-size: 13px;
   color: var(--text-secondary);
   margin: 4px 0;
+}
+
+@media (max-width: 639px) {
+  .maplibregl-popup-content {
+    padding: 10px !important;
+  }
+  .popup-content {
+    min-width: 160px;
+    max-width: 200px;
+  }
+  .popup-title {
+    font-size: 13px;
+  }
+  .popup-meta {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+  .popup-desc {
+    font-size: 12px;
+  }
 }
 
 .popup-upvote-btn {
