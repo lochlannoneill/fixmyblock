@@ -210,7 +210,7 @@ export default function RequestForm({
         style={{ display: "none" }}
       />
 
-      <span className="block text-[13px] font-semibold text-slate-600 dark:text-[#b4b4bb] mb-1.5">Images <span className="font-normal text-slate-400 dark:text-zinc-500">(max 5)</span></span>
+      <span className="block text-[13px] font-semibold text-slate-600 dark:text-[#b4b4bb] mb-1.5">Images <span className="font-normal text-slate-400 dark:text-zinc-500">(max 1)</span></span>
       <div className="flex gap-2 flex-wrap mb-4">
         {previews.map((src, i) => (
           <div key={i} className="relative w-18 h-18 rounded-lg overflow-hidden">

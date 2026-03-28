@@ -10,7 +10,7 @@ import "./App.css";
 
 export default function App() {
   const { darkMode, toggleTheme } = useTheme();
-  const { requests, selectedRequest, selectRequest, upvote, remove, create } = useRequests();
+  const { requests, loading, selectedRequest, selectRequest, upvote, remove, create } = useRequests();
 
   const [showForm, setShowForm] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -138,6 +138,7 @@ export default function App() {
             <>
               <RequestToolbar
                 requests={requests}
+                loading={loading}
                 onNewRequest={handleStartRequest}
                 showingForm={showForm}
                 onSelectRequest={handleSelectRequest}
