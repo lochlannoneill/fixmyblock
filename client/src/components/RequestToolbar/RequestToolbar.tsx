@@ -9,6 +9,7 @@ type SortBy = "newest" | "oldest" | "upvotes";
 
 interface RequestToolbarProps {
   requests: Request[];
+  loading?: boolean;
   onNewRequest: () => void;
   showingForm: boolean;
   onSelectRequest: (c: Request) => void;
@@ -18,6 +19,7 @@ interface RequestToolbarProps {
 
 export default function RequestToolbar({
   requests,
+  loading,
   onSelectRequest,
   onDeleteRequest,
   selectedId,
@@ -112,12 +114,17 @@ export default function RequestToolbar({
             </select>
           </div>
         )}
-        <span className="text-[13px] font-semibold text-slate-500 dark:text-[#8c8c96] mt-1.5">
-          {filteredSorted.length} of {requests.length} requests
-        </span>
+        {loading ? (
+          <div className="h-4 w-32 bg-slate-200 dark:bg-zinc-700 rounded-full animate-pulse mt-1.5" />
+        ) : (
+          <span className="text-[13px] font-semibold text-slate-500 dark:text-[#8c8c96] mt-1.5">
+            {filteredSorted.length} of {requests.length} requests
+          </span>
+        )}
       </div>
       <RequestList
         requests={filteredSorted}
+        loading={loading}
         onSelect={onSelectRequest}
         onDelete={onDeleteRequest}
         selectedId={selectedId}
