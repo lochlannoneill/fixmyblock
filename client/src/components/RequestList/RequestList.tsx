@@ -32,8 +32,32 @@ export default function RequestList({
   onSelect,
   selectedId,
 }: RequestListProps) {
+  const PAGE_SIZE = 5;
   const listRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [showBackToTop, setShowBackToTop] = useState(false);
+
+  // Reset visible count when the list changes (new filter/sort)
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [requests]);
+
+  // Infinite scroll via IntersectionObserver on a sentinel element
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, requests.length));
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [requests.length]);
 
   const handleScroll = useCallback(() => {
     const el = listRef.current?.closest(".sidebar");
@@ -82,7 +106,7 @@ export default function RequestList({
           ↑ Back to top
         </button>
       )}
-      {requests.map((c) => {
+      {requests.slice(0, visibleCount).map((c) => {
         const comments = c.comments || [];
         const likeCount = (c.likers || []).length;
         const timeSince = getTimeSince(c.createdAt);
@@ -136,6 +160,11 @@ export default function RequestList({
         </div>
         );
       })}
+      {visibleCount < requests.length && (
+        <div ref={sentinelRef} className="flex justify-center py-4">
+          <div className="w-5 h-5 border-2 border-slate-300 dark:border-zinc-600 border-t-blue-500 rounded-full animate-spin" />
+        </div>
+      )}
     </div>
   );
 }
