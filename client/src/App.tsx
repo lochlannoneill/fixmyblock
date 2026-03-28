@@ -55,7 +55,7 @@ export default function App() {
     if (c) {
       setSidebarView("detail");
       setShowForm(false);
-      setSidebarCollapsed(false);
+      if (window.innerWidth >= 768) setSidebarCollapsed(false);
     } else {
       setSidebarView("list");
     }
@@ -198,7 +198,7 @@ export default function App() {
           ) : sidebarView === "detail" && selectedRequest ? (
             <RequestDetail
               request={selectedRequest}
-              onBack={() => { selectRequest(null); setSidebarView("list"); }}
+              onBack={() => { if (window.innerWidth < 768) { setSidebarCollapsed(true); } else { selectRequest(null); setSidebarView("list"); } }}
               onLike={(id: string) => { if (!user) { setShowAuthModal(true); return; } like(id); }}
               onAddComment={(id: string, text: string, parentId?: string) => { if (!user) { setShowAuthModal(true); return; } addComment(id, text, parentId); }}
               onLikeComment={(requestId: string, commentId: string) => { if (!user) { setShowAuthModal(true); return; } likeComment(requestId, commentId); }}
@@ -263,6 +263,7 @@ export default function App() {
             currentUserId={user?.userId}
             usedGeolocation={usedGeolocation}
             highAccuracy={highAccuracy}
+            onExpandRequest={() => setSidebarCollapsed(false)}
           />
         </main>
       </div>

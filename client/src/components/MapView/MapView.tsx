@@ -20,6 +20,7 @@ interface MapViewProps {
   currentUserId?: string;
   usedGeolocation?: boolean;
   highAccuracy?: boolean;
+  onExpandRequest?: () => void;
 }
 
 export default function MapView({
@@ -35,6 +36,7 @@ export default function MapView({
   currentUserId,
   usedGeolocation,
   highAccuracy = true,
+  onExpandRequest,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -324,6 +326,7 @@ export default function MapView({
               ${commentCount}
             </span>
           </div>
+          ${isMobile ? '<div style="display:flex;justify-content:center;margin-top:8px"><div style="width:32px;height:4px;border-radius:2px;background:var(--text-muted);opacity:0.3"></div></div>' : ''}
         </div>
       `;
 
@@ -341,18 +344,29 @@ export default function MapView({
       popupCloseHandlerRef.current = closeHandler;
       popup.on("close", closeHandler);
 
-      // Attach like handler after DOM insertion
+      // Attach like handler + make entire popup tappable on mobile to expand
       setTimeout(() => {
         const btn = document.getElementById(`popup-like-${req.id}`);
         btn?.addEventListener("click", (e) => {
           e.stopPropagation();
           onLike(req.id);
         });
+        if (isMobile) {
+          const popupContent = popup.getElement()?.querySelector(".popup-content") as HTMLElement | null;
+          if (popupContent) {
+            popupContent.style.cursor = "pointer";
+            popupContent.addEventListener("click", (e) => {
+              // Don't expand if tapping the like button
+              if ((e.target as HTMLElement).closest(`#popup-like-${req.id}`)) return;
+              onExpandRequest?.();
+            });
+          }
+        }
       }, 0);
 
       popupRef.current = popup;
     },
-    [onSelectRequest, onLike, currentUserId]
+    [onSelectRequest, onLike, currentUserId, onExpandRequest]
   );
 
   const selectedIdRef = useRef<string | null>(null);
