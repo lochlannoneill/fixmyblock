@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronUp, faComment, faMapMarkerAlt, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import type { Request } from "../../types/request";
@@ -23,6 +23,7 @@ export default function RequestDetail({
 }: RequestDetailProps) {
   const [commentText, setCommentText] = useState("");
   const [locationName, setLocationName] = useState("");
+  const commentInputRef = useRef<HTMLInputElement>(null);
 
   const comments = request.comments || [];
   const upvoteCount = (request.upvoters || []).length;
@@ -105,21 +106,24 @@ export default function RequestDetail({
           </p>
 
           {/* Metrics bar */}
-          <div className="flex items-center gap-4 mt-4 pt-3 border-t border-slate-100 dark:border-[#3a3a3a] text-xs">
+          <div className="flex items-center gap-2 mt-4 pt-3 text-xs">
             <button
-              className={`flex items-center gap-1.5 transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
                 hasUpvoted
-                  ? "text-blue-500 font-semibold"
-                  : "text-slate-400 dark:text-[#8c8c96] hover:text-blue-500"
+                  ? "text-blue-500 font-semibold bg-blue-50 dark:bg-blue-500/10"
+                  : "text-slate-500 dark:text-[#8c8c96] bg-slate-100 dark:bg-[#2a2a2a] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10"
               }`}
               onClick={() => onUpvote(request.id)}
               title={hasUpvoted ? "Remove upvote" : "Upvote"}
             >
               <FontAwesomeIcon icon={faChevronUp} /> {upvoteCount}
             </button>
-            <span className="flex items-center gap-1.5 text-slate-400 dark:text-[#8c8c96]">
+            <button
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-[#2a2a2a] text-slate-500 dark:text-[#8c8c96] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer"
+              onClick={() => commentInputRef.current?.focus()}
+            >
               <FontAwesomeIcon icon={faComment} /> {comments.length}
-            </span>
+            </button>
           </div>
 
           {/* Comments */}
@@ -127,6 +131,7 @@ export default function RequestDetail({
             {/* Add comment input */}
             <div className="flex gap-2 mb-3 items-center">
               <input
+                ref={commentInputRef}
                 type="text"
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
