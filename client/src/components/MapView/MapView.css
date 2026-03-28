@@ -43,7 +43,7 @@
 
 /* ===== MapLibre popup overrides ===== */
 .maplibregl-popup-content {
-  background: color-mix(in srgb, var(--bg-card) 70%, transparent) !important;
+  background: rgba(255, 255, 255, 0.7) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: var(--text-primary);
@@ -53,7 +53,15 @@
 }
 
 .maplibregl-popup-tip {
-  border-top-color: color-mix(in srgb, var(--bg-card) 70%, transparent) !important;
+  border-top-color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.dark .maplibregl-popup-content {
+  background: rgba(39, 39, 39, 0.7) !important;
+}
+
+.dark .maplibregl-popup-tip {
+  border-top-color: rgba(39, 39, 39, 0.7) !important;
 }
 
 .maplibregl-popup-close-button {
