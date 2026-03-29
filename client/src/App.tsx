@@ -240,7 +240,7 @@ export default function App() {
         <aside className={`sidebar border-t border-slate-200 dark:border-[#2a2a2a] md:border-r md:border-t-0 bg-slate-50 dark:bg-[#1e1e1e] overflow-y-auto z-10 ${
           dragMapHeight !== null && !isSnapping ? "" : "transition-all duration-300"
         } ${
-          dragMapHeight !== null
+          dragMapHeight !== null && window.innerWidth < 768
             ? "w-full flex-1"
             : mobileSlide === "bottom"
               ? "hidden md:block md:w-0 md:min-w-0 md:overflow-hidden"
@@ -307,14 +307,16 @@ export default function App() {
           className={`md:flex-1 md:h-auto md:min-h-0 relative ${
             dragMapHeight !== null && !isSnapping ? "" : "transition-all duration-300"
           } ${
-            mobileSlide === "bottom" ? "flex-1" : "flex-none"
+            mobileSlide === "bottom" ? "flex-1" : "flex-none md:flex-1"
           }`}
           style={
-            dragMapHeight !== null
-              ? { height: dragMapHeight, minHeight: dragMapHeight, flexGrow: 0 }
-              : mobileSlide === "bottom"
-                ? undefined
-                : { height: mobileSlide === "top" ? "15vh" : "40vh", minHeight: mobileSlide === "top" ? "15vh" : "40vh" }
+            window.innerWidth >= 768
+              ? undefined
+              : dragMapHeight !== null
+                ? { height: dragMapHeight, minHeight: dragMapHeight, flexGrow: 0 }
+                : mobileSlide === "bottom"
+                  ? undefined
+                  : { height: mobileSlide === "top" ? "15vh" : "40vh", minHeight: mobileSlide === "top" ? "15vh" : "40vh" }
           }
         >
           {/* Desktop: floating pill toggle */}
