@@ -49,7 +49,7 @@ az account set --subscription "<YOUR_SUBSCRIPTION_ID>"
 ### 2. Create a Resource Group
 
 ```bash
-az group create --name fixmyblock-rg --location eastus
+az group create --name fixmyblock-rg --location northeurope
 ```
 
 ### 3. Create Azure Cosmos DB
@@ -57,20 +57,21 @@ az group create --name fixmyblock-rg --location eastus
 ```bash
 # Create Cosmos DB account (serverless to minimize cost)
 az cosmosdb create \
-  --name fixmyblock-cosmos \
+  --name fixmyblock-db \
   --resource-group fixmyblock-rg \
+  --locations regionName=northeurope \
   --default-consistency-level Session \
   --capabilities EnableServerless
 
 # Create database
 az cosmosdb sql database create \
-  --account-name fixmyblock-cosmos \
+  --account-name fixmyblock-db \
   --resource-group fixmyblock-rg \
   --name fixmyblock
 
 # Create container (partition key = /id)
 az cosmosdb sql container create \
-  --account-name fixmyblock-cosmos \
+  --account-name fixmyblock-db \
   --resource-group fixmyblock-rg \
   --database-name fixmyblock \
   --name complaints \
@@ -78,7 +79,7 @@ az cosmosdb sql container create \
 
 # Get connection string
 az cosmosdb keys list \
-  --name fixmyblock-cosmos \
+  --name fixmyblock-db \
   --resource-group fixmyblock-rg \
   --type connection-strings \
   --query "connectionStrings[0].connectionString" -o tsv
@@ -134,7 +135,7 @@ npm install -g @azure/static-web-apps-cli
 az staticwebapp create \
   --name fixmyblock \
   --resource-group fixmyblock-rg \
-  --location eastus2
+  --location westeurope
 
 # Get deployment token
 az staticwebapp secrets list \
@@ -153,13 +154,7 @@ In Azure Portal, go to your Static Web App > Configuration:
 - `COSMOS_CONTAINER` = `complaints`
 - `STORAGE_CONNECTION_STRING` = (from step 4)
 - `STORAGE_CONTAINER` = `images`
-
-**Environment variables (Frontend):**
-
-Create `client/.env.local`:
-```
-VITE_AZURE_MAPS_KEY=<your Azure Maps key from step 5>
-```
+- `AZURE_MAPS_KEY` = (from step 5)
 
 ## Local Development
 
@@ -172,8 +167,7 @@ cd ../api && npm install
 
 ### 2. Configure local settings
 
-Copy `api/local.settings.json` and fill in your connection strings.
-Copy `client/.env.example` to `client/.env.local` and add your Azure Maps key.
+Copy `api/local.settings.json` and fill in your connection strings (including `AZURE_MAPS_KEY`).
 
 ### 3. Start the API
 

@@ -22,6 +22,7 @@ interface MapViewProps {
   highAccuracy?: boolean;
   onExpandRequest?: () => void;
   flyToTarget?: { lng: number; lat: number } | null;
+  onSignInPrompt?: () => void;
 }
 
 export default function MapView({
@@ -39,6 +40,7 @@ export default function MapView({
   highAccuracy = true,
   onExpandRequest,
   flyToTarget,
+  onSignInPrompt,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -98,9 +100,6 @@ export default function MapView({
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
-    const azureMapsKey = import.meta.env.VITE_AZURE_MAPS_KEY || "";
-
-    // Use Azure Maps tiles if key is available, otherwise use free OSM tiles
     const defaultStyle = darkMode
       ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
       : "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
@@ -108,29 +107,7 @@ export default function MapView({
     map.current = new maplibregl.Map({
       container: mapContainer.current,
       attributionControl: false,
-      style: azureMapsKey
-        ? {
-            version: 8,
-            sources: {
-              "azure-maps": {
-                type: "raster",
-                tiles: [
-                  `https://atlas.microsoft.com/map/tile?api-version=2024-04-01&tilesetId=microsoft.base.road&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}`,
-                ],
-                tileSize: 256,
-              },
-            },
-            layers: [
-              {
-                id: "azure-maps-layer",
-                type: "raster",
-                source: "azure-maps",
-                minzoom: 0,
-                maxzoom: 22,
-              },
-            ],
-          }
-        : defaultStyle,
+      style: defaultStyle,
       center: [-6.2603, 53.3498], // Default: Dublin
       zoom: 13,
       pitch: 45, // 3D tilt
@@ -138,7 +115,7 @@ export default function MapView({
     });
 
     map.current.addControl(new maplibregl.NavigationControl(), "top-right");
-    if (!azureMapsKey) (map.current as unknown as { _styleUrl?: string })._styleUrl = defaultStyle;
+    (map.current as unknown as { _styleUrl?: string })._styleUrl = defaultStyle;
 
     // Invert horizontal drag-rotate so left-right feels natural
     const hm = (map.current as unknown as { handlers: { _handlers: { handlerName: string; handler: { _move: (...args: unknown[]) => unknown } }[] } }).handlers;
@@ -187,10 +164,31 @@ export default function MapView({
     if (!map.current || !mapReady) return;
     if (lastDarkModeApplied.current === darkMode) return;
     lastDarkModeApplied.current = darkMode;
+
+    // Handle Azure Maps dark mode toggle
+    if (activeLayer === "azure") {
+      const tilesetId = darkMode ? "microsoft.base.darkgrey" : "microsoft.base.road";
+      const azureStyle = {
+        version: 8 as const,
+        sources: {
+          "azure-maps": {
+            type: "raster" as const,
+            tiles: [
+              `/api/map/tile?tilesetId=${tilesetId}&z={z}&x={x}&y={y}`,
+            ],
+            tileSize: 256,
+          },
+        },
+        layers: [
+          { id: "azure-maps-layer", type: "raster" as const, source: "azure-maps", minzoom: 0, maxzoom: 22 },
+        ],
+      };
+      map.current.setStyle(azureStyle);
+      return;
+    }
+
+    if (activeLayer !== "default" && activeLayer !== "terrain") return; // Don't override other raster layers
     setMapFading(true);
-    const azureMapsKey = import.meta.env.VITE_AZURE_MAPS_KEY || "";
-    if (azureMapsKey) return; // Azure Maps doesn't support style switching this way
-    if (activeLayer !== "default" && activeLayer !== "terrain") return; // Don't override raster layer selections
     const style = darkMode
       ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
       : activeLayer === "terrain"
@@ -529,6 +527,21 @@ export default function MapView({
           { id: "osm-transport-layer", type: "raster", source: "osm-transport" },
         ],
       },
+      azure: {
+        version: 8,
+        sources: {
+          "azure-maps": {
+            type: "raster",
+            tiles: [
+              `/api/map/tile?tilesetId=${darkMode ? "microsoft.base.darkgrey" : "microsoft.base.road"}&z={z}&x={x}&y={y}`,
+            ],
+            tileSize: 256,
+          },
+        },
+        layers: [
+          { id: "azure-maps-layer", type: "raster", source: "azure-maps", minzoom: 0, maxzoom: 22 },
+        ],
+      },
     };
 
     const newStyle = styles[layer];
@@ -571,7 +584,7 @@ export default function MapView({
           zIndex: 1,
         }}
       />
-      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} />
+      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} isSignedIn={!!currentUserId} onSignInPrompt={onSignInPrompt} />
     </div>
   );
 }

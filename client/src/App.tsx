@@ -390,6 +390,7 @@ export default function App() {
             highAccuracy={highAccuracy}
             onExpandRequest={() => { setSidebarView("detail"); setMobileSlide("top"); }}
             flyToTarget={flyToTarget}
+            onSignInPrompt={() => setShowAuthModal(true)}
           />
         </main>
       </div>
