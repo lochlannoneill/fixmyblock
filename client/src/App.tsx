@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, type TouchEvent as ReactTouchEvent } from "react";
+import { useState, useCallback, useRef, useEffect, type TouchEvent as ReactTouchEvent } from "react";
 import Header from "./components/Header";
 import MapView from "./components/MapView";
 import RequestForm from "./components/RequestForm";
@@ -33,6 +33,15 @@ export default function App() {
   // Mobile slide positions: "bottom" = full map, "middle" = 40vh map, "top" = 15vh map
   const [mobileSlide, setMobileSlide] = useState<"top" | "middle" | "bottom">(() => window.innerWidth < 768 ? "bottom" : "middle");
   const geoAbortRef = useRef(false);
+
+  // On mobile, exiting detail view when sidebar fully collapses
+  useEffect(() => {
+    if (mobileSlide === "bottom" && sidebarView === "detail" && window.innerWidth < 768) {
+      setSidebarView("list");
+      selectRequest(null);
+    }
+  }, [mobileSlide, sidebarView, selectRequest]);
+
   const userLocationRef = useRef<{ lng: number; lat: number } | null>(null);
   const touchStartY = useRef<number | null>(null);
   const isDragging = useRef(false);
