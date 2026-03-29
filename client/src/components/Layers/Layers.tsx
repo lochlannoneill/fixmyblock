@@ -45,7 +45,7 @@ export default function Layers({ activeLayer, onLayerChange, darkMode }: LayersP
   ];
 
   return (
-    <div className="absolute bottom-6 left-4 z-50 flex items-end gap-2">
+    <div className="absolute bottom-14 md:bottom-6 left-4 z-50 flex items-end gap-2">
       <button
         onClick={() => setExpanded(!expanded)}
         className="group relative flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border-2 border-white dark:border-[#3a3a3a] shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"

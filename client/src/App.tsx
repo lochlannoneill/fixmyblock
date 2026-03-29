@@ -218,20 +218,32 @@ export default function App() {
           )}
         </aside>
         <main className={`md:flex-1 md:h-auto md:min-h-0 relative transition-all duration-300 ${
-          sidebarCollapsed ? "flex-1" : "flex-none h-[25vh] min-h-[25vh]"
+          sidebarCollapsed ? "flex-1" : "flex-none h-[40vh] min-h-[40vh]"
         }`}>
+          {/* Desktop: floating pill toggle */}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="absolute z-50 transition-colors flex items-center gap-1.5 px-3 py-2 rounded-full bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-[#3a3a3a] shadow-lg text-xs font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-[#333] cursor-pointer bottom-3 left-1/2 -translate-x-1/2 md:bottom-auto md:left-4 md:translate-x-0 md:top-4"
+            className="hidden md:flex absolute z-50 transition-colors items-center gap-1.5 px-3 py-2 rounded-full bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-[#3a3a3a] shadow-lg text-xs font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-[#333] cursor-pointer left-4 top-4"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
               className={`transition-transform duration-300 ${sidebarCollapsed ? "rotate-0" : "rotate-180"}`}
             >
-              <polyline points="18 15 12 9 6 15" className="md:hidden" />
-              <polyline points="9 18 15 12 9 6" className="hidden md:block" />
+              <polyline points="9 18 15 12 9 6" />
             </svg>
-            {sidebarCollapsed ? "Show Requests" : (<><span className="md:hidden">Show map</span><span className="hidden md:inline">Hide Requests List</span></>)}
+            {sidebarCollapsed ? "Show Requests" : "Hide Requests List"}
           </button>
+          {/* Mobile: full-width slide bar */}
+          <div
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="md:hidden absolute bottom-0 left-0 right-0 z-50 flex items-center justify-center gap-2 py-2.5 bg-white/80 dark:bg-[#1e1e1e]/80 backdrop-blur-sm border-t border-slate-200 dark:border-[#2a2a2a] text-xs font-medium text-slate-500 dark:text-zinc-400 cursor-pointer select-none"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              className={`transition-transform duration-300 ${sidebarCollapsed ? "rotate-0" : "rotate-180"}`}
+            >
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
+            {sidebarCollapsed ? "Slide for requests" : "Slide for map"}
+          </div>
           {showForm && selectingOnMap && !selectedLocation && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-[#121212] text-white py-2.5 px-6 rounded-3xl text-sm font-medium z-50 shadow-lg animate-pulse">
               Click anywhere on the map to place your pin
@@ -240,7 +252,7 @@ export default function App() {
           {!showForm && (
             <button
               onClick={handleStartRequest}
-              className="absolute bottom-6 right-4 z-50 w-16 h-16 md:w-auto md:h-auto md:px-6 md:py-4 flex items-center justify-center md:gap-2 rounded-full border-2 border-dashed border-slate-400 dark:border-zinc-500 bg-white/60 dark:bg-[#2a2a2a]/60 backdrop-blur-sm text-slate-600 dark:text-zinc-300 hover:border-blue-500 hover:text-blue-500 shadow-lg cursor-pointer transition-colors"
+              className="absolute bottom-14 md:bottom-6 right-4 z-50 w-16 h-16 md:w-auto md:h-auto md:px-6 md:py-4 flex items-center justify-center md:gap-2 rounded-full border-2 border-dashed border-slate-400 dark:border-zinc-500 bg-white/60 dark:bg-[#2a2a2a]/60 backdrop-blur-sm text-slate-600 dark:text-zinc-300 hover:border-blue-500 hover:text-blue-500 shadow-lg cursor-pointer transition-colors"
               title="New Request"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

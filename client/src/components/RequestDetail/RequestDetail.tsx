@@ -102,21 +102,14 @@ export default function RequestDetail({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-[#2a2a2a]">
+      {/* Header - desktop only */}
+      <div className="hidden md:flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-[#2a2a2a]">
         <button
           onClick={onBack}
           className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-[#2a2a2a] transition-colors cursor-pointer text-slate-500 dark:text-zinc-400"
         >
           <FontAwesomeIcon icon={faArrowLeft} />
         </button>
-        <span className="flex-1"></span>
-        <span
-          className="text-[11px] font-semibold text-white px-2.5 py-0.5 rounded-full shrink-0"
-          style={{ backgroundColor: STATUS_COLORS[request.status] }}
-        >
-          {statusLabel}
-        </span>
       </div>
 
       {/* Scrollable content */}
@@ -133,6 +126,12 @@ export default function RequestDetail({
               </span>
               <span className="text-xs text-slate-400 dark:text-[#6e6e79]">{getTimeSince(request.createdAt)}</span>
             </div>
+            <span
+              className="text-[11px] font-semibold text-white px-2.5 py-0.5 rounded-full shrink-0"
+              style={{ backgroundColor: STATUS_COLORS[request.status] }}
+            >
+              {statusLabel}
+            </span>
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setShowMenu(v => !v)}
