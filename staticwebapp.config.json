@@ -98,7 +98,7 @@
     },
     {
       "route": "/api/users/me/avatar",
-      "methods": ["POST"],
+      "methods": ["POST", "DELETE"],
       "allowedRoles": ["authenticated"]
     },
     {

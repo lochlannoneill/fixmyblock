@@ -123,7 +123,17 @@ export async function uploadAvatar(file: File): Promise<UserProfile> {
     headers: { "Content-Type": file.type },
     body: file,
   });
-  if (!res.ok) throw new Error("Failed to upload avatar");
+  if (!res.ok) {
+    const body = await res.text();
+    console.error("Avatar upload response:", res.status, body);
+    throw new Error("Failed to upload avatar");
+  }
+  return res.json();
+}
+
+export async function deleteAvatar(): Promise<UserProfile> {
+  const res = await fetch(`${API_BASE}/users/me/avatar`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to remove avatar");
   return res.json();
 }
 

@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import type { AuthUser } from "../../hooks/useAuth";
 import type { Request, UserProfile } from "../../types/request";
 import { CATEGORY_LABELS, STATUS_COLORS } from "../../types/request";
-import { updateProfile, uploadAvatar } from "../../services/api";
+import { updateProfile, uploadAvatar, deleteAvatar } from "../../services/api";
 
 interface ProfilePageProps {
   user: AuthUser;
@@ -27,6 +27,7 @@ export default function ProfilePage({ user, profile, requests, onClose, onSelect
   const [lastName, setLastName] = useState(profile?.lastName || "");
   const [savingName, setSavingName] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const displayName = profile?.firstName ? profile.displayName : user.userDetails;
@@ -54,17 +55,40 @@ export default function ProfilePage({ user, profile, requests, onClose, onSelect
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || uploadingAvatar) return;
+    setAvatarError("");
     setUploadingAvatar(true);
     try {
-      const updated = await uploadAvatar(file);
+      const resized = await resizeImage(file, 512, 0.85);
+      const updated = await uploadAvatar(resized);
       onProfileUpdate(updated);
     } catch {
-      // ignore
+      setAvatarError("Failed to upload image. Please try a smaller file.");
+      setTimeout(() => setAvatarError(""), 4000);
     } finally {
       setUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
+
+  function resizeImage(file: File, maxSize: number, quality: number): Promise<File> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(
+          (blob) => resolve(new File([blob!], file.name, { type: "image/jpeg" })),
+          "image/jpeg",
+          quality,
+        );
+        URL.revokeObjectURL(img.src);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  }
 
   return (
     <div className="p-6">
@@ -84,6 +108,7 @@ export default function ProfilePage({ user, profile, requests, onClose, onSelect
 
       {/* User info card */}
       <div className="flex items-center gap-4 mb-6 p-4 rounded-xl bg-white dark:bg-[#272727] border border-slate-200 dark:border-[#3a3a3a]">
+        <div className="shrink-0 flex flex-col items-center gap-1">
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploadingAvatar}
@@ -113,6 +138,20 @@ export default function ProfilePage({ user, profile, requests, onClose, onSelect
             className="hidden"
           />
         </button>
+        {profile?.profilePictureUrl && !uploadingAvatar && (
+          <button
+            onClick={async () => {
+              try {
+                const updated = await deleteAvatar();
+                onProfileUpdate(updated);
+              } catch { /* ignore */ }
+            }}
+            className="text-[10px] text-red-400 hover:text-red-500 cursor-pointer transition-colors border border-red-300 dark:border-red-800 rounded px-1.5 py-0.5 bg-transparent"
+          >
+            Remove
+          </button>
+        )}
+        </div>
         <div className="min-w-0 flex-1">
           {editingName ? (
             <div className="flex flex-col gap-2">
@@ -174,6 +213,12 @@ export default function ProfilePage({ user, profile, requests, onClose, onSelect
           )}
         </div>
       </div>
+
+      {avatarError && (
+        <div className="mb-4 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-xs text-red-600 dark:text-red-400">
+          {avatarError}
+        </div>
+      )}
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3 mb-6">
