@@ -58,6 +58,7 @@ export default function App() {
       if (window.innerWidth >= 768) setSidebarCollapsed(false);
     } else {
       setSidebarView("list");
+      if (window.innerWidth < 768) setSidebarCollapsed(true);
     }
   }, [selectRequest]);
 
