@@ -45,7 +45,7 @@ export default function Layers({ activeLayer, onLayerChange, darkMode }: LayersP
   ];
 
   return (
-    <div className="absolute bottom-14 md:bottom-6 left-4 z-50 flex items-end gap-2">
+    <div className="absolute bottom-14 md:bottom-6 left-4 z-50 flex flex-col-reverse md:flex-row items-start md:items-end gap-2">
       <button
         onClick={() => setExpanded(!expanded)}
         className="group relative flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border-2 border-white dark:border-[#3a3a3a] shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
@@ -69,11 +69,13 @@ export default function Layers({ activeLayer, onLayerChange, darkMode }: LayersP
         </div>
       </button>
       <div
-        className={`flex overflow-hidden transition-all duration-300 ease-in-out ${
-          expanded ? "max-w-lg opacity-100 scale-100" : "max-w-0 opacity-0 scale-95"
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          expanded
+            ? "max-h-[500px] md:max-h-none md:max-w-lg opacity-100 scale-100"
+            : "max-h-0 md:max-w-0 opacity-0 scale-95"
         }`}
       >
-        <div className="flex gap-2 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-lg border border-slate-200 dark:border-[#3a3a3a] p-2">
+        <div className="flex flex-col-reverse md:flex-row gap-2 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-lg border border-slate-200 dark:border-[#3a3a3a] p-2">
           {LAYERS.map((layer) => (
             <button
               key={layer.id}
