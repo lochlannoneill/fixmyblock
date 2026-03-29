@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, type TouchEvent as ReactTouchEvent } from "react";
 import Header from "./components/Header";
 import MapView from "./components/MapView";
 import RequestForm from "./components/RequestForm";
@@ -30,9 +30,64 @@ export default function App() {
   const [selectingOnMap, setSelectingOnMap] = useState(false);
   const [highAccuracy, setHighAccuracy] = useState(() => localStorage.getItem("highAccuracy") !== "false");
   const [sidebarView, setSidebarView] = useState<"list" | "form" | "profile" | "detail" | "settings" | "feedback">("list");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
+  // Mobile slide positions: "bottom" = full map, "middle" = 40vh map, "top" = 15vh map
+  const [mobileSlide, setMobileSlide] = useState<"top" | "middle" | "bottom">(() => window.innerWidth < 768 ? "bottom" : "middle");
   const geoAbortRef = useRef(false);
   const userLocationRef = useRef<{ lng: number; lat: number } | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const isDragging = useRef(false);
+  const [dragMapHeight, setDragMapHeight] = useState<number | null>(null);
+  const [isSnapping, setIsSnapping] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleSlideBarTouchStart = (e: ReactTouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+    isDragging.current = false;
+  };
+
+  const handleSlideBarTouchMove = (e: ReactTouchEvent) => {
+    if (touchStartY.current === null || !containerRef.current) return;
+    const deltaY = Math.abs(e.touches[0].clientY - touchStartY.current);
+    if (deltaY > 10) isDragging.current = true;
+    if (!isDragging.current) return;
+    e.preventDefault();
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const fingerY = e.touches[0].clientY;
+    const mapH = Math.max(80, Math.min(fingerY - containerRect.top, containerRect.height - 80));
+    setDragMapHeight(mapH);
+  };
+
+  const handleSlideBarTouchEnd = (e: ReactTouchEvent) => {
+    if (touchStartY.current === null) return;
+    const wasDragging = isDragging.current;
+    touchStartY.current = null;
+    isDragging.current = false;
+    if (wasDragging && dragMapHeight !== null && containerRef.current) {
+      const containerH = containerRef.current.getBoundingClientRect().height;
+      const ratio = dragMapHeight / containerH;
+      // Determine snap target
+      let target: "top" | "middle" | "bottom";
+      if (ratio > 0.7) {
+        target = "bottom";
+      } else if (ratio > 0.35) {
+        target = "middle";
+      } else {
+        target = "top";
+      }
+      // Animate to snap point: compute target height in px
+      const targetH = target === "bottom" ? containerH : target === "top" ? containerH * 0.15 : containerH * 0.4;
+      setIsSnapping(true);
+      setDragMapHeight(targetH);
+      setMobileSlide(target);
+      // After transition ends, clear inline height
+      setTimeout(() => {
+        setDragMapHeight(null);
+        setIsSnapping(false);
+      }, 300);
+    } else if (!wasDragging) {
+      // Simple tap — let onClick handle it
+    }
+  };
 
   const handleUserLocation = useCallback((lng: number, lat: number) => {
     userLocationRef.current = { lng, lat };
@@ -44,7 +99,7 @@ export default function App() {
         setSelectedLocation({ lng, lat });
         setSelectingOnMap(false);
         setUsedGeolocation(false);
-        setSidebarCollapsed(false);
+        setMobileSlide("middle");
       }
     },
     [showForm]
@@ -55,10 +110,11 @@ export default function App() {
     if (c) {
       setSidebarView("detail");
       setShowForm(false);
-      if (window.innerWidth >= 768) setSidebarCollapsed(false);
+      if (window.innerWidth >= 768) setMobileSlide("middle");
+      else setMobileSlide("bottom");
     } else {
       setSidebarView("list");
-      if (window.innerWidth < 768) setSidebarCollapsed(true);
+      if (window.innerWidth < 768) setMobileSlide("bottom");
     }
   }, [selectRequest]);
 
@@ -76,7 +132,7 @@ export default function App() {
     }
     setShowForm(true);
     setSidebarView("form");
-    setSidebarCollapsed(false);
+    setMobileSlide("middle");
     selectRequest(null);
     setSelectedLocation(null);
     setSelectingOnMap(false);
@@ -121,7 +177,7 @@ export default function App() {
     setSelectingOnMap(true);
     setSelectedLocation(null);
     if (window.innerWidth < 768) {
-      setSidebarCollapsed(true);
+      setMobileSlide("bottom");
     }
   };
 
@@ -136,19 +192,19 @@ export default function App() {
         onProfileClick={() => {
           setShowForm(false);
           setSidebarView("profile");
-          setSidebarCollapsed(false);
+          setMobileSlide("middle");
           selectRequest(null);
         }}
         onSettingsClick={() => {
           setShowForm(false);
           setSidebarView("settings");
-          setSidebarCollapsed(false);
+          setMobileSlide("middle");
           selectRequest(null);
         }}
         onFeedbackClick={() => {
           setShowForm(false);
           setSidebarView("feedback");
-          setSidebarCollapsed(false);
+          setMobileSlide("middle");
           selectRequest(null);
         }}
       />
@@ -157,11 +213,15 @@ export default function App() {
         onClose={() => setShowAuthModal(false)}
         onLogin={(provider) => { login(provider); setShowAuthModal(false); }}
       />
-      <div className="flex flex-col-reverse md:flex-row flex-1 overflow-hidden">
-        <aside className={`sidebar border-t border-slate-200 dark:border-[#2a2a2a] md:border-r md:border-t-0 bg-slate-50 dark:bg-[#1e1e1e] overflow-y-auto z-10 transition-all duration-300 ${
-          sidebarCollapsed
-            ? "hidden md:block md:w-0 md:min-w-0 md:overflow-hidden"
-            : "w-full flex-1 md:w-96 md:min-w-96 md:flex-none"
+      <div ref={containerRef} className="flex flex-col-reverse md:flex-row flex-1 overflow-hidden">
+        <aside className={`sidebar border-t border-slate-200 dark:border-[#2a2a2a] md:border-r md:border-t-0 bg-slate-50 dark:bg-[#1e1e1e] overflow-y-auto z-10 ${
+          dragMapHeight !== null && !isSnapping ? "" : "transition-all duration-300"
+        } ${
+          dragMapHeight !== null
+            ? "w-full flex-1"
+            : mobileSlide === "bottom"
+              ? "hidden md:block md:w-0 md:min-w-0 md:overflow-hidden"
+              : "w-full flex-1 md:w-96 md:min-w-96 md:flex-none"
         }`}>
           {sidebarView === "form" ? (
             <RequestForm
@@ -199,7 +259,7 @@ export default function App() {
           ) : sidebarView === "detail" && selectedRequest ? (
             <RequestDetail
               request={selectedRequest}
-              onBack={() => { if (window.innerWidth < 768) { setSidebarCollapsed(true); } else { selectRequest(null); setSidebarView("list"); } }}
+              onBack={() => { if (window.innerWidth < 768) { setMobileSlide("bottom"); } else { selectRequest(null); setSidebarView("list"); } }}
               onLike={(id: string) => { if (!user) { setShowAuthModal(true); return; } like(id); }}
               onAddComment={(id: string, text: string, parentId?: string) => { if (!user) { setShowAuthModal(true); return; } addComment(id, text, parentId); }}
               onLikeComment={(requestId: string, commentId: string) => { if (!user) { setShowAuthModal(true); return; } likeComment(requestId, commentId); }}
@@ -218,32 +278,50 @@ export default function App() {
             />
           )}
         </aside>
-        <main className={`md:flex-1 md:h-auto md:min-h-0 relative transition-all duration-300 ${
-          sidebarCollapsed ? "flex-1" : "flex-none h-[40vh] min-h-[40vh]"
-        }`}>
+        <main
+          className={`md:flex-1 md:h-auto md:min-h-0 relative ${
+            dragMapHeight !== null && !isSnapping ? "" : "transition-all duration-300"
+          } ${
+            mobileSlide === "bottom" ? "flex-1" : "flex-none"
+          }`}
+          style={
+            dragMapHeight !== null
+              ? { height: dragMapHeight, minHeight: dragMapHeight, flexGrow: 0 }
+              : mobileSlide === "bottom"
+                ? undefined
+                : { height: mobileSlide === "top" ? "15vh" : "40vh", minHeight: mobileSlide === "top" ? "15vh" : "40vh" }
+          }
+        >
           {/* Desktop: floating pill toggle */}
           <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            onClick={() => setMobileSlide(mobileSlide === "bottom" ? "middle" : "bottom")}
             className="hidden md:flex absolute z-50 transition-colors items-center gap-1.5 px-3 py-2 rounded-full bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-[#3a3a3a] shadow-lg text-xs font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-[#333] cursor-pointer left-4 top-4"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              className={`transition-transform duration-300 ${sidebarCollapsed ? "rotate-0" : "rotate-180"}`}
+              className={`transition-transform duration-300 ${mobileSlide === "bottom" ? "rotate-0" : "rotate-180"}`}
             >
               <polyline points="9 18 15 12 9 6" />
             </svg>
-            {sidebarCollapsed ? "Show Requests" : "Hide Requests List"}
+            {mobileSlide === "bottom" ? "Show Requests" : "Hide Requests List"}
           </button>
           {/* Mobile: full-width slide bar */}
           <div
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="md:hidden absolute bottom-0 left-0 right-0 z-50 flex items-center justify-center gap-2 py-2.5 bg-white/80 dark:bg-[#1e1e1e]/80 backdrop-blur-sm border-t border-slate-200 dark:border-[#2a2a2a] text-xs font-medium text-slate-500 dark:text-zinc-400 cursor-pointer select-none"
+            onClick={() => { if (!isDragging.current) setMobileSlide(mobileSlide === "bottom" ? "top" : "bottom"); }}
+            onTouchStart={handleSlideBarTouchStart}
+            onTouchMove={handleSlideBarTouchMove}
+            onTouchEnd={handleSlideBarTouchEnd}
+            className="md:hidden absolute bottom-0 left-0 right-0 z-50 flex items-center justify-center py-2.5 bg-white/80 dark:bg-[#1e1e1e]/80 backdrop-blur-sm border-t border-slate-200 dark:border-[#2a2a2a] text-xs font-medium text-slate-400 dark:text-zinc-500 cursor-pointer select-none touch-none"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              className={`transition-transform duration-300 ${sidebarCollapsed ? "rotate-0" : "rotate-180"}`}
-            >
-              <polyline points="18 15 12 9 6 15" />
-            </svg>
-            {sidebarCollapsed ? "Slide for requests" : "Slide for map"}
+            <span className="inline-flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                className={`transition-transform duration-300 ${mobileSlide === "bottom" ? "rotate-0" : "rotate-180"}`}
+              >
+                <polyline points="18 18 12 12 6 18" />
+                <polyline points="18 14 12 8 6 14" />
+                <polyline points="18 10 12 4 6 10" />
+              </svg>
+              {mobileSlide === "bottom" ? "Slide for requests" : "Slide for map"}
+            </span>
           </div>
           {showForm && selectingOnMap && !selectedLocation && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-[#121212] text-white py-2.5 px-6 rounded-3xl text-sm font-medium z-50 shadow-lg animate-pulse">
@@ -276,7 +354,7 @@ export default function App() {
             currentUserId={user?.userId}
             usedGeolocation={usedGeolocation}
             highAccuracy={highAccuracy}
-            onExpandRequest={() => setSidebarCollapsed(false)}
+            onExpandRequest={() => setMobileSlide("top")}
           />
         </main>
       </div>
