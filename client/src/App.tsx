@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect, type TouchEvent as ReactTouch
 import Header from "./components/Header";
 import MapView from "./components/MapView";
 import RequestForm from "./components/RequestForm";
-import RequestToolbar from "./components/RequestToolbar";
+import RequestListToolbar from "./components/RequestToolbar";
 import RequestDetail from "./components/RequestDetail";
 import AuthModal from "./components/AuthModal";
 import ProfilePage from "./components/ProfilePage";
@@ -302,7 +302,7 @@ export default function App() {
               currentUserId={user?.userId}
             />
           ) : (
-            <RequestToolbar
+            <RequestListToolbar
               requests={requests}
               loading={loading}
               currentUserId={user?.userId}
