@@ -205,32 +205,6 @@ export default function App() {
 
   return (
     <div className="relative h-dvh overflow-hidden bg-white dark:bg-[#121212] text-slate-800 dark:text-zinc-200">
-      <Header
-        user={user}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onLocationSelect={(lng, lat) => setFlyToTarget({ lng, lat })}
-        onLoginClick={() => setShowAuthModal(true)}
-        onLogout={logout}
-        onProfileClick={() => {
-          setShowForm(false);
-          setSidebarView("profile");
-          setMobileSlide("middle");
-          selectRequest(null);
-        }}
-        onSettingsClick={() => {
-          setShowForm(false);
-          setSidebarView("settings");
-          setMobileSlide("middle");
-          selectRequest(null);
-        }}
-        onFeedbackClick={() => {
-          setShowForm(false);
-          setSidebarView("feedback");
-          setMobileSlide("middle");
-          selectRequest(null);
-        }}
-      />
       <AuthModal
         open={showAuthModal}
         onClose={() => setShowAuthModal(false)}
@@ -320,9 +294,36 @@ export default function App() {
           }
         >
           {/* Desktop: floating pill toggle */}
+          <Header
+            user={user}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onLocationSelect={(lng, lat) => setFlyToTarget({ lng, lat })}
+            onLoginClick={() => setShowAuthModal(true)}
+            onLogout={logout}
+            onProfileClick={() => {
+              setShowForm(false);
+              setSidebarView("profile");
+              setMobileSlide("middle");
+              selectRequest(null);
+            }}
+            onSettingsClick={() => {
+              setShowForm(false);
+              setSidebarView("settings");
+              setMobileSlide("middle");
+              selectRequest(null);
+            }}
+            onFeedbackClick={() => {
+              setShowForm(false);
+              setSidebarView("feedback");
+              setMobileSlide("middle");
+              selectRequest(null);
+            }}
+          />
+          {/* Desktop: floating pill toggle */}
           <button
             onClick={() => setMobileSlide(mobileSlide === "bottom" ? "middle" : "bottom")}
-            className="hidden md:flex absolute z-50 transition-colors items-center gap-1.5 px-3 py-2 rounded-full bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-[#3a3a3a] shadow-lg text-xs font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-[#333] cursor-pointer left-4 top-4"
+            className="hidden md:flex absolute z-50 transition-colors items-center gap-1.5 px-3 py-2 rounded-full bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-[#3a3a3a] shadow-lg text-xs font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-[#333] cursor-pointer left-4 top-1/2 -translate-y-1/2"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
               className={`transition-transform duration-300 ${mobileSlide === "bottom" ? "rotate-0" : "rotate-180"}`}
