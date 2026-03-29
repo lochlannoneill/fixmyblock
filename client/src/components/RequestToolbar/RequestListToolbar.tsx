@@ -20,7 +20,7 @@ function distanceBetween(lat1: number, lng1: number, lat2: number, lng2: number)
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-interface RequestToolbarProps {
+interface RequestListToolbarProps {
   requests: Request[];
   loading?: boolean;
   currentUserId?: string;
@@ -31,14 +31,14 @@ interface RequestToolbarProps {
   selectedId: string | null;
 }
 
-export default function RequestToolbar({
+export default function RequestListToolbar({
   requests,
   loading,
   currentUserId,
   userLocation,
   onSelectRequest,
   selectedId,
-}: RequestToolbarProps) {
+}: RequestListToolbarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<RequestCategory | "">("");
   const [filterStatus, setFilterStatus] = useState<RequestStatus | "">("");

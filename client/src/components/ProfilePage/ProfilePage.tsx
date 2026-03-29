@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
 import type { AuthUser } from "../../hooks/useAuth";
 import type { Request, UserProfile } from "../../types/request";
-import { CATEGORY_LABELS, STATUS_COLORS } from "../../types/request";
 import { updateProfile, uploadAvatar, deleteAvatar } from "../../services/api";
+import { RequestItem } from "../RequestItem";
 
 interface ProfilePageProps {
   user: AuthUser;
@@ -280,9 +280,12 @@ export default function ProfilePage({ user, profile, requests, onClose, onSelect
           You haven't posted any requests yet.
         </p>
       ) : (
-        <div className="flex flex-col gap-2">
-          {myPosts.map((r) => (
-            <PostCard key={r.id} request={r} onSelect={onSelectRequest} />
+        <div className="flex flex-col">
+          {myPosts.map((r, i) => (
+            <div key={r.id}>
+              {i > 0 && <hr className="border-slate-200 dark:border-[#2a2a2a] my-2 mx-auto w-4/5" />}
+              <RequestItem request={r} onSelect={onSelectRequest} currentUserId={user.userId} />
+            </div>
           ))}
         </div>
       )}
@@ -294,46 +297,18 @@ export default function ProfilePage({ user, profile, requests, onClose, onSelect
           You haven't saved any posts yet.
         </p>
       ) : (
-        <div className="flex flex-col gap-2">
-          {savedPosts.map((r) => (
-            <PostCard key={r.id} request={r} onSelect={onSelectRequest} />
+        <div className="flex flex-col">
+          {savedPosts.map((r, i) => (
+            <div key={r.id}>
+              {i > 0 && <hr className="border-slate-200 dark:border-[#2a2a2a] my-2 mx-auto w-4/5" />}
+              <RequestItem request={r} onSelect={onSelectRequest} currentUserId={user.userId} />
+            </div>
           ))}
         </div>
       )}
       </>
       )}
     </div>
-  );
-}
-
-function PostCard({ request: r, onSelect }: { request: Request; onSelect: (r: Request) => void }) {
-  return (
-    <button
-      onClick={() => onSelect(r)}
-      className="text-left p-3 rounded-lg border border-slate-200 dark:border-[#3a3a3a] bg-white dark:bg-[#272727] hover:border-blue-300 dark:hover:border-blue-700 cursor-pointer transition-colors"
-    >
-      <div className="flex items-center gap-2 mb-1">
-        <span className="flex-1 text-sm font-semibold truncate">{r.title}</span>
-        <span
-          className="text-[11px] font-semibold text-white px-2 py-0.5 rounded-full shrink-0"
-          style={{ backgroundColor: STATUS_COLORS[r.status] }}
-        >
-          {r.status === "in-progress" ? "In Progress" : r.status.charAt(0).toUpperCase() + r.status.slice(1)}
-        </span>
-      </div>
-      <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-[#6e6e79]">
-        <span>{CATEGORY_LABELS[r.category]}</span>
-        <span>&middot;</span>
-        <span>{new Date(r.createdAt).toLocaleDateString()}</span>
-        <span>&middot;</span>
-        <span className="flex items-center gap-1">
-          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-          </svg>
-          {(r.likers || []).length}
-        </span>
-      </div>
-    </button>
   );
 }
 

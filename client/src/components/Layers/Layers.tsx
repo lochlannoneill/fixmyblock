@@ -80,7 +80,7 @@ export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedI
             : "max-h-0 md:max-w-0 opacity-0 scale-95"
         }`}
       >
-        <div className="flex flex-col-reverse md:flex-row gap-2 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-lg border border-slate-200 dark:border-[#3a3a3a] p-2">
+        <div className="flex flex-col-reverse md:flex-row gap-2 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-lg border border-slate-200 dark:border-[#3a3a3a] p-2 max-h-[60vh] md:max-h-none overflow-y-auto md:overflow-y-visible">
           {LAYERS.map((layer) => (
             <button
               key={layer.id}

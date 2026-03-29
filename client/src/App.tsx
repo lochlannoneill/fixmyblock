@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect, type TouchEvent as ReactTouch
 import Header from "./components/Header";
 import MapView from "./components/MapView";
 import RequestForm from "./components/RequestForm";
-import RequestToolbar from "./components/RequestToolbar";
+import RequestListToolbar from "./components/RequestToolbar";
 import RequestDetail from "./components/RequestDetail";
 import AuthModal from "./components/AuthModal";
 import ProfilePage from "./components/ProfilePage";
@@ -46,7 +46,7 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
   // Mobile slide positions: "bottom" = full map, "middle" = 40vh map, "top" = 15vh map
-  const [mobileSlide, setMobileSlide] = useState<"top" | "middle" | "bottom">(() => window.innerWidth < 768 ? "bottom" : "middle");
+  const [mobileSlide, setMobileSlide] = useState<"top" | "middle" | "bottom">("middle");
   const geoAbortRef = useRef(false);
 
   // Reset slide state when crossing the mobile/desktop breakpoint
@@ -302,7 +302,7 @@ export default function App() {
               currentUserId={user?.userId}
             />
           ) : (
-            <RequestToolbar
+            <RequestListToolbar
               requests={requests}
               loading={loading}
               currentUserId={user?.userId}
@@ -395,7 +395,7 @@ export default function App() {
           {!showForm && (
             <button
               onClick={handleStartRequest}
-              className="absolute bottom-14 md:bottom-6 right-4 z-50 w-16 h-16 md:w-auto md:h-auto md:px-6 md:py-4 flex items-center justify-center md:gap-2 rounded-full border-2 border-dashed border-slate-400 dark:border-zinc-500 bg-white/60 dark:bg-[#2a2a2a]/60 backdrop-blur-sm text-slate-600 dark:text-zinc-300 hover:border-blue-500 hover:text-blue-500 shadow-lg cursor-pointer transition-colors"
+              className="absolute bottom-14 md:bottom-6 right-4 z-50 w-16 h-16 md:w-auto md:h-auto md:px-6 md:py-4 flex items-center justify-center md:gap-2 rounded-full border-2 border-dashed border-slate-400 dark:border-zinc-500 bg-white/60 dark:bg-[#2a2a2a]/60 backdrop-blur-sm text-slate-600 dark:text-zinc-300 hover:border-blue-500 hover:text-blue-500 shadow-md hover:shadow-lg hover:scale-105 cursor-pointer transition-all duration-150"
               title="New Request"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
