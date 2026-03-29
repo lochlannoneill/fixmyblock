@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import type { AuthUser } from "../../hooks/useAuth";
+import type { UserProfile } from "../../types/request";
 
 interface HeaderProps {
   user: AuthUser | null;
+  profile: UserProfile | null;
   onLocationSelect: (lng: number, lat: number) => void;
   onLoginClick: () => void;
   onLogout: () => void;
@@ -17,7 +19,8 @@ interface GeoSuggestion {
   lon: string;
 }
 
-export default function Header({ user, onLocationSelect, onLoginClick, onLogout, onProfileClick, onSettingsClick, onFeedbackClick }: HeaderProps) {
+export default function Header({ user, profile, onLocationSelect, onLoginClick, onLogout, onProfileClick, onSettingsClick, onFeedbackClick }: HeaderProps) {
+  const headerName = profile?.firstName || user?.userDetails || "";
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -88,7 +91,7 @@ export default function Header({ user, onLocationSelect, onLoginClick, onLogout,
   }, [dropdownOpen]);
 
   return (
-    <header className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 h-14 text-slate-800 dark:text-zinc-200 z-50 pointer-events-none">
+    <header className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 h-14 text-slate-800 dark:text-zinc-200 z-[9999] pointer-events-none">
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.25), transparent)' }} />
       <div className="relative pointer-events-auto">
         <h1 className="m-0 flex items-center cursor-pointer text-white drop-shadow-md rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md p-2" onClick={() => window.location.reload()}>
@@ -176,11 +179,15 @@ export default function Header({ user, onLocationSelect, onLoginClick, onLogout,
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md hover:bg-white/60 dark:hover:bg-black/40 cursor-pointer transition-colors text-slate-700 dark:text-white"
             >
-              <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">
-                {(user.userDetails?.[0] ?? "U").toUpperCase()}
+              <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold overflow-hidden">
+                {profile?.profilePictureUrl ? (
+                  <img src={profile.profilePictureUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  (headerName?.[0] ?? "U").toUpperCase()
+                )}
               </div>
               <span className="hidden sm:inline text-sm font-medium truncate max-w-30">
-                {user.userDetails}
+                {headerName}
               </span>
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}>
                 <polyline points="6 9 12 15 18 9" />
@@ -195,9 +202,10 @@ export default function Header({ user, onLocationSelect, onLoginClick, onLogout,
                 transform: dropdownAnimate ? "scale(1) translateY(0)" : "scale(0.95) translateY(-4px)",
               }}
             >
-              <div className="px-4 py-3 border-b border-slate-100 dark:border-[#3a3a3a]">
-                <p className="text-sm font-medium truncate">{user.userDetails}</p>
-                <p className="text-xs text-slate-400 dark:text-zinc-500 capitalize">{{ aad: "Microsoft", google: "Google", apple: "Apple", facebook: "Facebook" }[user.identityProvider] ?? user.identityProvider}</p>
+              <div className="px-4 py-3 border-b border-slate-100 dark:border-[#3a3a3a] overflow-hidden">
+                <p className="text-sm font-medium truncate">{profile?.firstName ? `${profile.firstName} ${profile.lastName}` : user.userDetails}</p>
+                <p className="text-xs text-slate-400 dark:text-zinc-500 truncate">{profile?.email || user.userDetails}</p>
+                <p className="text-xs text-slate-400 dark:text-zinc-500 capitalize truncate">{{ aad: "Microsoft", google: "Google", apple: "Apple", facebook: "Facebook" }[user.identityProvider] ?? user.identityProvider} account</p>
               </div>
               <button
                 onClick={() => { setDropdownOpen(false); onProfileClick(); }}

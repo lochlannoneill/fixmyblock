@@ -69,7 +69,7 @@ export default function ProfilePage({ user, profile, requests, onClose, onSelect
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="m-0 text-lg font-semibold text-slate-800 dark:text-zinc-200">{displayName}</h2>
+        <h2 className="m-0 text-lg font-semibold text-slate-800 dark:text-zinc-200">My Profile</h2>
         <button
           onClick={onClose}
           className="text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 cursor-pointer transition-colors"
@@ -116,25 +116,23 @@ export default function ProfilePage({ user, profile, requests, onClose, onSelect
         <div className="min-w-0 flex-1">
           {editingName ? (
             <div className="flex flex-col gap-2">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="First name"
-                  maxLength={50}
-                  autoFocus
-                  className="flex-1 min-w-0 px-2 py-1 rounded-md border border-slate-200 dark:border-[#3a3a3a] bg-white dark:bg-[#1e1e1e] text-sm text-slate-800 dark:text-zinc-200 outline-none focus:border-blue-400"
-                />
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Last name"
-                  maxLength={50}
-                  className="flex-1 min-w-0 px-2 py-1 rounded-md border border-slate-200 dark:border-[#3a3a3a] bg-white dark:bg-[#1e1e1e] text-sm text-slate-800 dark:text-zinc-200 outline-none focus:border-blue-400"
-                />
-              </div>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="First name"
+                maxLength={50}
+                autoFocus
+                className="w-full bg-transparent text-sm text-slate-800 dark:text-zinc-200 border-b border-slate-300 dark:border-[#444] outline-none focus:border-blue-400 py-0.5 transition-colors"
+              />
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Last name"
+                maxLength={50}
+                className="w-full bg-transparent text-sm text-slate-800 dark:text-zinc-200 border-b border-slate-300 dark:border-[#444] outline-none focus:border-blue-400 py-0.5 transition-colors"
+              />
               <div className="flex gap-2">
                 <button
                   onClick={handleSaveName}
@@ -166,7 +164,10 @@ export default function ProfilePage({ user, profile, requests, onClose, onSelect
                   </svg>
                 </button>
               </div>
-              <p className="text-sm text-slate-400 dark:text-zinc-500">
+              <p className="text-sm text-slate-400 dark:text-zinc-500 truncate">
+                {profile?.email || user.userDetails}
+              </p>
+              <p className="text-xs text-slate-400 dark:text-zinc-500">
                 {PROVIDER_LABELS[user.identityProvider] ?? user.identityProvider} account
               </p>
             </>

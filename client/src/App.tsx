@@ -333,6 +333,7 @@ export default function App() {
           {/* Desktop: floating pill toggle */}
           <Header
             user={user}
+            profile={profile}
             onLocationSelect={(lng, lat) => setFlyToTarget({ lng, lat })}
             onLoginClick={() => setShowAuthModal(true)}
             onLogout={logout}

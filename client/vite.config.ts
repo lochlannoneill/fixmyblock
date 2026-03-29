@@ -32,6 +32,19 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:7071',
         changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            if (!proxyReq.getHeader('x-ms-client-principal')) {
+              const mockPrincipal = Buffer.from(JSON.stringify({
+                identityProvider: 'aad',
+                userId: 'dev-user-123',
+                userDetails: 'dev@outlook.com',
+                userRoles: ['anonymous', 'authenticated'],
+              })).toString('base64');
+              proxyReq.setHeader('x-ms-client-principal', mockPrincipal);
+            }
+          });
+        },
       },
     },
   },
