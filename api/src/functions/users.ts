@@ -10,10 +10,12 @@ import {
   updateUserSettings,
   updateUserRole,
   getAllUsers,
+  backfillUserName,
   UserDoc,
   UserSettings,
   UserRole,
 } from "../cosmos.js";
+import { uploadImage } from "../storage.js";
 
 function parseAuthPrincipal(req: HttpRequest): { userId: string; userDetails: string; identityProvider: string } | null {
   const principal = req.headers.get("x-ms-client-principal");
@@ -58,12 +60,14 @@ async function upsertMe(
   const doc: UserDoc = existing
     ? {
         ...existing,
-        displayName: auth.userDetails || existing.displayName,
+        displayName: existing.firstName ? `${existing.firstName} ${existing.lastName}` : existing.displayName,
         identityProvider: auth.identityProvider,
         role: existing.role || "user",
       }
     : {
         id: auth.userId,
+        firstName: "",
+        lastName: "",
         displayName: auth.userDetails || "Anonymous",
         email: auth.userDetails || undefined,
         identityProvider: auth.identityProvider,
@@ -103,6 +107,94 @@ async function patchSettings(
   if (!updated) return { status: 404, jsonBody: { error: "User not found" } };
 
   return { status: 200, jsonBody: updated };
+}
+
+// PATCH /api/users/me/profile — update first/last name
+async function patchProfile(
+  req: HttpRequest,
+  _ctx: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = parseAuthPrincipal(req);
+  if (!auth) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  let body: { firstName?: string; lastName?: string };
+  try {
+    body = (await req.json()) as { firstName?: string; lastName?: string };
+  } catch {
+    return { status: 400, jsonBody: { error: "Invalid JSON" } };
+  }
+
+  const firstName = (body.firstName ?? "").trim().slice(0, 50);
+  const lastName = (body.lastName ?? "").trim().slice(0, 50);
+
+  if (!firstName || !lastName) {
+    return { status: 400, jsonBody: { error: "First name and last name are required" } };
+  }
+
+  const existing = await getUserById(auth.userId);
+  if (!existing) return { status: 404, jsonBody: { error: "User not found" } };
+
+  existing.firstName = firstName;
+  existing.lastName = lastName;
+  existing.displayName = `${firstName} ${lastName}`;
+
+  const saved = await upsertUser(existing);
+
+  // Backfill the new display name on all existing posts and comments by this user
+  backfillUserName(auth.userId, saved.displayName).catch(() => {});
+
+  return { status: 200, jsonBody: saved };
+}
+
+const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+// POST /api/users/me/avatar — upload profile picture
+async function uploadAvatar(
+  req: HttpRequest,
+  _ctx: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = parseAuthPrincipal(req);
+  if (!auth) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  const contentType = (req.headers.get("content-type") || "").split(";")[0].trim();
+  if (!contentType.startsWith("image/")) {
+    return { status: 400, jsonBody: { error: `Invalid content type '${contentType}'. Must be an image.` } };
+  }
+
+  const bodyBuffer = Buffer.from(await req.arrayBuffer());
+  if (bodyBuffer.length === 0) {
+    return { status: 400, jsonBody: { error: "No image data provided" } };
+  }
+  if (bodyBuffer.length > MAX_AVATAR_SIZE) {
+    return { status: 400, jsonBody: { error: "Image too large. Max 2MB." } };
+  }
+
+  const existing = await getUserById(auth.userId);
+  if (!existing) return { status: 404, jsonBody: { error: "User not found" } };
+
+  const ext = contentType.split("/")[1] === "jpeg" ? "jpg" : contentType.split("/")[1];
+  const url = await uploadImage(bodyBuffer, contentType, `avatar-${auth.userId}.${ext}`);
+
+  existing.profilePictureUrl = url;
+  const saved = await upsertUser(existing);
+  return { status: 200, jsonBody: saved };
+}
+
+// DELETE /api/users/me/avatar — remove profile picture
+async function deleteAvatar(
+  req: HttpRequest,
+  _ctx: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = parseAuthPrincipal(req);
+  if (!auth) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  const existing = await getUserById(auth.userId);
+  if (!existing) return { status: 404, jsonBody: { error: "User not found" } };
+
+  delete existing.profilePictureUrl;
+  const saved = await upsertUser(existing);
+  return { status: 200, jsonBody: saved };
 }
 
 const VALID_ROLES: UserRole[] = ["admin", "moderator", "developer", "user"];
@@ -184,6 +276,13 @@ app.http("patchSettings", {
   handler: patchSettings,
 });
 
+app.http("patchProfile", {
+  methods: ["PATCH"],
+  authLevel: "anonymous",
+  route: "users/me/profile",
+  handler: patchProfile,
+});
+
 app.http("listUsers", {
   methods: ["GET"],
   authLevel: "anonymous",
@@ -196,4 +295,18 @@ app.http("changeRole", {
   authLevel: "anonymous",
   route: "users/{id}/role",
   handler: changeRole,
+});
+
+app.http("uploadAvatar", {
+  methods: ["POST"],
+  authLevel: "anonymous",
+  route: "users/me/avatar",
+  handler: uploadAvatar,
+});
+
+app.http("deleteAvatar", {
+  methods: ["DELETE"],
+  authLevel: "anonymous",
+  route: "users/me/avatar",
+  handler: deleteAvatar,
 });

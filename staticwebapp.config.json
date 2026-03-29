@@ -92,6 +92,16 @@
       "allowedRoles": ["authenticated"]
     },
     {
+      "route": "/api/users/me/profile",
+      "methods": ["PATCH"],
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/api/users/me/avatar",
+      "methods": ["POST", "DELETE"],
+      "allowedRoles": ["authenticated"]
+    },
+    {
       "route": "/api/users",
       "methods": ["GET"],
       "allowedRoles": ["authenticated"]

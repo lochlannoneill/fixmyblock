@@ -76,6 +76,8 @@ export type UserRole = "admin" | "moderator" | "developer" | "user";
 
 export interface UserProfile {
   id: string;
+  firstName: string;
+  lastName: string;
   displayName: string;
   email?: string;
   identityProvider: string;

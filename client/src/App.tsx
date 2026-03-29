@@ -6,6 +6,7 @@ import RequestToolbar from "./components/RequestToolbar";
 import RequestDetail from "./components/RequestDetail";
 import AuthModal from "./components/AuthModal";
 import ProfilePage from "./components/ProfilePage";
+import { WelcomeModal } from "./components/WelcomeModal";
 import { SettingsPage } from "./components/SettingsPage";
 import { FeedbackPage } from "./components/FeedbackPage";
 import { useTheme } from "./hooks/useTheme";
@@ -233,6 +234,9 @@ export default function App() {
         onClose={() => setShowAuthModal(false)}
         onLogin={(provider) => { login(provider); setShowAuthModal(false); }}
       />
+      {user && profile && !profile.firstName && (
+        <WelcomeModal onComplete={(p) => setProfile(p)} />
+      )}
       <div ref={containerRef} className="flex flex-col-reverse md:flex-row h-full overflow-hidden">
         <aside className={`sidebar border-t border-slate-200 dark:border-[#2a2a2a] md:border-r md:border-t-0 bg-slate-50 dark:bg-[#1e1e1e] overflow-y-auto z-10 ${
           dragMapHeight !== null && !isSnapping ? "" : "transition-all duration-300"
@@ -257,12 +261,14 @@ export default function App() {
           ) : sidebarView === "profile" && user ? (
             <ProfilePage
               user={user}
+              profile={profile}
               requests={requests}
               onClose={() => setSidebarView("list")}
               onSelectRequest={(r) => {
                 setSidebarView("list");
                 handleSelectRequest(r);
               }}
+              onProfileUpdate={setProfile}
             />
           ) : sidebarView === "settings" ? (
             <SettingsPage
@@ -327,6 +333,7 @@ export default function App() {
           {/* Desktop: floating pill toggle */}
           <Header
             user={user}
+            profile={profile}
             onLocationSelect={(lng, lat) => setFlyToTarget({ lng, lat })}
             onLoginClick={() => setShowAuthModal(true)}
             onLogout={logout}

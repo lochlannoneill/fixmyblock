@@ -107,6 +107,36 @@ export async function patchSettings(settings: Partial<UserSettings>): Promise<Us
   return res.json();
 }
 
+export async function updateProfile(data: { firstName: string; lastName: string }): Promise<UserProfile> {
+  const res = await fetch(`${API_BASE}/users/me/profile`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update profile");
+  return res.json();
+}
+
+export async function uploadAvatar(file: File): Promise<UserProfile> {
+  const res = await fetch(`${API_BASE}/users/me/avatar`, {
+    method: "POST",
+    headers: { "Content-Type": file.type },
+    body: file,
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    console.error("Avatar upload response:", res.status, body);
+    throw new Error("Failed to upload avatar");
+  }
+  return res.json();
+}
+
+export async function deleteAvatar(): Promise<UserProfile> {
+  const res = await fetch(`${API_BASE}/users/me/avatar`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to remove avatar");
+  return res.json();
+}
+
 // ── Admin API ──
 
 export async function fetchAllUsers(): Promise<UserProfile[]> {
