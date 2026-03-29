@@ -103,9 +103,9 @@ export default function RequestList({
       {showBackToTop && (
         <button
           onClick={scrollToTop}
-          className="sticky top-0 z-20 w-full mb-2 py-1.5 text-xs font-medium text-slate-500 dark:text-zinc-400 bg-slate-100/90 dark:bg-[#1e1e1e]/90 backdrop-blur-sm hover:text-blue-500 cursor-pointer transition-colors"
+          className="sticky top-2 z-20 block mx-auto mb-2 px-3 py-1.5 text-xs font-medium text-slate-500 dark:text-zinc-400 bg-slate-100/90 dark:bg-[#1e1e1e]/90 backdrop-blur-sm rounded-full hover:text-blue-500 cursor-pointer transition-colors"
         >
-          ↑ Back to top
+          Back to top
         </button>
       )}
       {requests.slice(0, visibleCount).map((c) => {
