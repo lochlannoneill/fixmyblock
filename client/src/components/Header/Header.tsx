@@ -94,7 +94,7 @@ export default function Header({ user, profile, onLocationSelect, onLoginClick, 
     <header className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 h-14 text-slate-800 dark:text-zinc-200 z-[9999] pointer-events-none">
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.25), transparent)' }} />
       <div className="relative pointer-events-auto">
-        <h1 className="m-0 flex items-center cursor-pointer text-white drop-shadow-md rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md p-2" onClick={() => window.location.reload()}>
+        <h1 className="m-0 flex items-center cursor-pointer rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md shadow-sm p-2" onClick={() => window.location.reload()}>
           <span className="inline-flex items-center">
             <svg width="28" height="28" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M32 4L2 30h10v28h40V30h10L32 4z" fill="#3b82f6" stroke="currentColor" strokeWidth="2"/>
@@ -107,7 +107,7 @@ export default function Header({ user, profile, onLocationSelect, onLoginClick, 
       </div>
       <div className="relative flex items-center gap-2 pointer-events-auto">
         {/* Search: always expanded on desktop, expandable on mobile */}
-        <div ref={searchContainerRef} className={`relative flex items-center rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md transition-all duration-300 overflow-visible ${
+        <div ref={searchContainerRef} className={`relative flex items-center rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md shadow-sm transition-all duration-300 overflow-visible ${
           searchExpanded ? "w-48 sm:w-56" : "w-10 md:w-56"
         } h-10`}>
           <button
@@ -177,7 +177,7 @@ export default function Header({ user, profile, onLocationSelect, onLoginClick, 
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md hover:bg-white/60 dark:hover:bg-black/40 cursor-pointer transition-colors text-slate-700 dark:text-white"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md shadow-sm hover:bg-white/60 dark:hover:bg-black/40 cursor-pointer transition-colors text-slate-700 dark:text-white"
             >
               <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold overflow-hidden">
                 {profile?.profilePictureUrl ? (
@@ -254,7 +254,7 @@ export default function Header({ user, profile, onLocationSelect, onLoginClick, 
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md hover:bg-white/60 dark:hover:bg-black/40 cursor-pointer transition-colors text-slate-700 dark:text-white"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md shadow-sm hover:bg-white/60 dark:hover:bg-black/40 cursor-pointer transition-colors text-slate-700 dark:text-white"
               aria-label="Menu"
             >
               <div className="w-7 h-7 rounded-full bg-white/60 dark:bg-white/10 flex items-center justify-center">

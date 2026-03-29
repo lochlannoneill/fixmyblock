@@ -333,44 +333,44 @@ export default function RequestDetail({
                   const replies = getReplies(comment.id);
                   return (
                   <div key={comment.id}>
-                  <div className="flex gap-2.5 p-2.5 text-xs">
+                  <div className="relative flex gap-2.5 py-2.5 text-xs">
                     <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-[#3a3a3a] text-slate-500 dark:text-zinc-400 flex items-center justify-center text-[10px] font-semibold shrink-0 mt-0.5">
                       {((comment.userName || "U")[0] ?? "U").toUpperCase()}
                     </div>
+                    <div className="absolute right-1 top-1">
+                      <CommentMenu
+                        commentId={comment.id}
+                        isAuthor={currentUserId === comment.userId}
+                        openMenuId={commentMenuId}
+                        onToggle={(id) => setCommentMenuId(commentMenuId === id ? null : id)}
+                        onDelete={() => { /* TODO: delete comment */ }}
+                        onEdit={() => { /* TODO: edit comment */ }}
+                        onReport={() => { /* TODO: report comment */ }}
+                      />
+                    </div>
+                    <div className="absolute right-2 bottom-2">
+                      <button
+                        className={`flex items-center gap-1 transition-colors cursor-pointer text-[11px] ${
+                          hasLikedComment
+                            ? "text-red-500 font-semibold"
+                            : "text-slate-400 dark:text-zinc-500 hover:text-red-500"
+                        }`}
+                        onClick={() => onLikeComment(request.id, comment.id)}
+                      >
+                        <FontAwesomeIcon icon={hasLikedComment ? faHeartSolid : faHeartRegular} className="text-[9px]" />
+                        <span>{commentLikes}</span>
+                      </button>
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{comment.userName || "Anonymous"}</span>
-                        <CommentMenu
-                          commentId={comment.id}
-                          isAuthor={currentUserId === comment.userId}
-                          openMenuId={commentMenuId}
-                          onToggle={(id) => setCommentMenuId(commentMenuId === id ? null : id)}
-                          onDelete={() => { /* TODO: delete comment */ }}
-                          onEdit={() => { /* TODO: edit comment */ }}
-                          onReport={() => { /* TODO: report comment */ }}
-                        />
-                      </div>
+                      <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{comment.userName || "Anonymous"}</span>
                       <p className="text-slate-600 dark:text-zinc-400 mt-0.5">{comment.text}</p>
-                      <div className="flex items-center justify-between mt-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-slate-400 dark:text-zinc-500">{getTimeSince(comment.createdAt)}</span>
-                          <button
-                            className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 hover:text-blue-500 cursor-pointer transition-colors"
-                            onClick={() => { setReplyingTo(replyingTo === comment.id ? null : comment.id); setReplyText(`@${comment.userName || "Anonymous"} `); }}
-                          >
-                            Reply
-                          </button>
-                        </div>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <span className="text-[10px] text-slate-400 dark:text-zinc-500">{getTimeSince(comment.createdAt)}</span>
                         <button
-                          className={`flex items-center gap-1 transition-colors cursor-pointer text-[11px] ${
-                            hasLikedComment
-                              ? "text-red-500 font-semibold"
-                              : "text-slate-400 dark:text-zinc-500 hover:text-red-500"
-                          }`}
-                          onClick={() => onLikeComment(request.id, comment.id)}
+                          className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 hover:text-blue-500 cursor-pointer transition-colors"
+                          onClick={() => { setReplyingTo(replyingTo === comment.id ? null : comment.id); setReplyText(`@${comment.userName || "Anonymous"} `); }}
                         >
-                          <FontAwesomeIcon icon={hasLikedComment ? faHeartSolid : faHeartRegular} className="text-[9px]" />
-                          <span>{commentLikes}</span>
+                          Reply
                         </button>
                       </div>
                     </div>
@@ -383,44 +383,44 @@ export default function RequestDetail({
                         const replyLikes = (reply.likers || []).length;
                         const hasLikedReply = currentUserId && (reply.likers || []).includes(currentUserId);
                         return (
-                        <div key={reply.id} className="flex gap-2.5 p-2.5 text-xs">
+                        <div key={reply.id} className="relative flex gap-2.5 py-2.5 text-xs">
                           <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-[#3a3a3a] text-slate-500 dark:text-zinc-400 flex items-center justify-center text-[9px] font-semibold shrink-0 mt-0.5">
                             {((reply.userName || "U")[0] ?? "U").toUpperCase()}
                           </div>
+                          <div className="absolute right-1 top-1">
+                            <CommentMenu
+                              commentId={reply.id}
+                              isAuthor={currentUserId === reply.userId}
+                              openMenuId={commentMenuId}
+                              onToggle={(id) => setCommentMenuId(commentMenuId === id ? null : id)}
+                              onDelete={() => { /* TODO: delete reply */ }}
+                              onEdit={() => { /* TODO: edit reply */ }}
+                              onReport={() => { /* TODO: report reply */ }}
+                            />
+                          </div>
+                          <div className="absolute right-2 bottom-2">
+                            <button
+                              className={`flex items-center gap-1 transition-colors cursor-pointer text-[11px] ${
+                                hasLikedReply
+                                  ? "text-red-500 font-semibold"
+                                  : "text-slate-400 dark:text-zinc-500 hover:text-red-500"
+                              }`}
+                              onClick={() => onLikeComment(request.id, reply.id)}
+                            >
+                              <FontAwesomeIcon icon={hasLikedReply ? faHeartSolid : faHeartRegular} className="text-[9px]" />
+                              <span>{replyLikes}</span>
+                            </button>
+                          </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{reply.userName || "Anonymous"}</span>
-                              <CommentMenu
-                                commentId={reply.id}
-                                isAuthor={currentUserId === reply.userId}
-                                openMenuId={commentMenuId}
-                                onToggle={(id) => setCommentMenuId(commentMenuId === id ? null : id)}
-                                onDelete={() => { /* TODO: delete reply */ }}
-                                onEdit={() => { /* TODO: edit reply */ }}
-                                onReport={() => { /* TODO: report reply */ }}
-                              />
-                            </div>
+                            <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{reply.userName || "Anonymous"}</span>
                             <p className="text-slate-600 dark:text-zinc-400 mt-0.5">{formatCommentText(reply.text)}</p>
-                            <div className="flex items-center justify-between mt-1.5">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-slate-400 dark:text-zinc-500">{getTimeSince(reply.createdAt)}</span>
-                                <button
-                                  className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 hover:text-blue-500 cursor-pointer transition-colors"
-                                  onClick={() => { setReplyingTo(replyingTo === comment.id ? null : comment.id); setReplyText(`@${reply.userName || "Anonymous"} `); }}
-                                >
-                                  Reply
-                                </button>
-                              </div>
+                            <div className="flex items-center gap-2 mt-1.5">
+                              <span className="text-[10px] text-slate-400 dark:text-zinc-500">{getTimeSince(reply.createdAt)}</span>
                               <button
-                                className={`flex items-center gap-1 transition-colors cursor-pointer text-[11px] ${
-                                  hasLikedReply
-                                    ? "text-red-500 font-semibold"
-                                    : "text-slate-400 dark:text-zinc-500 hover:text-red-500"
-                                }`}
-                                onClick={() => onLikeComment(request.id, reply.id)}
+                                className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 hover:text-blue-500 cursor-pointer transition-colors"
+                                onClick={() => { setReplyingTo(replyingTo === comment.id ? null : comment.id); setReplyText(`@${reply.userName || "Anonymous"} `); }}
                               >
-                                <FontAwesomeIcon icon={hasLikedReply ? faHeartSolid : faHeartRegular} className="text-[9px]" />
-                                <span>{replyLikes}</span>
+                                Reply
                               </button>
                             </div>
                           </div>
