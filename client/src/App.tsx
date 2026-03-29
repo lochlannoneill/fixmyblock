@@ -108,10 +108,13 @@ export default function App() {
   const handleSelectRequest = useCallback((c: Request | null) => {
     selectRequest(c);
     if (c) {
-      setSidebarView("detail");
       setShowForm(false);
-      if (window.innerWidth >= 768) setMobileSlide("middle");
-      else setMobileSlide("bottom");
+      if (window.innerWidth >= 768) {
+        setSidebarView("detail");
+        setMobileSlide("middle");
+      } else {
+        setMobileSlide("bottom");
+      }
     } else {
       setSidebarView("list");
       if (window.innerWidth < 768) setMobileSlide("bottom");
@@ -354,7 +357,7 @@ export default function App() {
             currentUserId={user?.userId}
             usedGeolocation={usedGeolocation}
             highAccuracy={highAccuracy}
-            onExpandRequest={() => setMobileSlide("top")}
+            onExpandRequest={() => { setSidebarView("detail"); setMobileSlide("top"); }}
           />
         </main>
       </div>
