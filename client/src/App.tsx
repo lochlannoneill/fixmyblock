@@ -278,7 +278,6 @@ export default function App() {
             <RequestToolbar
               requests={requests}
               loading={loading}
-              searchQuery={searchQuery}
               currentUserId={user?.userId}
               onNewRequest={handleStartRequest}
               showingForm={showForm}
@@ -340,7 +339,7 @@ export default function App() {
             >
               <polyline points="9 18 15 12 9 6" />
             </svg>
-            {mobileSlide === "bottom" ? "Show Requests" : "Hide Requests List"}
+            {mobileSlide === "bottom" ? "Show Requests" : "Hide Requests"}
           </button>
           {/* Mobile: full-width slide bar */}
           <div

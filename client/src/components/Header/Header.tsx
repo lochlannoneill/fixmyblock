@@ -130,7 +130,7 @@ export default function Header({ user, searchQuery, onSearchChange, onLocationSe
             onChange={(e) => { onSearchChange(e.target.value); setShowSuggestions(true); }}
             onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
             onBlur={() => { if (!searchQuery) setSearchExpanded(false); }}
-            placeholder="Search issues or places..."
+            placeholder="Search locations..."
             className={`bg-transparent border-none outline-none text-sm text-slate-700 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 pr-3 w-full ${
               searchExpanded ? "opacity-100" : "opacity-0 md:opacity-100"
             } transition-opacity duration-200`}
