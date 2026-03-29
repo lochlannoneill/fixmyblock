@@ -21,6 +21,7 @@ interface MapViewProps {
   usedGeolocation?: boolean;
   highAccuracy?: boolean;
   onExpandRequest?: () => void;
+  flyToTarget?: { lng: number; lat: number } | null;
 }
 
 export default function MapView({
@@ -37,6 +38,7 @@ export default function MapView({
   usedGeolocation,
   highAccuracy = true,
   onExpandRequest,
+  flyToTarget,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -391,6 +393,17 @@ export default function MapView({
       }
     }
   }, [selectedRequest, showPopup]);
+
+  // Fly to target location from search
+  useEffect(() => {
+    if (flyToTarget && map.current) {
+      map.current.flyTo({
+        center: [flyToTarget.lng, flyToTarget.lat],
+        zoom: 15,
+        pitch: 45,
+      });
+    }
+  }, [flyToTarget]);
 
   // Toggle crosshair cursor in report mode
   useEffect(() => {

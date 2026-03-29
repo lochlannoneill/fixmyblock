@@ -3,6 +3,9 @@ import type { AuthUser } from "../../hooks/useAuth";
 
 interface HeaderProps {
   user: AuthUser | null;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  onLocationSelect: (lng: number, lat: number) => void;
   onLoginClick: () => void;
   onLogout: () => void;
   onProfileClick: () => void;
@@ -10,8 +13,55 @@ interface HeaderProps {
   onFeedbackClick: () => void;
 }
 
-export default function Header({ user, onLoginClick, onLogout, onProfileClick, onSettingsClick, onFeedbackClick }: HeaderProps) {
+interface GeoSuggestion {
+  display_name: string;
+  lat: string;
+  lon: string;
+}
+
+export default function Header({ user, searchQuery, onSearchChange, onLocationSelect, onLoginClick, onLogout, onProfileClick, onSettingsClick, onFeedbackClick }: HeaderProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchExpanded, setSearchExpanded] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [suggestions, setSuggestions] = useState<GeoSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Fetch geocoding suggestions with debounce
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!searchQuery || searchQuery.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5&addressdetails=1`,
+          { headers: { "Accept-Language": "en" } }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setSuggestions(data);
+          setShowSuggestions(data.length > 0);
+        }
+      } catch { /* ignore network errors */ }
+    }, 400);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [searchQuery]);
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    if (!showSuggestions) return;
+    const handler = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showSuggestions]);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [dropdownAnimate, setDropdownAnimate] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -53,7 +103,74 @@ export default function Header({ user, onLoginClick, onLogout, onProfileClick, o
           </span>
         </h1>
       </div>
-      <div className="relative flex items-center gap-3 pointer-events-auto">
+      <div className="relative flex items-center gap-2 pointer-events-auto">
+        {/* Search: always expanded on desktop, expandable on mobile */}
+        <div ref={searchContainerRef} className={`relative flex items-center rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md transition-all duration-300 overflow-visible ${
+          searchExpanded ? "w-48 sm:w-56" : "w-10 md:w-56"
+        } h-10`}>
+          <button
+            onClick={() => {
+              if (!searchExpanded) {
+                setSearchExpanded(true);
+                setTimeout(() => searchInputRef.current?.focus(), 100);
+              }
+            }}
+            className="flex-shrink-0 w-10 h-10 flex items-center justify-center cursor-pointer md:pointer-events-none"
+            aria-label="Search"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600 dark:text-white">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </button>
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={searchQuery}
+            onChange={(e) => { onSearchChange(e.target.value); setShowSuggestions(true); }}
+            onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
+            onBlur={() => { if (!searchQuery) setSearchExpanded(false); }}
+            placeholder="Search issues or places..."
+            className={`bg-transparent border-none outline-none text-sm text-slate-700 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 pr-3 w-full ${
+              searchExpanded ? "opacity-100" : "opacity-0 md:opacity-100"
+            } transition-opacity duration-200`}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => { onSearchChange(""); searchInputRef.current?.focus(); }}
+              className="flex-shrink-0 w-8 h-8 flex items-center justify-center cursor-pointer mr-1"
+              aria-label="Clear search"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 dark:text-zinc-500">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+          {/* Location suggestions dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#272727] border border-slate-200 dark:border-[#3a3a3a] rounded-xl shadow-lg overflow-hidden z-50">
+              {suggestions.map((s, i) => (
+                <button
+                  key={`${s.lat}-${s.lon}-${i}`}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    onLocationSelect(parseFloat(s.lon), parseFloat(s.lat));
+                    onSearchChange(s.display_name.split(",")[0]);
+                    setShowSuggestions(false);
+                    searchInputRef.current?.blur();
+                  }}
+                  className="w-full text-left px-3 py-2.5 text-sm text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333] cursor-pointer transition-colors flex items-start gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 384 512" fill="currentColor" className="text-slate-400 dark:text-zinc-500 mt-0.5 shrink-0">
+                    <path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
+                  </svg>
+                  <span className="line-clamp-2 leading-snug">{s.display_name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         {user ? (
           <div className="relative" ref={dropdownRef}>
             <button

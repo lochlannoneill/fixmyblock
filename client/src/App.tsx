@@ -20,6 +20,8 @@ export default function App() {
   const { user, login, logout } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [flyToTarget, setFlyToTarget] = useState<{ lng: number; lat: number } | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{
     lng: number;
@@ -205,6 +207,9 @@ export default function App() {
     <div className="relative h-dvh overflow-hidden bg-white dark:bg-[#121212] text-slate-800 dark:text-zinc-200">
       <Header
         user={user}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onLocationSelect={(lng, lat) => setFlyToTarget({ lng, lat })}
         onLoginClick={() => setShowAuthModal(true)}
         onLogout={logout}
         onProfileClick={() => {
@@ -289,6 +294,7 @@ export default function App() {
             <RequestToolbar
               requests={requests}
               loading={loading}
+              searchQuery={searchQuery}
               onNewRequest={handleStartRequest}
               showingForm={showForm}
               onSelectRequest={handleSelectRequest}
@@ -373,6 +379,7 @@ export default function App() {
             usedGeolocation={usedGeolocation}
             highAccuracy={highAccuracy}
             onExpandRequest={() => { setSidebarView("detail"); setMobileSlide("top"); }}
+            flyToTarget={flyToTarget}
           />
         </main>
       </div>

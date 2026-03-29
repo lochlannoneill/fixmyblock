@@ -10,6 +10,7 @@ type SortBy = "newest" | "oldest" | "likes";
 interface RequestToolbarProps {
   requests: Request[];
   loading?: boolean;
+  searchQuery?: string;
   onNewRequest: () => void;
   showingForm: boolean;
   onSelectRequest: (c: Request) => void;
@@ -19,6 +20,7 @@ interface RequestToolbarProps {
 export default function RequestToolbar({
   requests,
   loading,
+  searchQuery = "",
   onSelectRequest,
   selectedId,
 }: RequestToolbarProps) {
@@ -57,6 +59,17 @@ export default function RequestToolbar({
     const filtered = requests.filter((c) => {
       if (filterCategory && c.category !== filterCategory) return false;
       if (filterStatus && c.status !== filterStatus) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const categoryLabel = CATEGORY_LABELS[c.category]?.toLowerCase() || "";
+        const location = (c.location || "").toLowerCase();
+        if (
+          !c.title.toLowerCase().includes(q) &&
+          !c.description.toLowerCase().includes(q) &&
+          !categoryLabel.includes(q) &&
+          !location.includes(q)
+        ) return false;
+      }
       return true;
     });
     return [...filtered].sort((a, b) => {
@@ -64,7 +77,7 @@ export default function RequestToolbar({
       if (sortBy === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       return (b.likers || []).length - (a.likers || []).length;
     });
-  }, [requests, filterCategory, filterStatus, sortBy]);
+  }, [requests, filterCategory, filterStatus, sortBy, searchQuery]);
 
   const selectClasses =
     "w-full min-w-0 py-1.5 px-2 text-[13px] border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-[#2a2a2a] text-slate-800 dark:text-zinc-200 cursor-pointer transition-colors focus:outline-none focus:border-blue-500";
