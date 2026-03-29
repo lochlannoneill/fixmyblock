@@ -11,6 +11,7 @@ interface RequestToolbarProps {
   requests: Request[];
   loading?: boolean;
   searchQuery?: string;
+  currentUserId?: string;
   onNewRequest: () => void;
   showingForm: boolean;
   onSelectRequest: (c: Request) => void;
@@ -21,6 +22,7 @@ export default function RequestToolbar({
   requests,
   loading,
   searchQuery = "",
+  currentUserId,
   onSelectRequest,
   selectedId,
 }: RequestToolbarProps) {
@@ -183,6 +185,7 @@ export default function RequestToolbar({
         loading={loading}
         onSelect={onSelectRequest}
         selectedId={selectedId}
+        currentUserId={currentUserId}
       />
     </>
   );

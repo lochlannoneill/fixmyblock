@@ -295,6 +295,7 @@ export default function App() {
               requests={requests}
               loading={loading}
               searchQuery={searchQuery}
+              currentUserId={user?.userId}
               onNewRequest={handleStartRequest}
               showingForm={showForm}
               onSelectRequest={handleSelectRequest}

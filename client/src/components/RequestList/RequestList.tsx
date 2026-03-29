@@ -10,6 +10,7 @@ interface RequestListProps {
   loading?: boolean;
   onSelect: (c: Request) => void;
   selectedId: string | null;
+  currentUserId?: string;
 }
 function SkeletonCard() {
   return (
@@ -31,6 +32,7 @@ export default function RequestList({
   loading,
   onSelect,
   selectedId,
+  currentUserId,
 }: RequestListProps) {
   const PAGE_SIZE = 5;
   const listRef = useRef<HTMLDivElement>(null);
@@ -109,6 +111,8 @@ export default function RequestList({
       {requests.slice(0, visibleCount).map((c) => {
         const comments = c.comments || [];
         const likeCount = (c.likers || []).length;
+        const hasLiked = !!(currentUserId && (c.likers || []).includes(currentUserId));
+        const hasCommented = !!(currentUserId && comments.some(com => com.userId === currentUserId));
         const timeSince = getTimeSince(c.createdAt);
         const locationName = c.location || `${c.latitude.toFixed(4)}, ${c.longitude.toFixed(4)}`;
 
@@ -151,10 +155,10 @@ export default function RequestList({
           </div>
           <div className="flex items-center gap-3 px-3.5 pb-2.5 text-xs text-slate-400 dark:text-[#8c8c96]">
             <span className="flex items-center gap-1">
-              <FontAwesomeIcon icon={likeCount > 0 ? faHeartSolid : faHeartRegular} /> {likeCount}
+              <FontAwesomeIcon icon={hasLiked ? faHeartSolid : faHeartRegular} /> {likeCount}
             </span>
             <span className="flex items-center gap-1">
-              <FontAwesomeIcon icon={comments.length > 0 ? faCommentSolid : faCommentRegular} /> {comments.length}
+              <FontAwesomeIcon icon={hasCommented ? faCommentSolid : faCommentRegular} /> {comments.length}
             </span>
           </div>
         </div>
