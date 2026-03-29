@@ -46,7 +46,7 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
   // Mobile slide positions: "bottom" = full map, "middle" = 40vh map, "top" = 15vh map
-  const [mobileSlide, setMobileSlide] = useState<"top" | "middle" | "bottom">(() => window.innerWidth < 768 ? "bottom" : "middle");
+  const [mobileSlide, setMobileSlide] = useState<"top" | "middle" | "bottom">("middle");
   const geoAbortRef = useRef(false);
 
   // Reset slide state when crossing the mobile/desktop breakpoint
