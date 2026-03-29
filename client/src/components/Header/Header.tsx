@@ -94,7 +94,7 @@ export default function Header({ user, profile, onLocationSelect, onLoginClick, 
     <header className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 h-14 text-slate-800 dark:text-zinc-200 z-[9999] pointer-events-none">
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.25), transparent)' }} />
       <div className="relative pointer-events-auto">
-        <h1 className="m-0 flex items-center cursor-pointer rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md shadow-sm p-2" onClick={() => window.location.reload()}>
+        <h1 className="m-0 flex items-center cursor-pointer rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md shadow-sm hover:bg-white/60 dark:hover:bg-black/40 transition-colors p-2" onClick={() => window.location.reload()}>
           <span className="inline-flex items-center">
             <svg width="28" height="28" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M32 4L2 30h10v28h40V30h10L32 4z" fill="#3b82f6" stroke="currentColor" strokeWidth="2"/>
