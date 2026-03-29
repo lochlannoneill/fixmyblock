@@ -55,7 +55,7 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
         <span>{timeSince}</span>
       </div>
       {(c.imageUrls || []).length > 0 && (
-        <div className="mt-2 rounded-lg overflow-hidden h-52">
+        <div className="mt-2 rounded-lg overflow-hidden h-80">
           <img className="w-full h-full object-cover" src={c.imageUrls[0]} alt={c.title} />
         </div>
       )}
@@ -64,7 +64,7 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
         {c.description.length > 200 ? "..." : ""}
       </p>
       <div className="flex items-center gap-3 mt-2 text-xs text-slate-400 dark:text-[#8c8c96]">
-        <span className="flex items-center gap-1">
+        <span className={`flex items-center gap-1 ${hasLiked ? "text-red-500" : ""}`}>
           <FontAwesomeIcon icon={hasLiked ? faHeartSolid : faHeartRegular} /> {likeCount}
         </span>
         <span className="flex items-center gap-1">
