@@ -91,7 +91,7 @@ export default function Header({ user, onLoginClick, onLogout, onProfileClick, o
                   <circle cx="12" cy="8" r="4" />
                   <path d="M20 21a8 8 0 0 0-16 0" />
                 </svg>
-                Profile
+                My Profile
               </button>
               <button
                 onClick={() => { setDropdownOpen(false); onSettingsClick(); }}
