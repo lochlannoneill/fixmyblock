@@ -48,25 +48,33 @@ export default function App() {
   const [dragMapHeight, setDragMapHeight] = useState<number | null>(null);
   const [isSnapping, setIsSnapping] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const slideBarRef = useRef<HTMLDivElement>(null);
+
+  // Attach touchmove as a native listener with { passive: false } so preventDefault works
+  useEffect(() => {
+    const el = slideBarRef.current;
+    if (!el) return;
+    const handler = (e: TouchEvent) => {
+      if (touchStartY.current === null || !containerRef.current) return;
+      const deltaY = Math.abs(e.touches[0].clientY - touchStartY.current);
+      if (deltaY > 10) isDragging.current = true;
+      if (!isDragging.current) return;
+      e.preventDefault();
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const fingerY = e.touches[0].clientY;
+      const mapH = Math.max(80, Math.min(fingerY - containerRect.top, containerRect.height - 80));
+      setDragMapHeight(mapH);
+    };
+    el.addEventListener("touchmove", handler, { passive: false });
+    return () => el.removeEventListener("touchmove", handler);
+  }, []);
 
   const handleSlideBarTouchStart = (e: ReactTouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
     isDragging.current = false;
   };
 
-  const handleSlideBarTouchMove = (e: ReactTouchEvent) => {
-    if (touchStartY.current === null || !containerRef.current) return;
-    const deltaY = Math.abs(e.touches[0].clientY - touchStartY.current);
-    if (deltaY > 10) isDragging.current = true;
-    if (!isDragging.current) return;
-    e.preventDefault();
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const fingerY = e.touches[0].clientY;
-    const mapH = Math.max(80, Math.min(fingerY - containerRect.top, containerRect.height - 80));
-    setDragMapHeight(mapH);
-  };
-
-  const handleSlideBarTouchEnd = (e: ReactTouchEvent) => {
+  const handleSlideBarTouchEnd = (_: ReactTouchEvent) => {
     if (touchStartY.current === null) return;
     const wasDragging = isDragging.current;
     touchStartY.current = null;
@@ -319,8 +327,8 @@ export default function App() {
           {/* Mobile: full-width slide bar */}
           <div
             onClick={() => { if (!isDragging.current) setMobileSlide(mobileSlide === "bottom" ? "top" : "bottom"); }}
+            ref={slideBarRef}
             onTouchStart={handleSlideBarTouchStart}
-            onTouchMove={handleSlideBarTouchMove}
             onTouchEnd={handleSlideBarTouchEnd}
             className="md:hidden absolute bottom-0 left-0 right-0 z-50 flex items-center justify-center py-2.5 bg-white/80 dark:bg-[#1e1e1e]/80 backdrop-blur-sm border-t border-slate-200 dark:border-[#2a2a2a] text-xs font-medium text-slate-400 dark:text-zinc-500 cursor-pointer select-none touch-none"
           >
