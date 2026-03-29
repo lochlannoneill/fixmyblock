@@ -36,6 +36,16 @@ export default function App() {
   const [mobileSlide, setMobileSlide] = useState<"top" | "middle" | "bottom">(() => window.innerWidth < 768 ? "bottom" : "middle");
   const geoAbortRef = useRef(false);
 
+  // Reset slide state when crossing the mobile/desktop breakpoint
+  useEffect(() => {
+    const mql = window.matchMedia("(min-width: 768px)");
+    const handler = (e: MediaQueryListEvent) => {
+      setMobileSlide(e.matches ? "middle" : "bottom");
+    };
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+
   // On mobile, exiting detail view when sidebar fully collapses
   useEffect(() => {
     if (mobileSlide === "bottom" && sidebarView === "detail" && window.innerWidth < 768) {
