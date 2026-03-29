@@ -49,13 +49,14 @@ export default function RequestList({
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
+    const scrollRoot = sentinel.closest(".sidebar") as Element | null;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
           setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, requests.length));
         }
       },
-      { rootMargin: "200px" }
+      { root: scrollRoot, rootMargin: "200px" }
     );
     observer.observe(sentinel);
     return () => observer.disconnect();

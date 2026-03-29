@@ -53,6 +53,7 @@ export default function App() {
   }, [mobileSlide, sidebarView]);
 
   const userLocationRef = useRef<{ lng: number; lat: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lng: number; lat: number } | null>(null);
   const touchStartY = useRef<number | null>(null);
   const isDragging = useRef(false);
   const [dragMapHeight, setDragMapHeight] = useState<number | null>(null);
@@ -118,6 +119,7 @@ export default function App() {
 
   const handleUserLocation = useCallback((lng: number, lat: number) => {
     userLocationRef.current = { lng, lat };
+    setUserLocation({ lng, lat });
   }, []);
 
   const handleMapClick = useCallback(
@@ -277,6 +279,7 @@ export default function App() {
               requests={requests}
               loading={loading}
               currentUserId={user?.userId}
+              userLocation={userLocation}
               onNewRequest={handleStartRequest}
               showingForm={showForm}
               onSelectRequest={handleSelectRequest}

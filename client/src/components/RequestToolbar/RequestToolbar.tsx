@@ -5,15 +5,26 @@ import type { Request, RequestCategory, RequestStatus } from "../../types/reques
 import { CATEGORY_LABELS } from "../../types/request";
 import RequestList from "../RequestList";
 
-type SortBy = "newest" | "oldest" | "likes";
+type SortBy = "newest" | "oldest" | "likes" | "comments" | "nearest";
 type OpenDropdown = "category" | "status" | "sort" | null;
 
 const STATUS_LABELS: Record<RequestStatus, string> = { open: "Open", "in-progress": "In Progress", resolved: "Resolved" };
+const SORT_LABELS: Record<SortBy, string> = { newest: "Most Recent", oldest: "Oldest", likes: "Most Liked", comments: "Most Comments", nearest: "Nearest" };
+
+function distanceBetween(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 interface RequestToolbarProps {
   requests: Request[];
   loading?: boolean;
   currentUserId?: string;
+  userLocation?: { lng: number; lat: number } | null;
   onNewRequest: () => void;
   showingForm: boolean;
   onSelectRequest: (c: Request) => void;
@@ -24,6 +35,7 @@ export default function RequestToolbar({
   requests,
   loading,
   currentUserId,
+  userLocation,
   onSelectRequest,
   selectedId,
 }: RequestToolbarProps) {
@@ -79,9 +91,15 @@ export default function RequestToolbar({
     return [...filtered].sort((a, b) => {
       if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       if (sortBy === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      if (sortBy === "comments") return (b.comments || []).length - (a.comments || []).length;
+      if (sortBy === "nearest" && userLocation) {
+        const distA = distanceBetween(userLocation.lat, userLocation.lng, a.latitude, a.longitude);
+        const distB = distanceBetween(userLocation.lat, userLocation.lng, b.latitude, b.longitude);
+        return distA - distB;
+      }
       return (b.likers || []).length - (a.likers || []).length;
     });
-  }, [requests, filterCategory, filterStatus, sortBy, searchQuery]);
+  }, [requests, filterCategory, filterStatus, sortBy, searchQuery, userLocation]);
 
   const toggle = (dropdown: OpenDropdown) => setOpenDropdown((prev) => (prev === dropdown ? null : dropdown));
 
@@ -181,14 +199,14 @@ export default function RequestToolbar({
           <div className="relative" ref={sortRef}>
             <button className={btnClass(openDropdown === "sort", false)} onClick={() => toggle("sort")}>
               <FontAwesomeIcon icon={faArrowDownUpAcrossLine} className="text-[12px]" />
-              <span className="font-medium">{{ newest: "Newest", oldest: "Oldest", likes: "Most Liked" }[sortBy]}</span>
+              <span className="font-medium">{SORT_LABELS[sortBy]}</span>
               {chevron(openDropdown === "sort")}
             </button>
             {dropdownVisible && openDropdown === "sort" && (
-              <div className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-[#272727] border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden origin-top-right" style={popoverStyle}>
-                {(["newest", "oldest", "likes"] as SortBy[]).map((value) => (
+              <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-[#272727] border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden origin-top-right" style={popoverStyle}>
+                {(["newest", "oldest", "likes", "comments", "nearest"] as SortBy[]).map((value) => (
                   <button key={value} onClick={() => { setSortBy(value); setOpenDropdown(null); }} className={optionClass(sortBy === value)}>
-                    {{ newest: "Newest", oldest: "Oldest", likes: "Most Liked" }[value]}
+                    {SORT_LABELS[value]}
                   </button>
                 ))}
               </div>
@@ -199,8 +217,10 @@ export default function RequestToolbar({
         {loading ? (
           <div className="h-4 w-32 bg-slate-200 dark:bg-zinc-700 rounded-full animate-pulse mt-1.5" />
         ) : (
-          <span className="text-[12px] font-semibold text-slate-500 dark:text-[#8c8c96] mt-1.5">
-            {filteredSorted.length} of {requests.length} requests
+          <span className="text-[12px] font-semibold text-slate-500 dark:text-[#8c8c96] mt-1.5 ml-2">
+            {filteredSorted.length === requests.length
+              ? `Showing all ${requests.length} requests`
+              : `Showing ${filteredSorted.length} of ${requests.length} requests`}
           </span>
         )}
       </div>
