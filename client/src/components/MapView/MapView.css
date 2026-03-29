@@ -1,4 +1,8 @@
 /* ===== MapLibre control dark mode ===== */
+.maplibregl-ctrl-top-right {
+  top: 3.5rem !important; /* clear transparent navbar */
+}
+
 .maplibregl-ctrl-group {
   transition: background-color 200ms ease, border-color 200ms ease !important;
 }

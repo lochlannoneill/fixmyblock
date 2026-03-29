@@ -202,7 +202,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-dvh overflow-hidden bg-white dark:bg-[#121212] text-slate-800 dark:text-zinc-200">
+    <div className="relative h-dvh overflow-hidden bg-white dark:bg-[#121212] text-slate-800 dark:text-zinc-200">
       <Header
         user={user}
         onLoginClick={() => setShowAuthModal(true)}
@@ -231,7 +231,7 @@ export default function App() {
         onClose={() => setShowAuthModal(false)}
         onLogin={(provider) => { login(provider); setShowAuthModal(false); }}
       />
-      <div ref={containerRef} className="flex flex-col-reverse md:flex-row flex-1 overflow-hidden">
+      <div ref={containerRef} className="flex flex-col-reverse md:flex-row h-full overflow-hidden">
         <aside className={`sidebar border-t border-slate-200 dark:border-[#2a2a2a] md:border-r md:border-t-0 bg-slate-50 dark:bg-[#1e1e1e] overflow-y-auto z-10 ${
           dragMapHeight !== null && !isSnapping ? "" : "transition-all duration-300"
         } ${
