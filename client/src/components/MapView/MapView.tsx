@@ -302,7 +302,7 @@ export default function MapView({
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
             <div style="width:28px;height:28px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">${userInitial}</div>
             <div style="display:flex;flex-direction:column;flex:1;min-width:0;line-height:1.2">
-              <span class="popup-title" style="font-size:13px;font-weight:600">${userName}</span>
+              <span class="popup-title" style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${userName}</span>
               <span style="font-size:11px;color:var(--text-muted)">${timeSince}${!images.length ? ` &middot; ${locationText}` : ''}</span>
             </div>
             <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap">${statusLabel}</span>
