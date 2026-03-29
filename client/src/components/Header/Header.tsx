@@ -2,8 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import type { AuthUser } from "../../hooks/useAuth";
 
 interface HeaderProps {
-  darkMode: boolean;
-  onToggleTheme: () => void;
   user: AuthUser | null;
   onLoginClick: () => void;
   onLogout: () => void;
@@ -12,7 +10,7 @@ interface HeaderProps {
   onFeedbackClick: () => void;
 }
 
-export default function Header({ darkMode, onToggleTheme, user, onLoginClick, onLogout, onProfileClick, onSettingsClick, onFeedbackClick }: HeaderProps) {
+export default function Header({ user, onLoginClick, onLogout, onProfileClick, onSettingsClick, onFeedbackClick }: HeaderProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [dropdownAnimate, setDropdownAnimate] = useState(false);
@@ -55,31 +53,6 @@ export default function Header({ darkMode, onToggleTheme, user, onLoginClick, on
         </h1>
       </div>
       <div className="flex items-center gap-3">
-        <button
-          type="button"
-          aria-label="Toggle dark mode"
-          onClick={onToggleTheme}
-          className="relative w-18 h-10 flex items-center rounded-full p-1 transition-colors cursor-pointer bg-slate-100 dark:bg-[#333] hover:bg-slate-200 dark:hover:bg-[#3a3a3a]"
-          title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-        >
-          <div className="absolute inset-0 flex items-center justify-between px-2.5 pointer-events-none select-none">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="5" fill="currentColor" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 1v2m0 18v2m11-11h-2M3 12H1m16.95 4.95l-1.41-1.41M6.34 6.34l-1.41-1.41m12.02 0l-1.41 1.41M6.34 17.66l-1.41 1.41" />
-            </svg>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" fill="currentColor" />
-            </svg>
-          </div>
-          <span
-            className="absolute top-1 left-1 w-8 h-8 rounded-full shadow-md"
-            style={{
-              transition: "transform 300ms ease, background-color 300ms ease",
-              transform: darkMode ? "translateX(2rem)" : "translateX(0)",
-              backgroundColor: darkMode ? "#272727" : "#ffffff",
-            }}
-          />
-        </button>
         {user ? (
           <div className="relative" ref={dropdownRef}>
             <button

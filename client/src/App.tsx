@@ -204,8 +204,6 @@ export default function App() {
   return (
     <div className="flex flex-col h-dvh overflow-hidden bg-white dark:bg-[#121212] text-slate-800 dark:text-zinc-200">
       <Header
-        darkMode={darkMode}
-        onToggleTheme={toggleTheme}
         user={user}
         onLoginClick={() => setShowAuthModal(true)}
         onLogout={logout}
