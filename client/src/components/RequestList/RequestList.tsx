@@ -109,7 +109,7 @@ export default function RequestList({
           Back to top
         </button>
       )}
-      {requests.slice(0, visibleCount).map((c) => {
+      {requests.slice(0, visibleCount).map((c, index) => {
         const comments = c.comments || [];
         const likeCount = (c.likers || []).length;
         const hasLiked = !!(currentUserId && (c.likers || []).includes(currentUserId));
@@ -118,16 +118,16 @@ export default function RequestList({
         const locationName = c.location || `${c.latitude.toFixed(4)}, ${c.longitude.toFixed(4)}`;
 
         return (
-        <div
-          key={c.id}
-          className={`group bg-white dark:bg-[#272727] rounded-xl mb-2.5 border-2 transition-all shadow-sm cursor-pointer
-            ${c.id === selectedId
-              ? "border-blue-500"
-              : "border-transparent hover:border-blue-200 dark:hover:border-blue-900 hover:shadow-md"
+        <div key={c.id}>
+          {index > 0 && <hr className="border-slate-200 dark:border-[#2a2a2a] my-2 mx-auto w-4/5" />}
+          <div
+            className={`py-3.5 px-2 -mx-2 rounded-lg cursor-pointer transition-all duration-150 ${
+              c.id === selectedId
+                ? "bg-blue-50/50 dark:bg-blue-500/5"
+                : "hover:bg-white dark:hover:bg-[#2a2a2a] hover:scale-[1.01]"
             }`}
-          onClick={() => onSelect(c)}
-        >
-          <div className="p-3.5">
+            onClick={() => onSelect(c)}
+          >
             <div className="flex items-center gap-2">
               <span className="flex-1 font-semibold text-sm text-slate-800 dark:text-zinc-200">{c.title}</span>
               <span
@@ -145,7 +145,7 @@ export default function RequestList({
               <span>{timeSince}</span>
             </div>
             {(c.imageUrls || []).length > 0 && (
-              <div className="mt-2 rounded-lg overflow-hidden h-30">
+              <div className="mt-2 rounded-lg overflow-hidden h-52">
                 <img className="w-full h-full object-cover" src={c.imageUrls[0]} alt={c.title} />
               </div>
             )}
@@ -153,14 +153,14 @@ export default function RequestList({
               {c.description.slice(0, 200)}
               {c.description.length > 200 ? "..." : ""}
             </p>
-          </div>
-          <div className="flex items-center gap-3 px-3.5 pb-2.5 text-xs text-slate-400 dark:text-[#8c8c96]">
-            <span className="flex items-center gap-1">
-              <FontAwesomeIcon icon={hasLiked ? faHeartSolid : faHeartRegular} /> {likeCount}
-            </span>
-            <span className="flex items-center gap-1">
-              <FontAwesomeIcon icon={hasCommented ? faCommentSolid : faCommentRegular} /> {comments.length}
-            </span>
+            <div className="flex items-center gap-3 mt-2 text-xs text-slate-400 dark:text-[#8c8c96]">
+              <span className="flex items-center gap-1">
+                <FontAwesomeIcon icon={hasLiked ? faHeartSolid : faHeartRegular} /> {likeCount}
+              </span>
+              <span className="flex items-center gap-1">
+                <FontAwesomeIcon icon={hasCommented ? faCommentSolid : faCommentRegular} /> {comments.length}
+              </span>
+            </div>
           </div>
         </div>
         );

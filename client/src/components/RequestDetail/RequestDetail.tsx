@@ -191,7 +191,7 @@ export default function RequestDetail({
                   <img
                     src={url}
                     alt={`${request.title} ${i + 1}`}
-                    className="w-full rounded-lg object-cover max-h-60"
+                    className="w-full rounded-lg"
                   />
                   {i === request.imageUrls.length - 1 && (
                     <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1 py-1.5 text-xs text-white bg-black/40 backdrop-blur-sm">
