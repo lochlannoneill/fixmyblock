@@ -263,7 +263,7 @@ export default function MapView({
       const locationText = req.location || `${req.latitude.toFixed(4)}, ${req.longitude.toFixed(4)}`;
       const images = req.imageUrls || [];
       const thumbs = images.length
-        ? `<div style="margin-top:6px;border-radius:8px;overflow:hidden;height:${isMobile ? '80px' : '120px'};position:relative">
+        ? `<div style="margin-top:16px;border-radius:8px;overflow:hidden;height:${isMobile ? '100px' : '120px'};position:relative">
             <img src="${images[0]}" style="width:100%;height:100%;object-fit:cover" />
             <div style="position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:4px;padding:4px 0;font-size:11px;color:#fff;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">
               <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 384 512" fill="currentColor"><path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/></svg>
@@ -308,7 +308,7 @@ export default function MapView({
             <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap">${statusLabel}</span>
           </div>
           ${thumbs}
-          <div style="margin-top:6px">
+          <div style="margin-top:12px">
             <span style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block" class="popup-title">${req.title}</span>
           </div>
           <p class="popup-desc" style="margin:6px 0 0;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${req.description}</p>
@@ -326,7 +326,7 @@ export default function MapView({
               ${commentCount}
             </span>
           </div>
-          ${isMobile ? '<div style="display:flex;justify-content:center;margin-top:8px"><div style="width:32px;height:4px;border-radius:2px;background:var(--text-muted);opacity:0.3"></div></div>' : ''}
+          ${isMobile ? '<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:10px;color:var(--text-muted);opacity:0.5">Click to expand</span><div style="width:32px;height:4px;border-radius:2px;background:var(--text-muted);opacity:0.3"></div></div>' : ''}
         </div>
       `;
 
