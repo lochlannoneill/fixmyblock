@@ -20,7 +20,6 @@ export default function App() {
   const { user, login, logout } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [flyToTarget, setFlyToTarget] = useState<{ lng: number; lat: number } | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -305,8 +304,6 @@ export default function App() {
           {/* Desktop: floating pill toggle */}
           <Header
             user={user}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
             onLocationSelect={(lng, lat) => setFlyToTarget({ lng, lat })}
             onLoginClick={() => setShowAuthModal(true)}
             onLogout={logout}

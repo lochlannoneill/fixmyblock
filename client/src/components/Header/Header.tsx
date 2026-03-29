@@ -3,8 +3,6 @@ import type { AuthUser } from "../../hooks/useAuth";
 
 interface HeaderProps {
   user: AuthUser | null;
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
   onLocationSelect: (lng: number, lat: number) => void;
   onLoginClick: () => void;
   onLogout: () => void;
@@ -19,9 +17,10 @@ interface GeoSuggestion {
   lon: string;
 }
 
-export default function Header({ user, searchQuery, onSearchChange, onLocationSelect, onLoginClick, onLogout, onProfileClick, onSettingsClick, onFeedbackClick }: HeaderProps) {
+export default function Header({ user, onLocationSelect, onLoginClick, onLogout, onProfileClick, onSettingsClick, onFeedbackClick }: HeaderProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [suggestions, setSuggestions] = useState<GeoSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -127,7 +126,7 @@ export default function Header({ user, searchQuery, onSearchChange, onLocationSe
             ref={searchInputRef}
             type="text"
             value={searchQuery}
-            onChange={(e) => { onSearchChange(e.target.value); setShowSuggestions(true); }}
+            onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
             onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
             onBlur={() => { if (!searchQuery) setSearchExpanded(false); }}
             placeholder="Search locations..."
@@ -137,7 +136,7 @@ export default function Header({ user, searchQuery, onSearchChange, onLocationSe
           />
           {searchQuery && (
             <button
-              onClick={() => { onSearchChange(""); searchInputRef.current?.focus(); }}
+              onClick={() => { setSearchQuery(""); searchInputRef.current?.focus(); }}
               className="flex-shrink-0 w-8 h-8 flex items-center justify-center cursor-pointer mr-1"
               aria-label="Clear search"
             >
@@ -156,7 +155,7 @@ export default function Header({ user, searchQuery, onSearchChange, onLocationSe
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
                     onLocationSelect(parseFloat(s.lon), parseFloat(s.lat));
-                    onSearchChange(s.display_name.split(",")[0]);
+                    setSearchQuery(s.display_name.split(",")[0]);
                     setShowSuggestions(false);
                     searchInputRef.current?.blur();
                   }}
