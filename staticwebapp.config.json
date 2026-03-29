@@ -97,6 +97,11 @@
       "allowedRoles": ["authenticated"]
     },
     {
+      "route": "/api/users/me/avatar",
+      "methods": ["POST"],
+      "allowedRoles": ["authenticated"]
+    },
+    {
       "route": "/api/users",
       "methods": ["GET"],
       "allowedRoles": ["authenticated"]

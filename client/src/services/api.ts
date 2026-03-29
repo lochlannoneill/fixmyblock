@@ -117,6 +117,16 @@ export async function updateProfile(data: { firstName: string; lastName: string 
   return res.json();
 }
 
+export async function uploadAvatar(file: File): Promise<UserProfile> {
+  const res = await fetch(`${API_BASE}/users/me/avatar`, {
+    method: "POST",
+    headers: { "Content-Type": file.type },
+    body: file,
+  });
+  if (!res.ok) throw new Error("Failed to upload avatar");
+  return res.json();
+}
+
 // ── Admin API ──
 
 export async function fetchAllUsers(): Promise<UserProfile[]> {

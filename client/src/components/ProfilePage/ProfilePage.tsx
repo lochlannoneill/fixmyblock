@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { AuthUser } from "../../hooks/useAuth";
 import type { Request, UserProfile } from "../../types/request";
 import { CATEGORY_LABELS, STATUS_COLORS } from "../../types/request";
-import { updateProfile } from "../../services/api";
+import { updateProfile, uploadAvatar } from "../../services/api";
 
 interface ProfilePageProps {
   user: AuthUser;
@@ -26,6 +26,8 @@ export default function ProfilePage({ user, profile, requests, onClose, onSelect
   const [firstName, setFirstName] = useState(profile?.firstName || "");
   const [lastName, setLastName] = useState(profile?.lastName || "");
   const [savingName, setSavingName] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const displayName = profile?.firstName ? profile.displayName : user.userDetails;
 
@@ -49,6 +51,21 @@ export default function ProfilePage({ user, profile, requests, onClose, onSelect
     }
   };
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || uploadingAvatar) return;
+    setUploadingAvatar(true);
+    try {
+      const updated = await uploadAvatar(file);
+      onProfileUpdate(updated);
+    } catch {
+      // ignore
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -67,9 +84,35 @@ export default function ProfilePage({ user, profile, requests, onClose, onSelect
 
       {/* User info card */}
       <div className="flex items-center gap-4 mb-6 p-4 rounded-xl bg-white dark:bg-[#272727] border border-slate-200 dark:border-[#3a3a3a]">
-        <div className="w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center text-white text-xl font-bold shrink-0">
-          {(displayName?.[0] ?? "U").toUpperCase()}
-        </div>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploadingAvatar}
+          className="relative w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center text-white text-xl font-bold shrink-0 cursor-pointer group overflow-hidden border-0 p-0"
+          aria-label="Change profile picture"
+        >
+          {profile?.profilePictureUrl ? (
+            <img src={profile.profilePictureUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            (displayName?.[0] ?? "U").toUpperCase()
+          )}
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            {uploadingAvatar ? (
+              <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="12" /></svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+            )}
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChange={handleAvatarChange}
+            className="hidden"
+          />
+        </button>
         <div className="min-w-0 flex-1">
           {editingName ? (
             <div className="flex flex-col gap-2">

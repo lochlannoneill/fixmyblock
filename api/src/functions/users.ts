@@ -15,6 +15,7 @@ import {
   UserSettings,
   UserRole,
 } from "../cosmos.js";
+import { uploadImage } from "../storage.js";
 
 function parseAuthPrincipal(req: HttpRequest): { userId: string; userDetails: string; identityProvider: string } | null {
   const principal = req.headers.get("x-ms-client-principal");
@@ -145,6 +146,41 @@ async function patchProfile(
   return { status: 200, jsonBody: saved };
 }
 
+const MAX_AVATAR_SIZE = 2 * 1024 * 1024; // 2MB
+const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+// POST /api/users/me/avatar — upload profile picture
+async function uploadAvatar(
+  req: HttpRequest,
+  _ctx: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = parseAuthPrincipal(req);
+  if (!auth) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  const contentType = req.headers.get("content-type") || "";
+  if (!ALLOWED_AVATAR_TYPES.includes(contentType)) {
+    return { status: 400, jsonBody: { error: "Invalid image type. Use JPEG, PNG, WebP, or GIF." } };
+  }
+
+  const bodyBuffer = Buffer.from(await req.arrayBuffer());
+  if (bodyBuffer.length === 0) {
+    return { status: 400, jsonBody: { error: "No image data provided" } };
+  }
+  if (bodyBuffer.length > MAX_AVATAR_SIZE) {
+    return { status: 400, jsonBody: { error: "Image too large. Max 2MB." } };
+  }
+
+  const existing = await getUserById(auth.userId);
+  if (!existing) return { status: 404, jsonBody: { error: "User not found" } };
+
+  const ext = contentType.split("/")[1] === "jpeg" ? "jpg" : contentType.split("/")[1];
+  const url = await uploadImage(bodyBuffer, contentType, `avatar-${auth.userId}.${ext}`);
+
+  existing.profilePictureUrl = url;
+  const saved = await upsertUser(existing);
+  return { status: 200, jsonBody: saved };
+}
+
 const VALID_ROLES: UserRole[] = ["admin", "moderator", "developer", "user"];
 
 // GET /api/users — admin only: list all users
@@ -243,4 +279,11 @@ app.http("changeRole", {
   authLevel: "anonymous",
   route: "users/{id}/role",
   handler: changeRole,
+});
+
+app.http("uploadAvatar", {
+  methods: ["POST"],
+  authLevel: "anonymous",
+  route: "users/me/avatar",
+  handler: uploadAvatar,
 });
