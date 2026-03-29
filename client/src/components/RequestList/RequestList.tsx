@@ -10,6 +10,7 @@ interface RequestListProps {
   loading?: boolean;
   onSelect: (c: Request) => void;
   selectedId: string | null;
+  currentUserId?: string;
 }
 function SkeletonCard() {
   return (
@@ -31,6 +32,7 @@ export default function RequestList({
   loading,
   onSelect,
   selectedId,
+  currentUserId,
 }: RequestListProps) {
   const PAGE_SIZE = 5;
   const listRef = useRef<HTMLDivElement>(null);
@@ -47,13 +49,14 @@ export default function RequestList({
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
+    const scrollRoot = sentinel.closest(".sidebar") as Element | null;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
           setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, requests.length));
         }
       },
-      { rootMargin: "200px" }
+      { root: scrollRoot, rootMargin: "200px" }
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -101,14 +104,16 @@ export default function RequestList({
       {showBackToTop && (
         <button
           onClick={scrollToTop}
-          className="sticky top-0 z-20 w-full mb-2 py-1.5 text-xs font-medium text-slate-500 dark:text-zinc-400 bg-slate-100/90 dark:bg-[#1e1e1e]/90 backdrop-blur-sm hover:text-blue-500 cursor-pointer transition-colors"
+          className="sticky top-2 z-20 block mx-auto mb-2 px-3 py-1.5 text-xs font-medium text-slate-500 dark:text-zinc-400 bg-slate-100/90 dark:bg-[#1e1e1e]/90 backdrop-blur-sm rounded-full hover:text-blue-500 cursor-pointer transition-colors"
         >
-          ↑ Back to top
+          Back to top
         </button>
       )}
       {requests.slice(0, visibleCount).map((c) => {
         const comments = c.comments || [];
         const likeCount = (c.likers || []).length;
+        const hasLiked = !!(currentUserId && (c.likers || []).includes(currentUserId));
+        const hasCommented = !!(currentUserId && comments.some(com => com.userId === currentUserId));
         const timeSince = getTimeSince(c.createdAt);
         const locationName = c.location || `${c.latitude.toFixed(4)}, ${c.longitude.toFixed(4)}`;
 
@@ -151,10 +156,10 @@ export default function RequestList({
           </div>
           <div className="flex items-center gap-3 px-3.5 pb-2.5 text-xs text-slate-400 dark:text-[#8c8c96]">
             <span className="flex items-center gap-1">
-              <FontAwesomeIcon icon={likeCount > 0 ? faHeartSolid : faHeartRegular} /> {likeCount}
+              <FontAwesomeIcon icon={hasLiked ? faHeartSolid : faHeartRegular} /> {likeCount}
             </span>
             <span className="flex items-center gap-1">
-              <FontAwesomeIcon icon={comments.length > 0 ? faCommentSolid : faCommentRegular} /> {comments.length}
+              <FontAwesomeIcon icon={hasCommented ? faCommentSolid : faCommentRegular} /> {comments.length}
             </span>
           </div>
         </div>

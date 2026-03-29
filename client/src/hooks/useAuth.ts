@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { upsertMe, fetchMe } from "../services/api";
+import type { UserProfile } from "../types/request";
 
 export interface AuthUser {
   identityProvider: string;
@@ -12,19 +14,45 @@ const isMockDev = import.meta.env.DEV && !window.location.port.startsWith("4280"
 
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (isMockDev) {
       const stored = localStorage.getItem(DEV_STORAGE_KEY);
-      setUser(stored ? JSON.parse(stored) : null);
+      if (stored) {
+        setUser(JSON.parse(stored));
+        // In dev mode, create a mock profile from localStorage settings
+        const parsed = JSON.parse(stored) as AuthUser;
+        setProfile({
+          id: parsed.userId,
+          displayName: parsed.userDetails,
+          identityProvider: parsed.identityProvider,
+          role: "admin",
+          createdAt: new Date().toISOString(),
+          settings: {
+            darkMode: localStorage.getItem("fixmyblock-theme") === "dark",
+            highAccuracy: localStorage.getItem("highAccuracy") !== "false",
+          },
+        });
+      }
       setLoading(false);
       return;
     }
     fetch("/.auth/me")
       .then((res) => res.json())
-      .then((data) => {
-        setUser(data.clientPrincipal ?? null);
+      .then(async (data) => {
+        const principal = data.clientPrincipal ?? null;
+        setUser(principal);
+        if (principal) {
+          try {
+            const p = await upsertMe();
+            setProfile(p);
+          } catch {
+            // Profile upsert failed — try fetching existing
+            try { setProfile(await fetchMe()); } catch { /* ignore */ }
+          }
+        }
       })
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
@@ -41,6 +69,17 @@ export function useAuth() {
       };
       localStorage.setItem(DEV_STORAGE_KEY, JSON.stringify(mockUser));
       setUser(mockUser);
+      setProfile({
+        id: mockUser.userId,
+        displayName: mockUser.userDetails,
+        identityProvider: mockUser.identityProvider,
+        role: "admin",
+        createdAt: new Date().toISOString(),
+        settings: {
+          darkMode: localStorage.getItem("fixmyblock-theme") === "dark",
+          highAccuracy: localStorage.getItem("highAccuracy") !== "false",
+        },
+      });
       return;
     }
     const redirect = encodeURIComponent(window.location.pathname);
@@ -51,10 +90,11 @@ export function useAuth() {
     if (isMockDev) {
       localStorage.removeItem(DEV_STORAGE_KEY);
       setUser(null);
+      setProfile(null);
       return;
     }
     window.location.href = "/.auth/logout?post_logout_redirect_uri=/";
   }, []);
 
-  return { user, loading, login, logout };
+  return { user, profile, loading, login, logout, setProfile };
 }

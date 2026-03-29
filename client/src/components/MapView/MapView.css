@@ -1,4 +1,8 @@
 /* ===== MapLibre control dark mode ===== */
+.maplibregl-ctrl-top-right {
+  top: 3.5rem !important; /* clear transparent navbar */
+}
+
 .maplibregl-ctrl-group {
   transition: background-color 200ms ease, border-color 200ms ease !important;
 }
@@ -45,7 +49,6 @@
 .maplibregl-popup-content {
   background: rgba(255, 255, 255, 0.7) !important;
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   color: var(--text-primary);
   border-radius: 12px !important;
   box-shadow: var(--shadow-md) !important;

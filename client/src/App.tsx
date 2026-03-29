@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect, type TouchEvent as ReactTouchEvent } from "react";
 import Header from "./components/Header";
 import MapView from "./components/MapView";
 import RequestForm from "./components/RequestForm";
@@ -11,15 +11,17 @@ import { FeedbackPage } from "./components/FeedbackPage";
 import { useTheme } from "./hooks/useTheme";
 import { useRequests } from "./hooks/useRequests";
 import { useAuth } from "./hooks/useAuth";
+import { patchSettings } from "./services/api";
 import type { Request, NewRequest } from "./types/request";
 import "./App.css";
 
 export default function App() {
   const { darkMode, toggleTheme } = useTheme();
   const { requests, loading, selectedRequest, selectRequest, like, remove, create, addComment, likeComment, save } = useRequests();
-  const { user, login, logout } = useAuth();
+  const { user, profile, login, logout, setProfile } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
+  const [flyToTarget, setFlyToTarget] = useState<{ lng: number; lat: number } | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{
     lng: number;
@@ -30,12 +32,107 @@ export default function App() {
   const [selectingOnMap, setSelectingOnMap] = useState(false);
   const [highAccuracy, setHighAccuracy] = useState(() => localStorage.getItem("highAccuracy") !== "false");
   const [sidebarView, setSidebarView] = useState<"list" | "form" | "profile" | "detail" | "settings" | "feedback">("list");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
+
+  // Sync settings from user profile when it loads
+  useEffect(() => {
+    if (profile) {
+      setHighAccuracy(profile.settings.highAccuracy);
+      // Sync dark mode if it differs from current local state
+      if (profile.settings.darkMode !== darkMode) {
+        toggleTheme();
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id]);
+  // Mobile slide positions: "bottom" = full map, "middle" = 40vh map, "top" = 15vh map
+  const [mobileSlide, setMobileSlide] = useState<"top" | "middle" | "bottom">(() => window.innerWidth < 768 ? "bottom" : "middle");
   const geoAbortRef = useRef(false);
+
+  // Reset slide state when crossing the mobile/desktop breakpoint
+  useEffect(() => {
+    const mql = window.matchMedia("(min-width: 768px)");
+    const handler = (e: MediaQueryListEvent) => {
+      setMobileSlide(e.matches ? "middle" : "bottom");
+    };
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+
+  // On mobile, exiting detail view when sidebar fully collapses
+  useEffect(() => {
+    if (mobileSlide === "bottom" && sidebarView === "detail" && window.innerWidth < 768) {
+      setSidebarView("list");
+    }
+  }, [mobileSlide, sidebarView]);
+
   const userLocationRef = useRef<{ lng: number; lat: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lng: number; lat: number } | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const isDragging = useRef(false);
+  const [dragMapHeight, setDragMapHeight] = useState<number | null>(null);
+  const [isSnapping, setIsSnapping] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const slideBarRef = useRef<HTMLDivElement>(null);
+
+  // Attach touchmove as a native listener with { passive: false } so preventDefault works
+  useEffect(() => {
+    const el = slideBarRef.current;
+    if (!el) return;
+    const handler = (e: TouchEvent) => {
+      if (touchStartY.current === null || !containerRef.current) return;
+      const deltaY = Math.abs(e.touches[0].clientY - touchStartY.current);
+      if (deltaY > 10) isDragging.current = true;
+      if (!isDragging.current) return;
+      e.preventDefault();
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const fingerY = e.touches[0].clientY;
+      const mapH = Math.max(80, Math.min(fingerY - containerRect.top, containerRect.height - 80));
+      setDragMapHeight(mapH);
+    };
+    el.addEventListener("touchmove", handler, { passive: false });
+    return () => el.removeEventListener("touchmove", handler);
+  }, []);
+
+  const handleSlideBarTouchStart = (e: ReactTouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+    isDragging.current = false;
+  };
+
+  const handleSlideBarTouchEnd = (_: ReactTouchEvent) => {
+    if (touchStartY.current === null) return;
+    const wasDragging = isDragging.current;
+    touchStartY.current = null;
+    isDragging.current = false;
+    if (wasDragging && dragMapHeight !== null && containerRef.current) {
+      const containerH = containerRef.current.getBoundingClientRect().height;
+      const ratio = dragMapHeight / containerH;
+      // Determine snap target
+      let target: "top" | "middle" | "bottom";
+      if (ratio > 0.7) {
+        target = "bottom";
+      } else if (ratio > 0.35) {
+        target = "middle";
+      } else {
+        target = "top";
+      }
+      // Animate to snap point: compute target height in px
+      const targetH = target === "bottom" ? containerH : target === "top" ? containerH * 0.15 : containerH * 0.4;
+      setIsSnapping(true);
+      setDragMapHeight(targetH);
+      setMobileSlide(target);
+      // After transition ends, clear inline height
+      setTimeout(() => {
+        setDragMapHeight(null);
+        setIsSnapping(false);
+      }, 300);
+    } else if (!wasDragging) {
+      // Simple tap — let onClick handle it
+    }
+  };
 
   const handleUserLocation = useCallback((lng: number, lat: number) => {
     userLocationRef.current = { lng, lat };
+    setUserLocation({ lng, lat });
   }, []);
 
   const handleMapClick = useCallback(
@@ -44,7 +141,7 @@ export default function App() {
         setSelectedLocation({ lng, lat });
         setSelectingOnMap(false);
         setUsedGeolocation(false);
-        setSidebarCollapsed(false);
+        setMobileSlide("middle");
       }
     },
     [showForm]
@@ -53,11 +150,16 @@ export default function App() {
   const handleSelectRequest = useCallback((c: Request | null) => {
     selectRequest(c);
     if (c) {
-      setSidebarView("detail");
       setShowForm(false);
-      setSidebarCollapsed(false);
+      if (window.innerWidth >= 768) {
+        setSidebarView("detail");
+        setMobileSlide("middle");
+      } else {
+        setMobileSlide("bottom");
+      }
     } else {
       setSidebarView("list");
+      if (window.innerWidth < 768) setMobileSlide("bottom");
     }
   }, [selectRequest]);
 
@@ -75,7 +177,7 @@ export default function App() {
     }
     setShowForm(true);
     setSidebarView("form");
-    setSidebarCollapsed(false);
+    setMobileSlide("middle");
     selectRequest(null);
     setSelectedLocation(null);
     setSelectingOnMap(false);
@@ -120,47 +222,26 @@ export default function App() {
     setSelectingOnMap(true);
     setSelectedLocation(null);
     if (window.innerWidth < 768) {
-      setSidebarCollapsed(true);
+      setMobileSlide("bottom");
     }
   };
 
   return (
-    <div className="flex flex-col h-dvh overflow-hidden bg-white dark:bg-[#121212] text-slate-800 dark:text-zinc-200">
-      <Header
-        darkMode={darkMode}
-        onToggleTheme={toggleTheme}
-        user={user}
-        onLoginClick={() => setShowAuthModal(true)}
-        onLogout={logout}
-        onProfileClick={() => {
-          setShowForm(false);
-          setSidebarView("profile");
-          setSidebarCollapsed(false);
-          selectRequest(null);
-        }}
-        onSettingsClick={() => {
-          setShowForm(false);
-          setSidebarView("settings");
-          setSidebarCollapsed(false);
-          selectRequest(null);
-        }}
-        onFeedbackClick={() => {
-          setShowForm(false);
-          setSidebarView("feedback");
-          setSidebarCollapsed(false);
-          selectRequest(null);
-        }}
-      />
+    <div className="relative h-dvh overflow-hidden bg-white dark:bg-[#121212] text-slate-800 dark:text-zinc-200">
       <AuthModal
         open={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         onLogin={(provider) => { login(provider); setShowAuthModal(false); }}
       />
-      <div className="flex flex-col-reverse md:flex-row flex-1 overflow-hidden">
-        <aside className={`sidebar border-t border-slate-200 dark:border-[#2a2a2a] md:border-r md:border-t-0 bg-slate-50 dark:bg-[#1e1e1e] overflow-y-auto z-10 transition-all duration-300 ${
-          sidebarCollapsed
-            ? "hidden md:block md:w-0 md:min-w-0 md:overflow-hidden"
-            : "w-full flex-1 md:w-96 md:min-w-96 md:flex-none"
+      <div ref={containerRef} className="flex flex-col-reverse md:flex-row h-full overflow-hidden">
+        <aside className={`sidebar border-t border-slate-200 dark:border-[#2a2a2a] md:border-r md:border-t-0 bg-slate-50 dark:bg-[#1e1e1e] overflow-y-auto z-10 ${
+          dragMapHeight !== null && !isSnapping ? "" : "transition-all duration-300"
+        } ${
+          dragMapHeight !== null && window.innerWidth < 768
+            ? "w-full flex-1"
+            : mobileSlide === "bottom"
+              ? "hidden md:block md:w-0 md:min-w-0 md:overflow-hidden"
+              : "w-full flex-1 md:w-96 md:min-w-96 md:flex-none"
         }`}>
           {sidebarView === "form" ? (
             <RequestForm
@@ -186,9 +267,17 @@ export default function App() {
           ) : sidebarView === "settings" ? (
             <SettingsPage
               darkMode={darkMode}
-              onToggleTheme={toggleTheme}
+              onToggleTheme={() => {
+                toggleTheme();
+                if (user) patchSettings({ darkMode: !darkMode }).then(setProfile).catch(() => {});
+              }}
               highAccuracy={highAccuracy}
-              onToggleHighAccuracy={() => { const next = !highAccuracy; setHighAccuracy(next); localStorage.setItem("highAccuracy", String(next)); }}
+              onToggleHighAccuracy={() => {
+                const next = !highAccuracy;
+                setHighAccuracy(next);
+                localStorage.setItem("highAccuracy", String(next));
+                if (user) patchSettings({ highAccuracy: next }).then(setProfile).catch(() => {});
+              }}
               onClose={() => setSidebarView("list")}
             />
           ) : sidebarView === "feedback" ? (
@@ -198,7 +287,7 @@ export default function App() {
           ) : sidebarView === "detail" && selectedRequest ? (
             <RequestDetail
               request={selectedRequest}
-              onBack={() => { selectRequest(null); setSidebarView("list"); }}
+              onBack={() => { if (window.innerWidth < 768) { setMobileSlide("bottom"); } else { setSidebarView("list"); } }}
               onLike={(id: string) => { if (!user) { setShowAuthModal(true); return; } like(id); }}
               onAddComment={(id: string, text: string, parentId?: string) => { if (!user) { setShowAuthModal(true); return; } addComment(id, text, parentId); }}
               onLikeComment={(requestId: string, commentId: string) => { if (!user) { setShowAuthModal(true); return; } likeComment(requestId, commentId); }}
@@ -210,6 +299,8 @@ export default function App() {
             <RequestToolbar
               requests={requests}
               loading={loading}
+              currentUserId={user?.userId}
+              userLocation={userLocation}
               onNewRequest={handleStartRequest}
               showingForm={showForm}
               onSelectRequest={handleSelectRequest}
@@ -217,21 +308,78 @@ export default function App() {
             />
           )}
         </aside>
-        <main className={`md:flex-1 md:h-auto md:min-h-0 relative transition-all duration-300 ${
-          sidebarCollapsed ? "flex-1" : "flex-none h-[25vh] min-h-[25vh]"
-        }`}>
+        <main
+          className={`md:flex-1 md:h-auto md:min-h-0 relative ${
+            dragMapHeight !== null && !isSnapping ? "" : "transition-all duration-300"
+          } ${
+            mobileSlide === "bottom" ? "flex-1" : "flex-none md:flex-1"
+          }`}
+          style={
+            window.innerWidth >= 768
+              ? undefined
+              : dragMapHeight !== null
+                ? { height: dragMapHeight, minHeight: dragMapHeight, flexGrow: 0 }
+                : mobileSlide === "bottom"
+                  ? undefined
+                  : { height: mobileSlide === "top" ? "15vh" : "40vh", minHeight: mobileSlide === "top" ? "15vh" : "40vh" }
+          }
+        >
+          {/* Desktop: floating pill toggle */}
+          <Header
+            user={user}
+            onLocationSelect={(lng, lat) => setFlyToTarget({ lng, lat })}
+            onLoginClick={() => setShowAuthModal(true)}
+            onLogout={logout}
+            onProfileClick={() => {
+              setShowForm(false);
+              setSidebarView("profile");
+              setMobileSlide("middle");
+              selectRequest(null);
+            }}
+            onSettingsClick={() => {
+              setShowForm(false);
+              setSidebarView("settings");
+              setMobileSlide("middle");
+              selectRequest(null);
+            }}
+            onFeedbackClick={() => {
+              setShowForm(false);
+              setSidebarView("feedback");
+              setMobileSlide("middle");
+              selectRequest(null);
+            }}
+          />
+          {/* Desktop: floating pill toggle */}
           <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="absolute z-50 transition-colors flex items-center gap-1.5 px-3 py-2 rounded-full bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-[#3a3a3a] shadow-lg text-xs font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-[#333] cursor-pointer bottom-3 left-1/2 -translate-x-1/2 md:bottom-auto md:left-4 md:translate-x-0 md:top-4"
+            onClick={() => setMobileSlide(mobileSlide === "bottom" ? "middle" : "bottom")}
+            className="hidden md:flex absolute z-50 transition-colors items-center gap-1.5 px-3 py-2 rounded-full bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-[#3a3a3a] shadow-lg text-xs font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-[#333] cursor-pointer left-4 top-1/2 -translate-y-1/2"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              className={`transition-transform duration-300 ${sidebarCollapsed ? "rotate-0" : "rotate-180"}`}
+              className={`transition-transform duration-300 ${mobileSlide === "bottom" ? "rotate-0" : "rotate-180"}`}
             >
-              <polyline points="18 15 12 9 6 15" className="md:hidden" />
-              <polyline points="9 18 15 12 9 6" className="hidden md:block" />
+              <polyline points="9 18 15 12 9 6" />
             </svg>
-            {sidebarCollapsed ? "Show Requests" : (<><span className="md:hidden">Show map</span><span className="hidden md:inline">Hide Requests List</span></>)}
+            {mobileSlide === "bottom" ? "Show Requests" : "Hide Requests"}
           </button>
+          {/* Mobile: full-width slide bar */}
+          <div
+            onClick={() => { if (!isDragging.current) setMobileSlide(mobileSlide === "bottom" ? "top" : "bottom"); }}
+            ref={slideBarRef}
+            onTouchStart={handleSlideBarTouchStart}
+            onTouchEnd={handleSlideBarTouchEnd}
+            className="md:hidden absolute bottom-0 left-0 right-0 z-50 flex items-center justify-center py-2.5 bg-white/80 dark:bg-[#1e1e1e]/80 backdrop-blur-sm border-t border-slate-200 dark:border-[#2a2a2a] text-xs font-medium text-slate-400 dark:text-zinc-500 cursor-pointer select-none touch-none"
+          >
+            <span className="inline-flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                className={`transition-transform duration-300 ${mobileSlide === "bottom" ? "rotate-0" : "rotate-180"}`}
+              >
+                <polyline points="18 18 12 12 6 18" />
+                <polyline points="18 14 12 8 6 14" />
+                <polyline points="18 10 12 4 6 10" />
+              </svg>
+              {mobileSlide === "bottom" ? "Slide for requests" : "Slide for map"}
+            </span>
+          </div>
           {showForm && selectingOnMap && !selectedLocation && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-[#121212] text-white py-2.5 px-6 rounded-3xl text-sm font-medium z-50 shadow-lg animate-pulse">
               Click anywhere on the map to place your pin
@@ -240,7 +388,7 @@ export default function App() {
           {!showForm && (
             <button
               onClick={handleStartRequest}
-              className="absolute bottom-6 right-4 z-50 w-16 h-16 md:w-auto md:h-auto md:px-6 md:py-4 flex items-center justify-center md:gap-2 rounded-full border-2 border-dashed border-slate-400 dark:border-zinc-500 bg-white/60 dark:bg-[#2a2a2a]/60 backdrop-blur-sm text-slate-600 dark:text-zinc-300 hover:border-blue-500 hover:text-blue-500 shadow-lg cursor-pointer transition-colors"
+              className="absolute bottom-14 md:bottom-6 right-4 z-50 w-16 h-16 md:w-auto md:h-auto md:px-6 md:py-4 flex items-center justify-center md:gap-2 rounded-full border-2 border-dashed border-slate-400 dark:border-zinc-500 bg-white/60 dark:bg-[#2a2a2a]/60 backdrop-blur-sm text-slate-600 dark:text-zinc-300 hover:border-blue-500 hover:text-blue-500 shadow-lg cursor-pointer transition-colors"
               title="New Request"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -263,6 +411,9 @@ export default function App() {
             currentUserId={user?.userId}
             usedGeolocation={usedGeolocation}
             highAccuracy={highAccuracy}
+            onExpandRequest={() => { setSidebarView("detail"); setMobileSlide("top"); }}
+            flyToTarget={flyToTarget}
+            onSignInPrompt={() => setShowAuthModal(true)}
           />
         </main>
       </div>

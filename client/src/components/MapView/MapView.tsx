@@ -20,6 +20,9 @@ interface MapViewProps {
   currentUserId?: string;
   usedGeolocation?: boolean;
   highAccuracy?: boolean;
+  onExpandRequest?: () => void;
+  flyToTarget?: { lng: number; lat: number } | null;
+  onSignInPrompt?: () => void;
 }
 
 export default function MapView({
@@ -35,6 +38,9 @@ export default function MapView({
   currentUserId,
   usedGeolocation,
   highAccuracy = true,
+  onExpandRequest,
+  flyToTarget,
+  onSignInPrompt,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -94,9 +100,6 @@ export default function MapView({
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
-    const azureMapsKey = import.meta.env.VITE_AZURE_MAPS_KEY || "";
-
-    // Use Azure Maps tiles if key is available, otherwise use free OSM tiles
     const defaultStyle = darkMode
       ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
       : "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
@@ -104,29 +107,7 @@ export default function MapView({
     map.current = new maplibregl.Map({
       container: mapContainer.current,
       attributionControl: false,
-      style: azureMapsKey
-        ? {
-            version: 8,
-            sources: {
-              "azure-maps": {
-                type: "raster",
-                tiles: [
-                  `https://atlas.microsoft.com/map/tile?api-version=2024-04-01&tilesetId=microsoft.base.road&zoom={z}&x={x}&y={y}&subscription-key=${azureMapsKey}`,
-                ],
-                tileSize: 256,
-              },
-            },
-            layers: [
-              {
-                id: "azure-maps-layer",
-                type: "raster",
-                source: "azure-maps",
-                minzoom: 0,
-                maxzoom: 22,
-              },
-            ],
-          }
-        : defaultStyle,
+      style: defaultStyle,
       center: [-6.2603, 53.3498], // Default: Dublin
       zoom: 13,
       pitch: 45, // 3D tilt
@@ -134,7 +115,19 @@ export default function MapView({
     });
 
     map.current.addControl(new maplibregl.NavigationControl(), "top-right");
-    if (!azureMapsKey) (map.current as unknown as { _styleUrl?: string })._styleUrl = defaultStyle;
+    (map.current as unknown as { _styleUrl?: string })._styleUrl = defaultStyle;
+
+    // Invert horizontal drag-rotate so left-right feels natural
+    const hm = (map.current as unknown as { handlers: { _handlers: { handlerName: string; handler: { _move: (...args: unknown[]) => unknown } }[] } }).handlers;
+    const rotateEntry = hm._handlers.find((h) => h.handlerName === "mouseRotate");
+    if (rotateEntry) {
+      const origMove = rotateEntry.handler._move.bind(rotateEntry.handler);
+      rotateEntry.handler._move = (...args: unknown[]) => {
+        const result = origMove(...args) as { bearingDelta?: number } | undefined;
+        if (result?.bearingDelta != null) result.bearingDelta = -result.bearingDelta;
+        return result;
+      };
+    }
 
     const geolocate = new maplibregl.GeolocateControl({
       positionOptions: { enableHighAccuracy: highAccuracy },
@@ -171,10 +164,31 @@ export default function MapView({
     if (!map.current || !mapReady) return;
     if (lastDarkModeApplied.current === darkMode) return;
     lastDarkModeApplied.current = darkMode;
+
+    // Handle Azure Maps dark mode toggle
+    if (activeLayer === "azure") {
+      const tilesetId = darkMode ? "microsoft.base.darkgrey" : "microsoft.base.road";
+      const azureStyle = {
+        version: 8 as const,
+        sources: {
+          "azure-maps": {
+            type: "raster" as const,
+            tiles: [
+              `/api/map/tile?tilesetId=${tilesetId}&z={z}&x={x}&y={y}`,
+            ],
+            tileSize: 256,
+          },
+        },
+        layers: [
+          { id: "azure-maps-layer", type: "raster" as const, source: "azure-maps", minzoom: 0, maxzoom: 22 },
+        ],
+      };
+      map.current.setStyle(azureStyle);
+      return;
+    }
+
+    if (activeLayer !== "default" && activeLayer !== "terrain") return; // Don't override other raster layers
     setMapFading(true);
-    const azureMapsKey = import.meta.env.VITE_AZURE_MAPS_KEY || "";
-    if (azureMapsKey) return; // Azure Maps doesn't support style switching this way
-    if (activeLayer !== "default" && activeLayer !== "terrain") return; // Don't override raster layer selections
     const style = darkMode
       ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
       : activeLayer === "terrain"
@@ -249,7 +263,7 @@ export default function MapView({
       const locationText = req.location || `${req.latitude.toFixed(4)}, ${req.longitude.toFixed(4)}`;
       const images = req.imageUrls || [];
       const thumbs = images.length
-        ? `<div style="margin-top:6px;border-radius:8px;overflow:hidden;height:${isMobile ? '80px' : '120px'};position:relative">
+        ? `<div style="margin-top:16px;border-radius:8px;overflow:hidden;height:${isMobile ? '100px' : '120px'};position:relative">
             <img src="${images[0]}" style="width:100%;height:100%;object-fit:cover" />
             <div style="position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:4px;padding:4px 0;font-size:11px;color:#fff;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">
               <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 384 512" fill="currentColor"><path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/></svg>
@@ -280,18 +294,24 @@ export default function MapView({
         } else timeSince = `${minutes}m ago`;
       }
 
+      const userName = req.userName || "Anonymous";
+      const userInitial = (userName[0] ?? "A").toUpperCase();
+
       const html = `
         <div class="popup-content" style="font-family:system-ui,sans-serif">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="flex:1;font-weight:600;font-size:14px" class="popup-title">${req.title.length > 30 ? `${req.title.slice(0, 30)}...` : req.title}</span>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <div style="width:28px;height:28px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">${userInitial}</div>
+            <div style="display:flex;flex-direction:column;flex:1;min-width:0;line-height:1.2">
+              <span class="popup-title" style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${userName}</span>
+              <span style="font-size:11px;color:var(--text-muted)">${timeSince}${!images.length ? ` &middot; ${locationText}` : ''}</span>
+            </div>
             <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap">${statusLabel}</span>
           </div>
-          <div class="popup-meta" style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-            ${!images.length ? `<span style="display:flex;align-items:center;gap:4px"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 384 512" fill="currentColor"><path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/></svg>${locationText}</span>` : '<span></span>'}
-            <span>${timeSince}</span>
-          </div>
           ${thumbs}
-          <p class="popup-desc" style="margin:6px 0 0;line-height:1.4">${req.description.slice(0, isMobile ? 120 : 200)}${req.description.length > (isMobile ? 120 : 200) ? "..." : ""}</p></p>
+          <div style="margin-top:12px">
+            <span style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block" class="popup-title">${req.title}</span>
+          </div>
+          <p class="popup-desc" style="margin:6px 0 0;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${req.description}</p>
           <div style="display:flex;align-items:center;gap:12px;margin-top:8px;font-size:12px">
             <button id="popup-like-${req.id}" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;font-size:12px;${likeColor}" class="popup-metric-btn">
               ${likeCount > 0
@@ -306,6 +326,7 @@ export default function MapView({
               ${commentCount}
             </span>
           </div>
+          ${isMobile ? '<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:10px;color:var(--text-muted);opacity:0.5">Click to expand</span><div style="width:32px;height:4px;border-radius:2px;background:var(--text-muted);opacity:0.3"></div></div>' : ''}
         </div>
       `;
 
@@ -323,18 +344,29 @@ export default function MapView({
       popupCloseHandlerRef.current = closeHandler;
       popup.on("close", closeHandler);
 
-      // Attach like handler after DOM insertion
+      // Attach like handler + make entire popup tappable on mobile to expand
       setTimeout(() => {
         const btn = document.getElementById(`popup-like-${req.id}`);
         btn?.addEventListener("click", (e) => {
           e.stopPropagation();
           onLike(req.id);
         });
+        if (isMobile) {
+          const popupContent = popup.getElement()?.querySelector(".popup-content") as HTMLElement | null;
+          if (popupContent) {
+            popupContent.style.cursor = "pointer";
+            popupContent.addEventListener("click", (e) => {
+              // Don't expand if tapping the like button
+              if ((e.target as HTMLElement).closest(`#popup-like-${req.id}`)) return;
+              onExpandRequest?.();
+            });
+          }
+        }
       }, 0);
 
       popupRef.current = popup;
     },
-    [onSelectRequest, onLike, currentUserId]
+    [onSelectRequest, onLike, currentUserId, onExpandRequest]
   );
 
   const selectedIdRef = useRef<string | null>(null);
@@ -359,6 +391,17 @@ export default function MapView({
       }
     }
   }, [selectedRequest, showPopup]);
+
+  // Fly to target location from search
+  useEffect(() => {
+    if (flyToTarget && map.current) {
+      map.current.flyTo({
+        center: [flyToTarget.lng, flyToTarget.lat],
+        zoom: 15,
+        pitch: 45,
+      });
+    }
+  }, [flyToTarget]);
 
   // Toggle crosshair cursor in report mode
   useEffect(() => {
@@ -484,6 +527,21 @@ export default function MapView({
           { id: "osm-transport-layer", type: "raster", source: "osm-transport" },
         ],
       },
+      azure: {
+        version: 8,
+        sources: {
+          "azure-maps": {
+            type: "raster",
+            tiles: [
+              `/api/map/tile?tilesetId=${darkMode ? "microsoft.base.darkgrey" : "microsoft.base.road"}&z={z}&x={x}&y={y}`,
+            ],
+            tileSize: 256,
+          },
+        },
+        layers: [
+          { id: "azure-maps-layer", type: "raster", source: "azure-maps", minzoom: 0, maxzoom: 22 },
+        ],
+      },
     };
 
     const newStyle = styles[layer];
@@ -526,7 +584,7 @@ export default function MapView({
           zIndex: 1,
         }}
       />
-      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} />
+      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} isSignedIn={!!currentUserId} onSignInPrompt={onSignInPrompt} />
     </div>
   );
 }

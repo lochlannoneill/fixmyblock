@@ -102,23 +102,14 @@ export default function RequestDetail({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-[#2a2a2a]">
+      {/* Header - desktop only */}
+      <div className="hidden md:flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-[#2a2a2a]">
         <button
           onClick={onBack}
           className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-[#2a2a2a] transition-colors cursor-pointer text-slate-500 dark:text-zinc-400"
         >
           <FontAwesomeIcon icon={faArrowLeft} />
         </button>
-        <span className="flex-1 font-semibold text-base text-slate-800 dark:text-zinc-200 truncate">
-          {request.title.length > 30 ? `${request.title.slice(0, 30)}...` : request.title}
-        </span>
-        <span
-          className="text-[11px] font-semibold text-white px-2.5 py-0.5 rounded-full shrink-0"
-          style={{ backgroundColor: STATUS_COLORS[request.status] }}
-        >
-          {statusLabel}
-        </span>
       </div>
 
       {/* Scrollable content */}
@@ -135,6 +126,12 @@ export default function RequestDetail({
               </span>
               <span className="text-xs text-slate-400 dark:text-[#6e6e79]">{getTimeSince(request.createdAt)}</span>
             </div>
+            <span
+              className="text-[11px] font-semibold text-white px-2.5 py-0.5 rounded-full shrink-0"
+              style={{ backgroundColor: STATUS_COLORS[request.status] }}
+            >
+              {statusLabel}
+            </span>
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setShowMenu(v => !v)}
@@ -260,7 +257,7 @@ export default function RequestDetail({
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-[#2a2a2a] text-slate-500 dark:text-[#8c8c96] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer"
               onClick={() => commentInputRef.current?.focus()}
             >
-              <FontAwesomeIcon icon={comments.length > 0 ? faCommentSolid : faCommentRegular} /> {comments.length}
+              <FontAwesomeIcon icon={currentUserId && comments.some(com => com.userId === currentUserId) ? faCommentSolid : faCommentRegular} /> {comments.length}
             </button>
             </div>
             <div className="flex items-center gap-2">
@@ -372,7 +369,7 @@ export default function RequestDetail({
                           }`}
                           onClick={() => onLikeComment(request.id, comment.id)}
                         >
-                          <FontAwesomeIcon icon={hasLikedComment || commentLikes > 0 ? faHeartSolid : faHeartRegular} className="text-[9px]" />
+                          <FontAwesomeIcon icon={hasLikedComment ? faHeartSolid : faHeartRegular} className="text-[9px]" />
                           <span>{commentLikes}</span>
                         </button>
                       </div>
@@ -422,7 +419,7 @@ export default function RequestDetail({
                                 }`}
                                 onClick={() => onLikeComment(request.id, reply.id)}
                               >
-                                <FontAwesomeIcon icon={hasLikedReply || replyLikes > 0 ? faHeartSolid : faHeartRegular} className="text-[9px]" />
+                                <FontAwesomeIcon icon={hasLikedReply ? faHeartSolid : faHeartRegular} className="text-[9px]" />
                                 <span>{replyLikes}</span>
                               </button>
                             </div>

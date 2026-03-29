@@ -80,23 +80,27 @@ export default function ProfilePage({ user, requests, onClose, onSelectRequest }
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-[#3a3a3a] mb-3">
+      <div className="relative flex border-b border-slate-200 dark:border-[#3a3a3a] mb-3">
+        <div
+          className="absolute bottom-0 h-0.5 bg-blue-500 transition-all duration-300 ease-in-out"
+          style={{ width: "50%", left: activeTab === "yours" ? "0%" : "50%" }}
+        />
         <button
           onClick={() => setActiveTab("yours")}
-          className={`flex-1 text-xs font-medium py-2.5 cursor-pointer transition-colors border-b-2 -mb-px ${
+          className={`flex-1 text-xs font-medium py-2.5 cursor-pointer transition-colors ${
             activeTab === "yours"
-              ? "border-blue-500 text-slate-800 dark:text-zinc-200"
-              : "border-transparent text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300"
+              ? "text-slate-800 dark:text-zinc-200"
+              : "text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300"
           }`}
         >
           Your Posts ({myPosts.length})
         </button>
         <button
           onClick={() => setActiveTab("saved")}
-          className={`flex-1 text-xs font-medium py-2.5 cursor-pointer transition-colors border-b-2 -mb-px ${
+          className={`flex-1 text-xs font-medium py-2.5 cursor-pointer transition-colors ${
             activeTab === "saved"
-              ? "border-blue-500 text-slate-800 dark:text-zinc-200"
-              : "border-transparent text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300"
+              ? "text-slate-800 dark:text-zinc-200"
+              : "text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300"
           }`}
         >
           Saved Posts ({savedPosts.length})
