@@ -11,13 +11,14 @@ import { FeedbackPage } from "./components/FeedbackPage";
 import { useTheme } from "./hooks/useTheme";
 import { useRequests } from "./hooks/useRequests";
 import { useAuth } from "./hooks/useAuth";
+import { patchSettings } from "./services/api";
 import type { Request, NewRequest } from "./types/request";
 import "./App.css";
 
 export default function App() {
   const { darkMode, toggleTheme } = useTheme();
   const { requests, loading, selectedRequest, selectRequest, like, remove, create, addComment, likeComment, save } = useRequests();
-  const { user, login, logout } = useAuth();
+  const { user, profile, login, logout, setProfile } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   const [flyToTarget, setFlyToTarget] = useState<{ lng: number; lat: number } | null>(null);
@@ -31,6 +32,18 @@ export default function App() {
   const [selectingOnMap, setSelectingOnMap] = useState(false);
   const [highAccuracy, setHighAccuracy] = useState(() => localStorage.getItem("highAccuracy") !== "false");
   const [sidebarView, setSidebarView] = useState<"list" | "form" | "profile" | "detail" | "settings" | "feedback">("list");
+
+  // Sync settings from user profile when it loads
+  useEffect(() => {
+    if (profile) {
+      setHighAccuracy(profile.settings.highAccuracy);
+      // Sync dark mode if it differs from current local state
+      if (profile.settings.darkMode !== darkMode) {
+        toggleTheme();
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id]);
   // Mobile slide positions: "bottom" = full map, "middle" = 40vh map, "top" = 15vh map
   const [mobileSlide, setMobileSlide] = useState<"top" | "middle" | "bottom">(() => window.innerWidth < 768 ? "bottom" : "middle");
   const geoAbortRef = useRef(false);
@@ -254,9 +267,17 @@ export default function App() {
           ) : sidebarView === "settings" ? (
             <SettingsPage
               darkMode={darkMode}
-              onToggleTheme={toggleTheme}
+              onToggleTheme={() => {
+                toggleTheme();
+                if (user) patchSettings({ darkMode: !darkMode }).then(setProfile).catch(() => {});
+              }}
               highAccuracy={highAccuracy}
-              onToggleHighAccuracy={() => { const next = !highAccuracy; setHighAccuracy(next); localStorage.setItem("highAccuracy", String(next)); }}
+              onToggleHighAccuracy={() => {
+                const next = !highAccuracy;
+                setHighAccuracy(next);
+                localStorage.setItem("highAccuracy", String(next));
+                if (user) patchSettings({ highAccuracy: next }).then(setProfile).catch(() => {});
+              }}
               onClose={() => setSidebarView("list")}
             />
           ) : sidebarView === "feedback" ? (

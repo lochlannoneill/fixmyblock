@@ -32,7 +32,7 @@ Built with React 19, MapLibre GL JS, Tailwind CSS, and Azure.
 │                              │      │      │          │
 │                   ┌──────────▼┐ ┌───▼────┐ │          │
 │                   │ Cosmos DB  │ │  Blob  │ │          │
-│                   │  (posts)   │ │Storage │ │          │
+│                   │posts+users │ │Storage │ │          │
 │                   └───────────┘ └────────┘ │          │
 │                                            │          │
 │                              ┌─────────────▼────────┐ │
@@ -69,7 +69,7 @@ Built with React 19, MapLibre GL JS, Tailwind CSS, and Azure.
 | Service | Purpose |
 |---------|---------|
 | **Static Web Apps** | Hosts frontend + API, manages OAuth, CI/CD |
-| **Cosmos DB** (Serverless) | NoSQL document database for posts |
+| **Cosmos DB** (Serverless) | NoSQL document database — `complaints` (posts) and `users` containers |
 | **Blob Storage** | Stores uploaded images (public blob access) |
 | **Azure Maps** | Map tile provider (proxied through API to protect key) |
 
@@ -111,8 +111,9 @@ fixmyblock/
 │   ├── src/
 │   │   ├── functions/
 │   │   │   ├── requests.ts          # CRUD endpoints for posts, comments, likes, saves
+│   │   │   ├── users.ts             # User profile & settings endpoints
 │   │   │   └── mapTile.ts           # Azure Maps tile proxy (hides API key server-side)
-│   │   ├── cosmos.ts                # Cosmos DB read/write operations
+│   │   ├── cosmos.ts                # Cosmos DB read/write operations (posts + users)
 │   │   ├── storage.ts               # Blob Storage upload operations
 │   │   └── multipart.ts             # Multipart form data parser
 │   ├── host.json                    # Azure Functions host config
@@ -139,6 +140,9 @@ All routes are prefixed with `/api`. Auth-required routes are enforced via `stat
 | POST | `/api/posts/{id}/save` | Yes | Toggle save on a post |
 | POST | `/api/posts/{id}/comments` | Yes | Add a comment (supports `parentId` for threading) |
 | POST | `/api/posts/{id}/comments/{commentId}/like` | Yes | Toggle like on a comment |
+| GET | `/api/users/me` | Yes | Get current user profile |
+| POST | `/api/users/me` | Yes | Upsert user on login |
+| PATCH | `/api/users/me/settings` | Yes | Update user settings (darkMode, highAccuracy) |
 | GET | `/api/map/tile` | No | Proxy Azure Maps tiles (`tilesetId`, `z`, `x`, `y` query params) |
 
 ## Prerequisites
@@ -180,12 +184,20 @@ az cosmosdb sql database create \
   --resource-group fixmyblock-rg \
   --name fixmyblock
 
-# Create container (partition key = /id)
+# Create posts container (partition key = /id)
 az cosmosdb sql container create \
   --account-name fixmyblock-db \
   --resource-group fixmyblock-rg \
   --database-name fixmyblock \
   --name complaints \
+  --partition-key-path "/id"
+
+# Create users container (partition key = /id)
+az cosmosdb sql container create \
+  --account-name fixmyblock-db \
+  --resource-group fixmyblock-rg \
+  --database-name fixmyblock \
+  --name users \
   --partition-key-path "/id"
 
 # Get connection string
@@ -263,6 +275,7 @@ In Azure Portal → Static Web App → Configuration → Application settings:
 | `COSMOS_CONNECTION_STRING` | *(from step 3)* |
 | `COSMOS_DATABASE` | `fixmyblock` |
 | `COSMOS_CONTAINER` | `complaints` |
+| `USERS_CONTAINER` | `users` |
 | `STORAGE_CONNECTION_STRING` | *(from step 4)* |
 | `STORAGE_CONTAINER` | `images` |
 | `AZURE_MAPS_KEY` | *(from step 5)* |
@@ -277,6 +290,7 @@ az staticwebapp appsettings set \
     COSMOS_CONNECTION_STRING="<value>" \
     COSMOS_DATABASE="fixmyblock" \
     COSMOS_CONTAINER="complaints" \
+    USERS_CONTAINER="users" \
     STORAGE_CONNECTION_STRING="<value>" \
     STORAGE_CONTAINER="images" \
     AZURE_MAPS_KEY="<value>"

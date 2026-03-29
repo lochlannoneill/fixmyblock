@@ -80,6 +80,26 @@
       "route": "/api/posts/*",
       "methods": ["DELETE"],
       "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/api/users/me",
+      "methods": ["GET", "POST"],
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/api/users/me/settings",
+      "methods": ["PATCH"],
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/api/users",
+      "methods": ["GET"],
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/api/users/*/role",
+      "methods": ["PATCH"],
+      "allowedRoles": ["authenticated"]
     }
   ],
   "responseOverrides": {

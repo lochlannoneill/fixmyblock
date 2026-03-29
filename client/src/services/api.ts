@@ -1,4 +1,4 @@
-import type { Request, NewRequest } from "../types/request";
+import type { Request, NewRequest, UserProfile, UserSettings, UserRole } from "../types/request";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
@@ -80,5 +80,50 @@ export async function saveRequest(id: string): Promise<Request> {
     { method: "POST" }
   );
   if (!res.ok) throw new Error("Failed to save request");
+  return res.json();
+}
+
+// ── User API ──
+
+export async function fetchMe(): Promise<UserProfile> {
+  const res = await fetch(`${API_BASE}/users/me`);
+  if (!res.ok) throw new Error("Failed to fetch user profile");
+  return res.json();
+}
+
+export async function upsertMe(): Promise<UserProfile> {
+  const res = await fetch(`${API_BASE}/users/me`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to upsert user");
+  return res.json();
+}
+
+export async function patchSettings(settings: Partial<UserSettings>): Promise<UserProfile> {
+  const res = await fetch(`${API_BASE}/users/me/settings`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(settings),
+  });
+  if (!res.ok) throw new Error("Failed to update settings");
+  return res.json();
+}
+
+// ── Admin API ──
+
+export async function fetchAllUsers(): Promise<UserProfile[]> {
+  const res = await fetch(`${API_BASE}/users`);
+  if (!res.ok) throw new Error("Failed to fetch users");
+  return res.json();
+}
+
+export async function changeUserRole(userId: string, role: UserRole): Promise<UserProfile> {
+  const res = await fetch(`${API_BASE}/users/${encodeURIComponent(userId)}/role`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ role }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Failed to change role" }));
+    throw new Error(err.error || "Failed to change role");
+  }
   return res.json();
 }

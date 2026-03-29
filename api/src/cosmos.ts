@@ -3,18 +3,38 @@ import { CosmosClient, Database, Container } from "@azure/cosmos";
 let client: CosmosClient;
 let database: Database;
 let container: Container;
+let usersContainer: Container;
 
-function getContainer(): Container {
-  if (!container) {
+function getClient(): CosmosClient {
+  if (!client) {
     const connectionString = process.env.COSMOS_CONNECTION_STRING;
     if (!connectionString) {
       throw new Error("COSMOS_CONNECTION_STRING is not configured");
     }
     client = new CosmosClient(connectionString);
-    database = client.database(process.env.COSMOS_DATABASE || "fixmyblock");
-    container = database.container(process.env.COSMOS_CONTAINER || "posts");
+  }
+  return client;
+}
+
+function getDatabase(): Database {
+  if (!database) {
+    database = getClient().database(process.env.COSMOS_DATABASE || "fixmyblock");
+  }
+  return database;
+}
+
+function getContainer(): Container {
+  if (!container) {
+    container = getDatabase().container(process.env.COSMOS_CONTAINER || "posts");
   }
   return container;
+}
+
+function getUsersContainer(): Container {
+  if (!usersContainer) {
+    usersContainer = getDatabase().container(process.env.USERS_CONTAINER || "users");
+  }
+  return usersContainer;
 }
 
 export interface Comment {
@@ -159,5 +179,68 @@ export async function toggleSave(id: string, userId: string): Promise<RequestDoc
   const { resource } = await getContainer()
     .item(id, id)
     .replace<RequestDoc>(existing);
+  return resource ?? null;
+}
+
+// ── User operations ──
+
+export interface UserSettings {
+  darkMode: boolean;
+  highAccuracy: boolean;
+}
+
+export type UserRole = "admin" | "moderator" | "developer" | "user";
+
+export interface UserDoc {
+  id: string;
+  displayName: string;
+  email?: string;
+  identityProvider: string;
+  role: UserRole;
+  createdAt: string;
+  settings: UserSettings;
+  profilePictureUrl?: string;
+}
+
+export async function getUserById(id: string): Promise<UserDoc | null> {
+  try {
+    const { resource } = await getUsersContainer().item(id, id).read<UserDoc>();
+    return resource ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function upsertUser(doc: UserDoc): Promise<UserDoc> {
+  const { resource } = await getUsersContainer().items.upsert<UserDoc>(doc);
+  return resource!;
+}
+
+export async function updateUserSettings(id: string, settings: UserSettings): Promise<UserDoc | null> {
+  const existing = await getUserById(id);
+  if (!existing) return null;
+
+  existing.settings = settings;
+  const { resource } = await getUsersContainer()
+    .item(id, id)
+    .replace<UserDoc>(existing);
+  return resource ?? null;
+}
+
+export async function getAllUsers(): Promise<UserDoc[]> {
+  const { resources } = await getUsersContainer()
+    .items.query<UserDoc>("SELECT * FROM c ORDER BY c.createdAt DESC")
+    .fetchAll();
+  return resources;
+}
+
+export async function updateUserRole(id: string, role: UserRole): Promise<UserDoc | null> {
+  const existing = await getUserById(id);
+  if (!existing) return null;
+
+  existing.role = role;
+  const { resource } = await getUsersContainer()
+    .item(id, id)
+    .replace<UserDoc>(existing);
   return resource ?? null;
 }

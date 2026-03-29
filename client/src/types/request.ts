@@ -66,3 +66,21 @@ export const STATUS_COLORS: Record<RequestStatus, string> = {
   "in-progress": "#f59e0b",
   resolved: "#22c55e",
 };
+
+export interface UserSettings {
+  darkMode: boolean;
+  highAccuracy: boolean;
+}
+
+export type UserRole = "admin" | "moderator" | "developer" | "user";
+
+export interface UserProfile {
+  id: string;
+  displayName: string;
+  email?: string;
+  identityProvider: string;
+  role: UserRole;
+  createdAt: string;
+  settings: UserSettings;
+  profilePictureUrl?: string;
+}
