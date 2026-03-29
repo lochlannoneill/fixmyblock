@@ -49,9 +49,8 @@ export default function App() {
   useEffect(() => {
     if (mobileSlide === "bottom" && sidebarView === "detail" && window.innerWidth < 768) {
       setSidebarView("list");
-      selectRequest(null);
     }
-  }, [mobileSlide, sidebarView, selectRequest]);
+  }, [mobileSlide, sidebarView]);
 
   const userLocationRef = useRef<{ lng: number; lat: number } | null>(null);
   const touchStartY = useRef<number | null>(null);
@@ -265,7 +264,7 @@ export default function App() {
           ) : sidebarView === "detail" && selectedRequest ? (
             <RequestDetail
               request={selectedRequest}
-              onBack={() => { if (window.innerWidth < 768) { setMobileSlide("bottom"); } else { selectRequest(null); setSidebarView("list"); } }}
+              onBack={() => { if (window.innerWidth < 768) { setMobileSlide("bottom"); } else { setSidebarView("list"); } }}
               onLike={(id: string) => { if (!user) { setShowAuthModal(true); return; } like(id); }}
               onAddComment={(id: string, text: string, parentId?: string) => { if (!user) { setShowAuthModal(true); return; } addComment(id, text, parentId); }}
               onLikeComment={(requestId: string, commentId: string) => { if (!user) { setShowAuthModal(true); return; } likeComment(requestId, commentId); }}
