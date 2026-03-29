@@ -107,6 +107,16 @@ export async function patchSettings(settings: Partial<UserSettings>): Promise<Us
   return res.json();
 }
 
+export async function updateProfile(data: { firstName: string; lastName: string }): Promise<UserProfile> {
+  const res = await fetch(`${API_BASE}/users/me/profile`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update profile");
+  return res.json();
+}
+
 // ── Admin API ──
 
 export async function fetchAllUsers(): Promise<UserProfile[]> {

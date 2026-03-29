@@ -1,13 +1,16 @@
 import { useState } from "react";
 import type { AuthUser } from "../../hooks/useAuth";
-import type { Request } from "../../types/request";
+import type { Request, UserProfile } from "../../types/request";
 import { CATEGORY_LABELS, STATUS_COLORS } from "../../types/request";
+import { updateProfile } from "../../services/api";
 
 interface ProfilePageProps {
   user: AuthUser;
+  profile: UserProfile | null;
   requests: Request[];
   onClose: () => void;
   onSelectRequest: (r: Request) => void;
+  onProfileUpdate: (profile: UserProfile) => void;
 }
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -17,18 +20,39 @@ const PROVIDER_LABELS: Record<string, string> = {
   facebook: "Facebook",
 };
 
-export default function ProfilePage({ user, requests, onClose, onSelectRequest }: ProfilePageProps) {
+export default function ProfilePage({ user, profile, requests, onClose, onSelectRequest, onProfileUpdate }: ProfilePageProps) {
   const [activeTab, setActiveTab] = useState<"yours" | "saved">("yours");
+  const [editingName, setEditingName] = useState(false);
+  const [firstName, setFirstName] = useState(profile?.firstName || "");
+  const [lastName, setLastName] = useState(profile?.lastName || "");
+  const [savingName, setSavingName] = useState(false);
+
+  const displayName = profile?.firstName ? profile.displayName : user.userDetails;
+
   const myPosts = requests.filter((r) => r.userId === user.userId);
   const savedPosts = requests.filter((r) => (r.savedBy || []).includes(user.userId));
   const totalLikesReceived = myPosts.reduce((sum, r) => sum + (r.likers || []).length, 0);
   const resolvedCount = myPosts.filter((r) => r.status === "resolved").length;
   const myLikesGiven = requests.filter((r) => (r.likers || []).includes(user.userId)).length;
 
+  const handleSaveName = async () => {
+    if (!firstName.trim() || !lastName.trim() || savingName) return;
+    setSavingName(true);
+    try {
+      const updated = await updateProfile({ firstName: firstName.trim(), lastName: lastName.trim() });
+      onProfileUpdate(updated);
+      setEditingName(false);
+    } catch {
+      // ignore
+    } finally {
+      setSavingName(false);
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="m-0 text-lg font-semibold text-slate-800 dark:text-zinc-200">{user.userDetails}</h2>
+        <h2 className="m-0 text-lg font-semibold text-slate-800 dark:text-zinc-200">{displayName}</h2>
         <button
           onClick={onClose}
           className="text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 cursor-pointer transition-colors"
@@ -44,13 +68,66 @@ export default function ProfilePage({ user, requests, onClose, onSelectRequest }
       {/* User info card */}
       <div className="flex items-center gap-4 mb-6 p-4 rounded-xl bg-white dark:bg-[#272727] border border-slate-200 dark:border-[#3a3a3a]">
         <div className="w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center text-white text-xl font-bold shrink-0">
-          {(user.userDetails?.[0] ?? "U").toUpperCase()}
+          {(displayName?.[0] ?? "U").toUpperCase()}
         </div>
-        <div className="min-w-0">
-          <p className="text-base font-semibold truncate">{user.userDetails}</p>
-          <p className="text-sm text-slate-400 dark:text-zinc-500">
-            {PROVIDER_LABELS[user.identityProvider] ?? user.identityProvider} account
-          </p>
+        <div className="min-w-0 flex-1">
+          {editingName ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="First name"
+                  maxLength={50}
+                  autoFocus
+                  className="flex-1 min-w-0 px-2 py-1 rounded-md border border-slate-200 dark:border-[#3a3a3a] bg-white dark:bg-[#1e1e1e] text-sm text-slate-800 dark:text-zinc-200 outline-none focus:border-blue-400"
+                />
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Last name"
+                  maxLength={50}
+                  className="flex-1 min-w-0 px-2 py-1 rounded-md border border-slate-200 dark:border-[#3a3a3a] bg-white dark:bg-[#1e1e1e] text-sm text-slate-800 dark:text-zinc-200 outline-none focus:border-blue-400"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSaveName}
+                  disabled={!firstName.trim() || !lastName.trim() || savingName}
+                  className="text-xs font-medium px-3 py-1 rounded-md bg-blue-500 text-white hover:bg-blue-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {savingName ? "Saving..." : "Save"}
+                </button>
+                <button
+                  onClick={() => { setEditingName(false); setFirstName(profile?.firstName || ""); setLastName(profile?.lastName || ""); }}
+                  className="text-xs font-medium px-3 py-1 rounded-md text-slate-500 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-[#333] cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <p className="text-base font-semibold truncate">{displayName}</p>
+                <button
+                  onClick={() => setEditingName(true)}
+                  className="text-slate-400 dark:text-zinc-500 hover:text-blue-500 cursor-pointer transition-colors shrink-0"
+                  aria-label="Edit name"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-sm text-slate-400 dark:text-zinc-500">
+                {PROVIDER_LABELS[user.identityProvider] ?? user.identityProvider} account
+              </p>
+            </>
+          )}
         </div>
       </div>
 

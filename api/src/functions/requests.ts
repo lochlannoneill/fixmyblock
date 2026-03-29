@@ -15,6 +15,7 @@ import {
   addComment as addCommentDoc,
   deleteRequest as deleteRequestDoc,
   RequestDoc,
+  getUserById,
 } from "../cosmos.js";
 import { uploadImage } from "../storage.js";
 import { parseMultipart } from "../multipart.js";
@@ -85,6 +86,16 @@ async function postRequest(
       } catch {
         // ignore decode errors
       }
+    }
+
+    // Use display name from user profile if available
+    if (visitorUserId) {
+      try {
+        const userProfile = await getUserById(visitorUserId);
+        if (userProfile?.firstName) {
+          visitorUserName = userProfile.displayName;
+        }
+      } catch { /* fall back to auth header name */ }
     }
 
     if (!title || !description || isNaN(latitude) || isNaN(longitude)) {
@@ -183,6 +194,14 @@ async function postComment(
     return { status: 401, jsonBody: { error: "Invalid auth token" } };
   }
   if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
+
+  // Use display name from user profile if available
+  try {
+    const userProfile = await getUserById(userId);
+    if (userProfile?.firstName) {
+      userName = userProfile.displayName;
+    }
+  } catch { /* fall back to auth header name */ }
 
   let body: { text?: string; parentId?: string };
   try {

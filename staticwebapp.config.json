@@ -92,6 +92,11 @@
       "allowedRoles": ["authenticated"]
     },
     {
+      "route": "/api/users/me/profile",
+      "methods": ["PATCH"],
+      "allowedRoles": ["authenticated"]
+    },
+    {
       "route": "/api/users",
       "methods": ["GET"],
       "allowedRoles": ["authenticated"]

@@ -193,6 +193,8 @@ export type UserRole = "admin" | "moderator" | "developer" | "user";
 
 export interface UserDoc {
   id: string;
+  firstName: string;
+  lastName: string;
   displayName: string;
   email?: string;
   identityProvider: string;
@@ -243,4 +245,30 @@ export async function updateUserRole(id: string, role: UserRole): Promise<UserDo
     .item(id, id)
     .replace<UserDoc>(existing);
   return resource ?? null;
+}
+
+/** Update userName on all posts authored by this user, and on all their comments across all posts. */
+export async function backfillUserName(userId: string, newName: string): Promise<void> {
+  const allPosts = await getAllRequests();
+  for (const post of allPosts) {
+    let changed = false;
+
+    // Update post author name
+    if (post.userId === userId && post.userName !== newName) {
+      post.userName = newName;
+      changed = true;
+    }
+
+    // Update comment author names
+    for (const comment of post.comments || []) {
+      if (comment.userId === userId && comment.userName !== newName) {
+        comment.userName = newName;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      await getContainer().item(post.id, post.id).replace<RequestDoc>(post);
+    }
+  }
 }

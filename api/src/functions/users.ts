@@ -10,6 +10,7 @@ import {
   updateUserSettings,
   updateUserRole,
   getAllUsers,
+  backfillUserName,
   UserDoc,
   UserSettings,
   UserRole,
@@ -58,12 +59,14 @@ async function upsertMe(
   const doc: UserDoc = existing
     ? {
         ...existing,
-        displayName: auth.userDetails || existing.displayName,
+        displayName: existing.firstName ? `${existing.firstName} ${existing.lastName}` : existing.displayName,
         identityProvider: auth.identityProvider,
         role: existing.role || "user",
       }
     : {
         id: auth.userId,
+        firstName: "",
+        lastName: "",
         displayName: auth.userDetails || "Anonymous",
         email: auth.userDetails || undefined,
         identityProvider: auth.identityProvider,
@@ -103,6 +106,43 @@ async function patchSettings(
   if (!updated) return { status: 404, jsonBody: { error: "User not found" } };
 
   return { status: 200, jsonBody: updated };
+}
+
+// PATCH /api/users/me/profile — update first/last name
+async function patchProfile(
+  req: HttpRequest,
+  _ctx: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = parseAuthPrincipal(req);
+  if (!auth) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  let body: { firstName?: string; lastName?: string };
+  try {
+    body = (await req.json()) as { firstName?: string; lastName?: string };
+  } catch {
+    return { status: 400, jsonBody: { error: "Invalid JSON" } };
+  }
+
+  const firstName = (body.firstName ?? "").trim().slice(0, 50);
+  const lastName = (body.lastName ?? "").trim().slice(0, 50);
+
+  if (!firstName || !lastName) {
+    return { status: 400, jsonBody: { error: "First name and last name are required" } };
+  }
+
+  const existing = await getUserById(auth.userId);
+  if (!existing) return { status: 404, jsonBody: { error: "User not found" } };
+
+  existing.firstName = firstName;
+  existing.lastName = lastName;
+  existing.displayName = `${firstName} ${lastName}`;
+
+  const saved = await upsertUser(existing);
+
+  // Backfill the new display name on all existing posts and comments by this user
+  backfillUserName(auth.userId, saved.displayName).catch(() => {});
+
+  return { status: 200, jsonBody: saved };
 }
 
 const VALID_ROLES: UserRole[] = ["admin", "moderator", "developer", "user"];
@@ -182,6 +222,13 @@ app.http("patchSettings", {
   authLevel: "anonymous",
   route: "users/me/settings",
   handler: patchSettings,
+});
+
+app.http("patchProfile", {
+  methods: ["PATCH"],
+  authLevel: "anonymous",
+  route: "users/me/profile",
+  handler: patchProfile,
 });
 
 app.http("listUsers", {

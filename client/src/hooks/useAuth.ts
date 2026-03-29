@@ -26,6 +26,8 @@ export function useAuth() {
         const parsed = JSON.parse(stored) as AuthUser;
         setProfile({
           id: parsed.userId,
+          firstName: "",
+          lastName: "",
           displayName: parsed.userDetails,
           identityProvider: parsed.identityProvider,
           role: "admin",
@@ -71,6 +73,8 @@ export function useAuth() {
       setUser(mockUser);
       setProfile({
         id: mockUser.userId,
+        firstName: "",
+        lastName: "",
         displayName: mockUser.userDetails,
         identityProvider: mockUser.identityProvider,
         role: "admin",
