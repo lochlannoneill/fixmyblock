@@ -81,6 +81,12 @@ export interface UserSettings {
   highAccuracy: boolean;
 }
 
+export interface HomeAddress {
+  address: string;
+  latitude: number;
+  longitude: number;
+}
+
 export type UserRole = "admin" | "moderator" | "developer" | "user";
 
 export interface UserProfile {
@@ -94,4 +100,5 @@ export interface UserProfile {
   createdAt: string;
   settings: UserSettings;
   profilePictureUrl?: string;
+  homeAddress?: HomeAddress;
 }

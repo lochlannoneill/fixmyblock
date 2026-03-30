@@ -1,8 +1,14 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import type { AuthUser } from "../../hooks/useAuth";
-import type { Request, UserProfile } from "../../types/request";
-import { updateProfile, uploadAvatar, deleteAvatar } from "../../services/api";
+import type { Request, UserProfile, HomeAddress } from "../../types/request";
+import { updateProfile, uploadAvatar, deleteAvatar, updateHomeAddress } from "../../services/api";
 import { RequestItem } from "../RequestItem";
+
+interface NominatimResult {
+  lat: string;
+  lon: string;
+  display_name: string;
+}
 
 interface ProfilePageProps {
   user: AuthUser;
@@ -28,7 +34,90 @@ export default function ProfilePage({ user, profile, requests, onClose, onSelect
   const [savingName, setSavingName] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState("");
+  const [addressInput, setAddressInput] = useState(profile?.homeAddress?.address ?? "");
+  const [addressSaving, setAddressSaving] = useState(false);
+  const [suggestions, setSuggestions] = useState<NominatimResult[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [hasSelection, setHasSelection] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const addressWrapperRef = useRef<HTMLDivElement>(null);
+  const selectedAddressRef = useRef<NominatimResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (addressWrapperRef.current && !addressWrapperRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleAddressInput = (value: string) => {
+    setAddressInput(value);
+    selectedAddressRef.current = null;
+    setHasSelection(false);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!value.trim() || value.trim().length < 3) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(value.trim())}`,
+          { headers: { "Accept-Language": "en" } }
+        );
+        const results: NominatimResult[] = await res.json();
+        setSuggestions(results);
+        setShowSuggestions(results.length > 0);
+      } catch {
+        setSuggestions([]);
+      }
+    }, 350);
+  };
+
+  const handleSelectSuggestion = (result: NominatimResult) => {
+    setShowSuggestions(false);
+    setSuggestions([]);
+    setAddressInput(result.display_name);
+    selectedAddressRef.current = result;
+    setHasSelection(true);
+  };
+
+  const handleSaveAddress = async () => {
+    if (addressSaving) return;
+    const trimmed = addressInput.trim();
+    setAddressSaving(true);
+    if (!trimmed) {
+      // Clear address
+      try {
+        const updated = await updateHomeAddress(null);
+        onProfileUpdate(updated);
+      } catch { /* ignore */ }
+      selectedAddressRef.current = null;
+      setHasSelection(false);
+      setAddressSaving(false);
+      return;
+    }
+    if (!selectedAddressRef.current) { setAddressSaving(false); return; }
+    const ref = selectedAddressRef.current;
+    const homeAddress: HomeAddress = {
+      address: ref.display_name,
+      latitude: parseFloat(ref.lat),
+      longitude: parseFloat(ref.lon),
+    };
+    try {
+      const updated = await updateHomeAddress(homeAddress);
+      onProfileUpdate(updated);
+    } catch { /* ignore */ }
+    selectedAddressRef.current = null;
+    setHasSelection(false);
+    setAddressSaving(false);
+  };
 
   const displayName = profile?.firstName ? profile.displayName : user.userDetails;
 
@@ -219,6 +308,50 @@ export default function ProfilePage({ user, profile, requests, onClose, onSelect
           {avatarError}
         </div>
       )}
+
+      {/* Home Address */}
+      <div ref={addressWrapperRef} className="relative mb-6">
+        <label className="flex items-center gap-2 text-xs font-medium text-slate-400 dark:text-zinc-500 mb-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          Home Address
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={addressInput}
+            onChange={(e) => handleAddressInput(e.target.value)}
+            onFocus={() => { if (suggestions.length) setShowSuggestions(true); }}
+            placeholder="Search for your home address…"
+            className="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-[#3a3a3a] bg-white dark:bg-[#272727] text-slate-700 dark:text-zinc-300 placeholder-slate-300 dark:placeholder-zinc-600 outline-none focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
+          />
+          {hasSelection && (
+            <button
+              onClick={handleSaveAddress}
+              disabled={addressSaving}
+              className="px-3 py-2 text-sm font-medium rounded-lg bg-slate-100 dark:bg-[#333] text-slate-600 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-[#3a3a3a] disabled:opacity-50 transition-colors cursor-pointer disabled:cursor-not-allowed shrink-0 border border-slate-200 dark:border-[#444]"
+            >
+              {addressSaving ? "…" : "Save"}
+            </button>
+          )}
+        </div>
+        {showSuggestions && suggestions.length > 0 && (
+          <div className="absolute z-50 left-0 right-0 mt-1 rounded-lg border border-slate-200 dark:border-[#3a3a3a] bg-white dark:bg-[#272727] shadow-lg overflow-hidden">
+            {suggestions.map((s, i) => (
+              <button
+                key={i}
+                onClick={() => handleSelectSuggestion(s)}
+                className="w-full text-left px-3 py-2 text-xs text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-[#333] cursor-pointer transition-colors border-0 bg-transparent"
+                style={{ whiteSpace: "normal", wordBreak: "break-word" }}
+              >
+                {s.display_name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3 mb-6">

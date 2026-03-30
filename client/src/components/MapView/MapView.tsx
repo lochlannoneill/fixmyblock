@@ -2,7 +2,7 @@ import { useRef, useEffect, useCallback, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./MapView.css";
-import type { Request, RequestStatus } from "../../types/request";
+import type { Request, RequestStatus, HomeAddress } from "../../types/request";
 import { STATUS_COLORS } from "../../types/request";
 import Layers from "../Layers";
 import type { MapLayer } from "../Layers";
@@ -26,6 +26,7 @@ interface MapViewProps {
   onSignInPrompt?: () => void;
   isAdmin?: boolean;
   onUpdateStatus?: (id: string, status: RequestStatus) => void;
+  homeAddress?: HomeAddress | null;
 }
 
 export default function MapView({
@@ -47,6 +48,7 @@ export default function MapView({
   onSignInPrompt,
   isAdmin,
   onUpdateStatus,
+  homeAddress,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -146,6 +148,17 @@ export default function MapView({
     geolocate.on("geolocate", (e: unknown) => {
       const pos = e as GeolocationPosition;
       onUserLocationRef.current?.(pos.coords.longitude, pos.coords.latitude);
+    });
+
+    geolocate.on("error", () => {
+      // Geolocation denied/failed — fly to home address if set
+      if (homeAddress) {
+        map.current?.flyTo({
+          center: [homeAddress.longitude, homeAddress.latitude],
+          zoom: 15,
+          pitch: 45,
+        });
+      }
     });
 
     map.current.on("load", () => {

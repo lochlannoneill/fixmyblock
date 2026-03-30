@@ -226,6 +226,12 @@ export interface UserSettings {
 
 export type UserRole = "admin" | "moderator" | "developer" | "user";
 
+export interface HomeAddress {
+  address: string;
+  latitude: number;
+  longitude: number;
+}
+
 export interface UserDoc {
   id: string;
   firstName: string;
@@ -237,6 +243,7 @@ export interface UserDoc {
   createdAt: string;
   settings: UserSettings;
   profilePictureUrl?: string;
+  homeAddress?: HomeAddress;
 }
 
 export async function getUserById(id: string): Promise<UserDoc | null> {

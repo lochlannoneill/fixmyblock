@@ -429,6 +429,7 @@ export default function App() {
             onSignInPrompt={() => setShowAuthModal(true)}
             isAdmin={profile?.role === "admin" || profile?.role === "moderator"}
             onUpdateStatus={(id, status) => updateStatus(id, status)}
+            homeAddress={profile?.homeAddress}
           />
         </main>
       </div>
