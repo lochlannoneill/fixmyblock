@@ -427,6 +427,8 @@ export default function App() {
             onShowResolution={setResolutionRequest}
             flyToTarget={flyToTarget}
             onSignInPrompt={() => setShowAuthModal(true)}
+            isAdmin={profile?.role === "admin" || profile?.role === "moderator"}
+            onUpdateStatus={(id, status) => updateStatus(id, status)}
           />
         </main>
       </div>

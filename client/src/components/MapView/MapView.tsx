@@ -2,7 +2,7 @@ import { useRef, useEffect, useCallback, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./MapView.css";
-import type { Request } from "../../types/request";
+import type { Request, RequestStatus } from "../../types/request";
 import { STATUS_COLORS } from "../../types/request";
 import Layers from "../Layers";
 import type { MapLayer } from "../Layers";
@@ -24,6 +24,8 @@ interface MapViewProps {
   onShowResolution?: (req: Request) => void;
   flyToTarget?: { lng: number; lat: number } | null;
   onSignInPrompt?: () => void;
+  isAdmin?: boolean;
+  onUpdateStatus?: (id: string, status: RequestStatus) => void;
 }
 
 export default function MapView({
@@ -43,6 +45,8 @@ export default function MapView({
   onShowResolution,
   flyToTarget,
   onSignInPrompt,
+  isAdmin,
+  onUpdateStatus,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -317,7 +321,16 @@ export default function MapView({
               <span class="popup-title" style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${userName}</span>
               <span style="font-size:11px;color:var(--text-muted)">${timeSince}${!images.length ? ` &middot; ${locationText}` : ''}</span>
             </div>
-            <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap">${statusLabel}</span>
+            <div style="position:relative">
+              <span id="popup-status-${req.id}" style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap;${isAdmin && onUpdateStatus ? 'cursor:pointer' : ''}">${statusLabel}${isAdmin && onUpdateStatus ? '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline-block;margin-left:4px;vertical-align:-1px"><path d="M7 10l5 5 5-5z"/></svg>' : ''}</span>
+              ${isAdmin && onUpdateStatus ? `<div id="popup-status-dropdown-${req.id}" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;width:140px;background:var(--popup-bg, #fff);border:1px solid var(--popup-border, #e5e7eb);border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:100;overflow:hidden;padding:4px 0">
+                ${(['open', 'under-review', 'in-progress', 'resolved'] as const).map(s => {
+                  const label = s === 'in-progress' ? 'In Progress' : s === 'under-review' ? 'Under Review' : s.charAt(0).toUpperCase() + s.slice(1);
+                  const isCurrentStatus = s === req.status;
+                  return `<button data-status="${s}" class="popup-status-option" style="display:flex;align-items:center;gap:6px;width:100%;text-align:left;padding:6px 10px;font-size:12px;border:none;background:none;cursor:${isCurrentStatus ? 'default' : 'pointer'};color:${isCurrentStatus ? 'var(--text-muted, #9ca3af)' : 'var(--text-main, #334155)'}"><span style="width:8px;height:8px;border-radius:50%;background:${STATUS_COLORS[s]};flex-shrink:0"></span>${label}${isCurrentStatus ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto"><polyline points="20 6 9 17 4 12"/></svg>' : ''}</button>`;
+                }).join('')}
+              </div>` : ''}
+            </div>
           </div>
           ${actionLogBtn}
           ${thumbs}
@@ -369,6 +382,34 @@ export default function MapView({
           e.stopPropagation();
           onShowResolution?.(req);
         });
+        // Admin status dropdown
+        if (isAdmin && onUpdateStatus) {
+          const statusBadge = document.getElementById(`popup-status-${req.id}`);
+          const statusDropdown = document.getElementById(`popup-status-dropdown-${req.id}`);
+          if (statusBadge && statusDropdown) {
+            statusBadge.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const isOpen = statusDropdown.style.display !== "none";
+              statusDropdown.style.display = isOpen ? "none" : "block";
+              if (!isOpen) {
+                setTimeout(() => {
+                  const closeDropdown = () => { statusDropdown.style.display = "none"; };
+                  document.addEventListener("click", closeDropdown, { once: true });
+                }, 0);
+              }
+            });
+            statusDropdown.querySelectorAll(".popup-status-option").forEach(opt => {
+              opt.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const newStatus = (opt as HTMLElement).dataset.status as RequestStatus;
+                if (newStatus && newStatus !== req.status) {
+                  onUpdateStatus(req.id, newStatus);
+                  statusDropdown.style.display = "none";
+                }
+              });
+            });
+          }
+        }
         if (isMobile) {
           const popupContent = popup.getElement()?.querySelector(".popup-content") as HTMLElement | null;
           if (popupContent) {
@@ -384,7 +425,7 @@ export default function MapView({
 
       popupRef.current = popup;
     },
-    [onSelectRequest, onLike, currentUserId, onExpandRequest, onShowResolution]
+    [onSelectRequest, onLike, currentUserId, onExpandRequest, onShowResolution, isAdmin, onUpdateStatus]
   );
 
   const selectedIdRef = useRef<string | null>(null);
