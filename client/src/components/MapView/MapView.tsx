@@ -238,6 +238,11 @@ export default function MapView({
     const m = map.current;
     const reqs = requestsRef.current;
 
+    // Only cluster when zoomed out past threshold
+    const CLUSTER_MAX_ZOOM = 16;
+    const currentZoom = m.getZoom();
+    const clusteringEnabled = currentZoom < CLUSTER_MAX_ZOOM;
+
     // Cluster radius in pixels
     const CLUSTER_RADIUS = 40;
 
@@ -258,15 +263,17 @@ export default function MapView({
       let sumLng = projected[i].req.longitude;
       let sumLat = projected[i].req.latitude;
 
-      for (let j = i + 1; j < projected.length; j++) {
-        if (used.has(j)) continue;
-        const dx = projected[i].x - projected[j].x;
-        const dy = projected[i].y - projected[j].y;
-        if (dx * dx + dy * dy < CLUSTER_RADIUS * CLUSTER_RADIUS) {
-          group.push(projected[j].req);
-          used.add(j);
-          sumLng += projected[j].req.longitude;
-          sumLat += projected[j].req.latitude;
+      if (clusteringEnabled) {
+        for (let j = i + 1; j < projected.length; j++) {
+          if (used.has(j)) continue;
+          const dx = projected[i].x - projected[j].x;
+          const dy = projected[i].y - projected[j].y;
+          if (dx * dx + dy * dy < CLUSTER_RADIUS * CLUSTER_RADIUS) {
+            group.push(projected[j].req);
+            used.add(j);
+            sumLng += projected[j].req.longitude;
+            sumLat += projected[j].req.latitude;
+          }
         }
       }
 
