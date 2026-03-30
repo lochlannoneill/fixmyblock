@@ -481,7 +481,7 @@ export default function MapView({
       if (isNewSelection) {
         map.current?.flyTo({
           center: [selectedRequest.longitude, selectedRequest.latitude],
-          zoom: 16,
+          zoom: 18,
           pitch: 50,
         });
       }
