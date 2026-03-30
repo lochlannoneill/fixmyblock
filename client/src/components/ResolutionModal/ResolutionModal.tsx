@@ -93,6 +93,7 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
             description={`"${request.title}" was submitted by ${openEntry?.changedByName || request.userName || "a community member"}.`}
             date={reportDate}
             dimmed={isUnderReview || isInProgress || isResolved}
+            nextIcon="review"
           />
           <LogEntry
             icon="review"
@@ -107,6 +108,7 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
             isLast={isUnderReview}
             activeLabel="Currently under review..."
             dimmed={isInProgress || isResolved}
+            nextIcon={isUnderReview ? undefined : "progress"}
           />
           {!isUnderReview && (
           <LogEntry
@@ -122,6 +124,7 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
             isLast={isInProgress}
             activeLabel="In progress..."
             dimmed={isResolved}
+            nextIcon={isResolved ? "resolved" : undefined}
           />
           )}
           {isResolved && (
@@ -162,7 +165,7 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
   );
 }
 
-function LogEntry({ icon, title, description, date, isLast, active, dimmed, activeLabel }: {
+function LogEntry({ icon, title, description, date, isLast, active, dimmed, activeLabel, nextIcon }: {
   icon: "report" | "review" | "progress" | "resolved";
   title: string;
   description: string;
@@ -171,12 +174,20 @@ function LogEntry({ icon, title, description, date, isLast, active, dimmed, acti
   active?: boolean;
   dimmed?: boolean;
   activeLabel?: string;
+  nextIcon?: "report" | "review" | "progress" | "resolved";
 }) {
   const iconColors: Record<string, string> = {
     report: "bg-red-100 dark:bg-red-500/15 text-red-500",
     review: "bg-blue-100 dark:bg-blue-500/15 text-blue-500",
     progress: "bg-amber-100 dark:bg-amber-500/15 text-amber-500",
     resolved: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-500",
+  };
+
+  const lineColors: Record<string, string> = {
+    report: "bg-red-300 dark:bg-red-500/40",
+    review: "bg-blue-300 dark:bg-blue-500/40",
+    progress: "bg-amber-300 dark:bg-amber-500/40",
+    resolved: "bg-emerald-300 dark:bg-emerald-500/40",
   };
 
   const icons: Record<string, React.ReactNode> = {
@@ -228,7 +239,7 @@ function LogEntry({ icon, title, description, date, isLast, active, dimmed, acti
             {icons[icon]}
           </div>
         </div>
-        {!isLast && <div className="w-px flex-1 bg-slate-200 dark:bg-[#3a3a3a] my-1" />}
+        {!isLast && <div className={`w-0.5 flex-1 ${lineColors[icon]} my-1`} />}
       </div>
       {/* Content */}
       <div className={`pt-0.5 ${isLast ? "pb-0" : "pb-4"}`}>
