@@ -46,7 +46,22 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
   const progressEntry = findEntry("in-progress");
   const resolvedEntry = findEntry("resolved");
 
-  const reportDate = openEntry ? formatDate(openEntry.changedAt) : formatDate(request.createdAt);
+  const reportAuthor = openEntry?.changedByName || request.userName;
+  const reportDate = openEntry
+    ? `${formatDate(openEntry.changedAt)}${reportAuthor ? ` by ${reportAuthor}` : ''}`
+    : `${formatDate(request.createdAt)}${request.userName ? ` by ${request.userName}` : ''}`;
+
+  const reviewDate = reviewEntry
+    ? `${formatDate(reviewEntry.changedAt)}${reviewEntry.changedByName ? ` by ${reviewEntry.changedByName}` : ''}`
+    : '';
+
+  const progressDate = progressEntry
+    ? `${formatDate(progressEntry.changedAt)}${progressEntry.changedByName ? ` by ${progressEntry.changedByName}` : ''}`
+    : '';
+
+  const resolvedDate = resolvedEntry
+    ? `${formatDate(resolvedEntry.changedAt)}${resolvedEntry.changedByName ? ` by ${resolvedEntry.changedByName}` : ''}`
+    : '';
 
   return (
     <div
@@ -90,7 +105,7 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
           <LogEntry
             icon="report"
             title="Issue Reported"
-            description={`"${request.title}" was submitted by ${openEntry?.changedByName || request.userName || "a community member"}.`}
+            description="This issue was reported by a member of the community."
             date={reportDate}
             dimmed={isUnderReview || isInProgress || isResolved}
             nextIcon="review"
@@ -101,9 +116,9 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
             description={isUnderReview
               ? "The report is currently being assessed by the local authority."
               : reviewEntry
-                ? `Moved to review${reviewEntry.changedByName ? ` by ${reviewEntry.changedByName}` : ""}.`
+                ? "Moved to review."
                 : "The report was received and queued for assessment by the local authority."}
-            date={reviewEntry ? formatDate(reviewEntry.changedAt) : ""}
+            date={reviewDate}
             active={isUnderReview}
             isLast={isUnderReview}
             activeLabel="Currently under review..."
@@ -117,9 +132,9 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
             description={isInProgress
               ? "Mitigation efforts are underway. Work is actively being done to resolve this issue."
               : progressEntry
-                ? `Work began${progressEntry.changedByName ? `, initiated by ${progressEntry.changedByName}` : ""}.`
+                ? "Work began on resolving the issue."
                 : "Mitigation efforts were scheduled and work began on resolving the issue."}
-            date={progressEntry ? formatDate(progressEntry.changedAt) : ""}
+            date={progressDate}
             active={isInProgress}
             isLast={isInProgress}
             activeLabel="In progress..."
@@ -131,8 +146,8 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
             <LogEntry
               icon="resolved"
               title="Resolved"
-              description={`The issue has been addressed and marked as resolved${resolvedEntry?.changedByName ? ` by ${resolvedEntry.changedByName}` : ""}.`}
-              date={resolvedEntry ? formatDate(resolvedEntry.changedAt) : ""}
+              description="The issue has been addressed and marked as resolved."
+              date={resolvedDate}
               isLast
             />
           )}
@@ -244,7 +259,7 @@ function LogEntry({ icon, title, description, date, isLast, active, dimmed, acti
       {/* Content */}
       <div className={`pt-0.5 ${isLast ? "pb-0" : "pb-4"}`}>
         <p className={`text-sm font-semibold ${active ? `${icon === "review" ? "text-blue-500 dark:text-blue-400" : "text-amber-500 dark:text-amber-400"}` : "text-slate-700 dark:text-zinc-200"}`}>{title}{active && " ..."}</p>
-        <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5 leading-relaxed">{description}</p>
+        <p className={`text-xs mt-0.5 leading-relaxed ${active ? "text-slate-700 dark:text-zinc-200" : "text-slate-500 dark:text-zinc-400"}`}>{description}</p>
         {date && <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-1">{date}</p>}
       </div>
     </div>
