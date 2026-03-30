@@ -21,6 +21,7 @@ interface MapViewProps {
   usedGeolocation?: boolean;
   highAccuracy?: boolean;
   onExpandRequest?: () => void;
+  onShowResolution?: (req: Request) => void;
   flyToTarget?: { lng: number; lat: number } | null;
   onSignInPrompt?: () => void;
 }
@@ -39,6 +40,7 @@ export default function MapView({
   usedGeolocation,
   highAccuracy = true,
   onExpandRequest,
+  onShowResolution,
   flyToTarget,
   onSignInPrompt,
 }: MapViewProps) {
@@ -273,7 +275,7 @@ export default function MapView({
         : "";
 
       const statusColor = STATUS_COLORS[req.status] || "#ef4444";
-      const statusLabel = req.status === "in-progress" ? "In Progress" : req.status.charAt(0).toUpperCase() + req.status.slice(1);
+      const statusLabel = req.status === "in-progress" ? "In Progress" : req.status === "under-review" ? "Under Review" : req.status.charAt(0).toUpperCase() + req.status.slice(1);
 
       const hasLiked = currentUserId && (req.likers || []).includes(currentUserId);
       const likeCount = (req.likers || []).length;
@@ -297,6 +299,16 @@ export default function MapView({
       const userName = req.userName || "Anonymous";
       const userInitial = (userName[0] ?? "A").toUpperCase();
 
+      const actionLogBtnColor = req.status === 'resolved' ? '#059669' : req.status === 'under-review' ? '#3b82f6' : '#d97706';
+      const actionLogBtnBg = req.status === 'resolved' ? 'rgba(16,185,129,0.08)' : req.status === 'under-review' ? 'rgba(59,130,246,0.08)' : 'rgba(245,158,11,0.08)';
+      const actionLogBtnBorder = req.status === 'resolved' ? 'rgba(16,185,129,0.2)' : req.status === 'under-review' ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)';
+      const actionLogBtn = req.status !== "open"
+        ? `<button id="popup-resolution-${req.id}" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:12px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:500;color:${actionLogBtnColor};background:${actionLogBtnBg};border:1px solid ${actionLogBtnBorder};cursor:pointer;transition:background 150ms">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            View Action Log
+          </button>`
+        : "";
+
       const html = `
         <div class="popup-content" style="font-family:system-ui,sans-serif">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
@@ -307,6 +319,7 @@ export default function MapView({
             </div>
             <span style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap">${statusLabel}</span>
           </div>
+          ${actionLogBtn}
           ${thumbs}
           <div style="margin-top:12px">
             <span style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block" class="popup-title">${req.title}</span>
@@ -344,12 +357,17 @@ export default function MapView({
       popupCloseHandlerRef.current = closeHandler;
       popup.on("close", closeHandler);
 
-      // Attach like handler + make entire popup tappable on mobile to expand
+      // Attach like handler + resolution button + make entire popup tappable on mobile to expand
       setTimeout(() => {
         const btn = document.getElementById(`popup-like-${req.id}`);
         btn?.addEventListener("click", (e) => {
           e.stopPropagation();
           onLike(req.id);
+        });
+        const resBtn = document.getElementById(`popup-resolution-${req.id}`);
+        resBtn?.addEventListener("click", (e) => {
+          e.stopPropagation();
+          onShowResolution?.(req);
         });
         if (isMobile) {
           const popupContent = popup.getElement()?.querySelector(".popup-content") as HTMLElement | null;
@@ -366,7 +384,7 @@ export default function MapView({
 
       popupRef.current = popup;
     },
-    [onSelectRequest, onLike, currentUserId, onExpandRequest]
+    [onSelectRequest, onLike, currentUserId, onExpandRequest, onShowResolution]
   );
 
   const selectedIdRef = useRef<string | null>(null);

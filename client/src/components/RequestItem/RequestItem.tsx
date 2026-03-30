@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart as faHeartSolid, faComment as faCommentSolid, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as faHeartRegular, faComment as faCommentRegular } from "@fortawesome/free-regular-svg-icons";
 import type { Request } from "../../types/request";
 import { STATUS_COLORS } from "../../types/request";
+import { ResolutionModal } from "../ResolutionModal";
 
 function getTimeSince(dateStr: string): string {
   const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
@@ -22,6 +24,7 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
   selected?: boolean;
   currentUserId?: string;
 }) {
+  const [showResolution, setShowResolution] = useState(false);
   const comments = c.comments || [];
   const likeCount = (c.likers || []).length;
   const hasLiked = !!(currentUserId && (c.likers || []).includes(currentUserId));
@@ -30,6 +33,8 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
   const locationName = c.location || `${c.latitude.toFixed(4)}, ${c.longitude.toFixed(4)}`;
 
   return (
+    <>
+    <ResolutionModal request={showResolution ? c : null} onClose={() => setShowResolution(false)} />
     <div
       className={`py-3.5 px-2 -mx-2 rounded-lg cursor-pointer transition-all duration-150 ${
         selected
@@ -44,7 +49,7 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
           className="text-[11px] font-semibold text-white px-2 py-0.5 rounded-full shrink-0"
           style={{ backgroundColor: STATUS_COLORS[c.status] }}
         >
-          {c.status === "in-progress" ? "In Progress" : c.status.charAt(0).toUpperCase() + c.status.slice(1)}
+          {c.status === "in-progress" ? "In Progress" : c.status === "under-review" ? "Under Review" : c.status.charAt(0).toUpperCase() + c.status.slice(1)}
         </span>
       </div>
       <div className="flex items-center justify-between text-xs text-slate-400 dark:text-[#6e6e79] mt-1">
@@ -54,6 +59,23 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
         </span>
         <span>{timeSince}</span>
       </div>
+      {c.status !== "open" && (
+        <button
+          className={`flex items-center justify-center gap-1.5 w-full mt-2 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
+            c.status === "resolved"
+              ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 hover:bg-emerald-100 dark:hover:bg-emerald-500/20"
+              : c.status === "under-review"
+                ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/20"
+                : "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 hover:bg-amber-100 dark:hover:bg-amber-500/20"
+          }`}
+          onClick={(e) => { e.stopPropagation(); setShowResolution(true); }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+          </svg>
+          View Action Log
+        </button>
+      )}
       {(c.imageUrls || []).length > 0 && (
         <div className="mt-2 rounded-lg overflow-hidden h-80">
           <img className="w-full h-full object-cover" src={c.imageUrls[0]} alt={c.title} />
@@ -72,5 +94,6 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
         </span>
       </div>
     </div>
+    </>
   );
 }

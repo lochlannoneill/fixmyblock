@@ -8,7 +8,7 @@ import RequestList from "../RequestList";
 type SortBy = "newest" | "oldest" | "likes" | "comments" | "nearest";
 type OpenDropdown = "category" | "status" | "sort" | null;
 
-const STATUS_LABELS: Record<RequestStatus, string> = { open: "Open", "in-progress": "In Progress", resolved: "Resolved" };
+const STATUS_LABELS: Record<RequestStatus, string> = { open: "Open", "under-review": "Under Review", "in-progress": "In Progress", resolved: "Resolved" };
 const SORT_LABELS: Record<SortBy, string> = { newest: "Most Recent", oldest: "Oldest", likes: "Most Liked", comments: "Most Comments", nearest: "Nearest" };
 
 function distanceBetween(lat1: number, lng1: number, lat2: number, lng2: number): number {

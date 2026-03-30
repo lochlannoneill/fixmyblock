@@ -14,13 +14,15 @@ import { useRequests } from "./hooks/useRequests";
 import { useAuth } from "./hooks/useAuth";
 import { patchSettings } from "./services/api";
 import type { Request, NewRequest } from "./types/request";
+import { ResolutionModal } from "./components/ResolutionModal";
 import "./App.css";
 
 export default function App() {
   const { darkMode, toggleTheme } = useTheme();
-  const { requests, loading, selectedRequest, selectRequest, like, remove, create, addComment, likeComment, save } = useRequests();
+  const { requests, loading, selectedRequest, selectRequest, like, remove, create, addComment, likeComment, save, updateStatus } = useRequests();
   const { user, profile, login, logout, setProfile } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [resolutionRequest, setResolutionRequest] = useState<Request | null>(null);
 
   const [flyToTarget, setFlyToTarget] = useState<{ lng: number; lat: number } | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -234,6 +236,7 @@ export default function App() {
         onClose={() => setShowAuthModal(false)}
         onLogin={(provider) => { login(provider); setShowAuthModal(false); }}
       />
+      <ResolutionModal request={resolutionRequest} onClose={() => setResolutionRequest(null)} />
       {user && profile && !profile.firstName && (
         <WelcomeModal onComplete={(p) => setProfile(p)} />
       )}
@@ -299,7 +302,9 @@ export default function App() {
               onLikeComment={(requestId: string, commentId: string) => { if (!user) { setShowAuthModal(true); return; } likeComment(requestId, commentId); }}
               onSave={(id: string) => { if (!user) { setShowAuthModal(true); return; } save(id); }}
               onDelete={(id: string) => { remove(id); setSidebarView("list"); }}
+              onUpdateStatus={(id, status) => updateStatus(id, status)}
               currentUserId={user?.userId}
+              isAdmin={profile?.role === "admin" || profile?.role === "moderator"}
             />
           ) : (
             <RequestListToolbar
@@ -419,6 +424,7 @@ export default function App() {
             usedGeolocation={usedGeolocation}
             highAccuracy={highAccuracy}
             onExpandRequest={() => { setSidebarView("detail"); setMobileSlide("top"); }}
+            onShowResolution={setResolutionRequest}
             flyToTarget={flyToTarget}
             onSignInPrompt={() => setShowAuthModal(true)}
           />

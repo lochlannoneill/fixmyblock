@@ -2,9 +2,17 @@ import { useState, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart as faHeartSolid, faComment as faCommentSolid, faMapMarkerAlt, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as faHeartRegular, faComment as faCommentRegular } from "@fortawesome/free-regular-svg-icons";
-import type { Request } from "../../types/request";
+import type { Request, RequestStatus } from "../../types/request";
 import { STATUS_COLORS } from "../../types/request";
 import { Comments } from "../Comments";
+import { ResolutionModal } from "../ResolutionModal";
+
+const STATUS_OPTIONS: { value: RequestStatus; label: string }[] = [
+  { value: "open", label: "Open" },
+  { value: "under-review", label: "Under Review" },
+  { value: "in-progress", label: "In Progress" },
+  { value: "resolved", label: "Resolved" },
+];
 
 interface RequestDetailProps {
   request: Request;
@@ -14,7 +22,9 @@ interface RequestDetailProps {
   onLikeComment: (requestId: string, commentId: string) => void;
   onSave: (id: string) => void;
   onDelete: (id: string) => void;
+  onUpdateStatus?: (id: string, status: RequestStatus) => void;
   currentUserId?: string;
+  isAdmin?: boolean;
 }
 
 export default function RequestDetail({
@@ -25,12 +35,17 @@ export default function RequestDetail({
   onLikeComment,
   onSave,
   onDelete,
+  onUpdateStatus,
   currentUserId,
+  isAdmin,
 }: RequestDetailProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuAnimate, setMenuAnimate] = useState(false);
+  const [showResolution, setShowResolution] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
 
   const isOwner = currentUserId && currentUserId === request.userId;
 
@@ -54,15 +69,26 @@ export default function RequestDetail({
     return () => document.removeEventListener("mousedown", handler);
   }, [showMenu]);
 
+  useEffect(() => {
+    if (!showStatusDropdown) return;
+    const handler = (e: MouseEvent) => {
+      if (statusRef.current && !statusRef.current.contains(e.target as Node)) setShowStatusDropdown(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showStatusDropdown]);
+
   const comments = request.comments || [];
   const likeCount = (request.likers || []).length;
   const hasLiked = currentUserId && (request.likers || []).includes(currentUserId);
   const hasSaved = currentUserId && (request.savedBy || []).includes(currentUserId);
 
   const displayLocation = request.location || `${request.latitude.toFixed(4)}, ${request.longitude.toFixed(4)}`;
-  const statusLabel = request.status === "in-progress" ? "In Progress" : request.status.charAt(0).toUpperCase() + request.status.slice(1);
+  const statusLabel = request.status === "in-progress" ? "In Progress" : request.status === "under-review" ? "Under Review" : request.status.charAt(0).toUpperCase() + request.status.slice(1);
 
   return (
+    <>
+    <ResolutionModal request={showResolution ? request : null} onClose={() => setShowResolution(false)} />
     <div className="flex flex-col h-full">
       {/* Header - desktop only */}
       <div className="hidden md:flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-[#2a2a2a]">
@@ -88,12 +114,40 @@ export default function RequestDetail({
               </span>
               <span className="text-xs text-slate-400 dark:text-[#6e6e79]">{getTimeSince(request.createdAt)}</span>
             </div>
-            <span
-              className="text-[11px] font-semibold text-white px-2.5 py-0.5 rounded-full shrink-0"
-              style={{ backgroundColor: STATUS_COLORS[request.status] }}
-            >
-              {statusLabel}
-            </span>
+            <div className="relative" ref={statusRef}>
+              <button
+                onClick={() => { if (isAdmin && onUpdateStatus) setShowStatusDropdown(v => !v); }}
+                className={`text-[11px] font-semibold text-white px-2.5 py-0.5 rounded-full shrink-0 ${isAdmin && onUpdateStatus ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}`}
+                style={{ backgroundColor: STATUS_COLORS[request.status] }}
+              >
+                {statusLabel}
+                {isAdmin && onUpdateStatus && (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="inline-block ml-1 -mt-px"><path d="M7 10l5 5 5-5z"/></svg>
+                )}
+              </button>
+              {showStatusDropdown && (
+                <div className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-[#272727] border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden py-1">
+                  {STATUS_OPTIONS.map(o => (
+                    <button
+                      key={o.value}
+                      className={`w-full text-left px-3 py-2 text-[13px] cursor-pointer transition-colors flex items-center gap-2 ${
+                        o.value === request.status
+                          ? "text-slate-400 dark:text-zinc-500"
+                          : "text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
+                      }`}
+                      disabled={o.value === request.status}
+                      onClick={() => { setShowStatusDropdown(false); onUpdateStatus!(request.id, o.value); }}
+                    >
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: STATUS_COLORS[o.value] }} />
+                      {o.label}
+                      {o.value === request.status && (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-auto"><polyline points="20 6 9 17 4 12"/></svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setShowMenu(v => !v)}
@@ -132,6 +186,16 @@ export default function RequestDetail({
                         Delete
                       </button>
                     </>
+                  ) : isAdmin ? (
+                    <button
+                      className="w-full text-left px-3 py-2 text-[13px] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors"
+                      onClick={() => {
+                        setShowMenu(false);
+                        if (confirm("Delete this request?")) onDelete(request.id);
+                      }}
+                    >
+                      Delete
+                    </button>
                   ) : (
                     <button
                       className="w-full text-left px-3 py-2 text-[13px] text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333] cursor-pointer transition-colors"
@@ -144,6 +208,25 @@ export default function RequestDetail({
               )}
             </div>
           </div>
+
+          {/* Action log button */}
+          {request.status !== "open" && (
+            <button
+              className={`flex items-center justify-center gap-1.5 w-full mt-3 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
+                request.status === "resolved"
+                  ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 hover:bg-emerald-100 dark:hover:bg-emerald-500/20"
+                  : request.status === "under-review"
+                    ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/20"
+                    : "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 hover:bg-amber-100 dark:hover:bg-amber-500/20"
+              }`}
+              onClick={() => setShowResolution(true)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+              View Action Log
+            </button>
+          )}
 
           {/* Images */}
           {(request.imageUrls || []).length > 0 ? (
@@ -261,6 +344,7 @@ export default function RequestDetail({
         </div>
       </div>
     </div>
+    </>
   );
 }
 

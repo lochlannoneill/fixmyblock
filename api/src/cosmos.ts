@@ -37,6 +37,13 @@ function getUsersContainer(): Container {
   return usersContainer;
 }
 
+export interface StatusChange {
+  status: string;
+  changedAt: string;
+  changedBy?: string;
+  changedByName?: string;
+}
+
 export interface Comment {
   id: string;
   userId: string;
@@ -65,12 +72,16 @@ export interface RequestDoc {
   userId: string;
   userName: string;
   comments: Comment[];
+  statusHistory: StatusChange[];
 }
 
 function migrateDoc(doc: RequestDoc & { reporterId?: string; reporterName?: string }): RequestDoc {
   if (!doc.type) doc.type = "complaint";
   if (!doc.userId && doc.reporterId) doc.userId = doc.reporterId;
   if (!doc.userName && doc.reporterName) doc.userName = doc.reporterName;
+  if (!doc.statusHistory) {
+    doc.statusHistory = [{ status: doc.status || "open", changedAt: doc.createdAt }];
+  }
   return doc;
 }
 
@@ -139,6 +150,30 @@ export async function deleteRequest(id: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export async function updateRequestStatus(
+  id: string,
+  status: string,
+  userId?: string,
+  userName?: string
+): Promise<RequestDoc | null> {
+  const existing = await getRequestById(id);
+  if (!existing) return null;
+
+  existing.status = status;
+  if (!existing.statusHistory) existing.statusHistory = [];
+  existing.statusHistory.push({
+    status,
+    changedAt: new Date().toISOString(),
+    ...(userId ? { changedBy: userId } : {}),
+    ...(userName ? { changedByName: userName } : {}),
+  });
+
+  const { resource } = await getContainer()
+    .item(id, id)
+    .replace<RequestDoc>(existing);
+  return resource ?? null;
 }
 
 export async function toggleCommentLike(requestId: string, commentId: string, userId: string): Promise<RequestDoc | null> {
