@@ -325,7 +325,7 @@ export default function ProfilePage({ user, profile, requests, onClose, onSelect
             onChange={(e) => handleAddressInput(e.target.value)}
             onFocus={() => { if (suggestions.length) setShowSuggestions(true); }}
             placeholder="Search for your home address…"
-            className="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-[#3a3a3a] bg-white dark:bg-[#272727] text-slate-700 dark:text-zinc-300 placeholder-slate-300 dark:placeholder-zinc-600 outline-none focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
+            className="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-[#3a3a3a] bg-white dark:bg-[#272727] text-slate-400 dark:text-zinc-500 focus:text-slate-700 dark:focus:text-zinc-300 placeholder-slate-300 dark:placeholder-zinc-600 outline-none focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
           />
           {hasSelection && (
             <button
