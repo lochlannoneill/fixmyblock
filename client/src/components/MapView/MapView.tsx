@@ -53,6 +53,8 @@ export default function MapView({
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const popupRef = useRef<maplibregl.Popup | null>(null);
   const popupCloseHandlerRef = useRef<(() => void) | null>(null);
+  const hoverPopupRef = useRef<maplibregl.Popup | null>(null);
+  const showPopupRef = useRef<((req: Request, hover?: boolean) => void) | null>(null);
   const dropPinRef = useRef<maplibregl.Marker | null>(null);
   const onMapClickRef = useRef(onMapClick);
   const reportModeRef = useRef(reportMode);
@@ -244,7 +246,21 @@ export default function MapView({
 
       el.addEventListener("click", (e) => {
         e.stopPropagation();
+        hoverPopupRef.current?.remove();
+        hoverPopupRef.current = null;
         onSelectRequest(req);
+      });
+
+      el.addEventListener("mouseenter", () => {
+        // Don't show hover popup if this request already has the active popup
+        if (popupRef.current && selectedIdRef.current === req.id) return;
+        hoverPopupRef.current?.remove();
+        showPopupRef.current?.(req, true);
+      });
+
+      el.addEventListener("mouseleave", () => {
+        hoverPopupRef.current?.remove();
+        hoverPopupRef.current = null;
       });
 
       const marker = new maplibregl.Marker({ element: el })
@@ -257,12 +273,19 @@ export default function MapView({
 
   // Show popup for selected request
   const showPopup = useCallback(
-    (req: Request) => {
+    (req: Request, hover = false) => {
       if (!map.current) return;
-      // Remove old popup without triggering its close handler
-      if (popupRef.current) {
-        popupRef.current.off("close", popupCloseHandlerRef.current!);
-        popupRef.current.remove();
+
+      const idPrefix = hover ? `h-${req.id}` : req.id;
+
+      if (hover) {
+        hoverPopupRef.current?.remove();
+      } else {
+        // Remove old active popup without triggering its close handler
+        if (popupRef.current) {
+          popupRef.current.off("close", popupCloseHandlerRef.current!);
+          popupRef.current.remove();
+        }
       }
 
       const isMobile = window.innerWidth < 640;
@@ -307,7 +330,7 @@ export default function MapView({
       const actionLogBtnBg = req.status === 'resolved' ? 'rgba(16,185,129,0.08)' : req.status === 'under-review' ? 'rgba(59,130,246,0.08)' : 'rgba(245,158,11,0.08)';
       const actionLogBtnBorder = req.status === 'resolved' ? 'rgba(16,185,129,0.2)' : req.status === 'under-review' ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)';
       const actionLogBtn = req.status !== "open"
-        ? `<button id="popup-resolution-${req.id}" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:12px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:500;color:${actionLogBtnColor};background:${actionLogBtnBg};border:1px solid ${actionLogBtnBorder};cursor:pointer;transition:background 150ms">
+        ? `<button id="popup-resolution-${idPrefix}" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:12px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:500;color:${actionLogBtnColor};background:${actionLogBtnBg};border:1px solid ${actionLogBtnBorder};cursor:pointer;transition:background 150ms">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             View Action Log
           </button>`
@@ -322,8 +345,8 @@ export default function MapView({
               <span style="font-size:11px;color:var(--text-muted)">${timeSince}${!images.length ? ` &middot; ${locationText}` : ''}</span>
             </div>
             <div style="position:relative">
-              <span id="popup-status-${req.id}" style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap;${isAdmin && onUpdateStatus ? 'cursor:pointer' : ''}">${statusLabel}${isAdmin && onUpdateStatus ? '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline-block;margin-left:4px;vertical-align:-1px"><path d="M7 10l5 5 5-5z"/></svg>' : ''}</span>
-              ${isAdmin && onUpdateStatus ? `<div id="popup-status-dropdown-${req.id}" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;width:140px;background:var(--bg-card);border:1px solid var(--border-input);border-radius:12px;box-shadow:var(--shadow-md);z-index:100;overflow:hidden;padding:4px 0;opacity:0;transform:scale(0.95) translateY(-4px);transition:opacity 150ms ease,transform 150ms ease;transform-origin:top right">
+              <span id="popup-status-${idPrefix}" style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap;${isAdmin && onUpdateStatus ? 'cursor:pointer' : ''}">${statusLabel}${isAdmin && onUpdateStatus ? '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline-block;margin-left:4px;vertical-align:-1px"><path d="M7 10l5 5 5-5z"/></svg>' : ''}</span>
+              ${isAdmin && onUpdateStatus ? `<div id="popup-status-dropdown-${idPrefix}" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;width:140px;background:var(--bg-card);border:1px solid var(--border-input);border-radius:12px;box-shadow:var(--shadow-md);z-index:100;overflow:hidden;padding:4px 0;opacity:0;transform:scale(0.95) translateY(-4px);transition:opacity 150ms ease,transform 150ms ease;transform-origin:top right">
                 ${(['open', 'under-review', 'in-progress', 'resolved'] as const).map(s => {
                   const label = s === 'in-progress' ? 'In Progress' : s === 'under-review' ? 'Under Review' : s.charAt(0).toUpperCase() + s.slice(1);
                   const isCurrentStatus = s === req.status;
@@ -339,7 +362,7 @@ export default function MapView({
           </div>
           <p class="popup-desc" style="margin:6px 0 0;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${req.description}</p>
           <div style="display:flex;align-items:center;gap:12px;margin-top:8px;font-size:12px">
-            <button id="popup-like-${req.id}" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;font-size:12px;${likeColor}" class="popup-metric-btn">
+            <button id="popup-like-${idPrefix}" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;font-size:12px;${likeColor}" class="popup-metric-btn">
               ${likeCount > 0
                 ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
                 : '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'}
@@ -358,34 +381,40 @@ export default function MapView({
 
       const popup = new maplibregl.Popup({
         offset: 25,
-        closeOnClick: true,
+        closeOnClick: !hover,
         closeButton: false,
         maxWidth: isMobile ? "220px" : "320px",
+        className: hover ? "hover-popup" : undefined,
       })
         .setLngLat([req.longitude, req.latitude])
         .setHTML(html)
         .addTo(map.current);
 
-      const closeHandler = () => onSelectRequest(null);
-      popupCloseHandlerRef.current = closeHandler;
-      popup.on("close", closeHandler);
+      if (hover) {
+        hoverPopupRef.current = popup;
+      } else {
+        const closeHandler = () => onSelectRequest(null);
+        popupCloseHandlerRef.current = closeHandler;
+        popup.on("close", closeHandler);
+        popupRef.current = popup;
+      }
 
       // Attach like handler + resolution button + make entire popup tappable on mobile to expand
       setTimeout(() => {
-        const btn = document.getElementById(`popup-like-${req.id}`);
+        const btn = document.getElementById(`popup-like-${idPrefix}`);
         btn?.addEventListener("click", (e) => {
           e.stopPropagation();
           onLike(req.id);
         });
-        const resBtn = document.getElementById(`popup-resolution-${req.id}`);
+        const resBtn = document.getElementById(`popup-resolution-${idPrefix}`);
         resBtn?.addEventListener("click", (e) => {
           e.stopPropagation();
           onShowResolution?.(req);
         });
         // Admin status dropdown
         if (isAdmin && onUpdateStatus) {
-          const statusBadge = document.getElementById(`popup-status-${req.id}`);
-          const statusDropdown = document.getElementById(`popup-status-dropdown-${req.id}`);
+          const statusBadge = document.getElementById(`popup-status-${idPrefix}`);
+          const statusDropdown = document.getElementById(`popup-status-dropdown-${idPrefix}`);
           if (statusBadge && statusDropdown) {
             statusBadge.addEventListener("click", (e) => {
               e.stopPropagation();
@@ -424,23 +453,23 @@ export default function MapView({
             });
           }
         }
-        if (isMobile) {
+        if (!hover && isMobile) {
           const popupContent = popup.getElement()?.querySelector(".popup-content") as HTMLElement | null;
           if (popupContent) {
             popupContent.style.cursor = "pointer";
             popupContent.addEventListener("click", (e) => {
               // Don't expand if tapping the like button
-              if ((e.target as HTMLElement).closest(`#popup-like-${req.id}`)) return;
+              if ((e.target as HTMLElement).closest(`#popup-like-${idPrefix}`)) return;
               onExpandRequest?.();
             });
           }
         }
       }, 0);
-
-      popupRef.current = popup;
     },
     [onSelectRequest, onLike, currentUserId, onExpandRequest, onShowResolution, isAdmin, onUpdateStatus]
   );
+
+  showPopupRef.current = showPopup;
 
   const selectedIdRef = useRef<string | null>(null);
 
