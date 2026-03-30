@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import type { Request, RequestStatus } from "../../types/request";
 
 interface ResolutionModalProps {
@@ -63,9 +64,9 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
     ? `${formatDate(resolvedEntry.changedAt)}${resolvedEntry.changedByName ? ` by ${resolvedEntry.changedByName}` : ''}`
     : '';
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-100 flex items-center justify-center backdrop-blur-sm transition-colors duration-200"
+      className="fixed inset-0 z-[10000] flex items-center justify-center backdrop-blur-sm transition-colors duration-200"
       style={{ backgroundColor: animate ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0)" }}
       onClick={onClose}
     >
@@ -176,7 +177,8 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
           </p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

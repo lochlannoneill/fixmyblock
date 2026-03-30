@@ -25,7 +25,7 @@ export default function AuthModal({ open, onClose, onLogin }: AuthModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-100 flex items-center justify-center backdrop-blur-sm transition-colors duration-200"
+      className="fixed inset-0 z-[10000] flex items-center justify-center backdrop-blur-sm transition-colors duration-200"
       style={{ backgroundColor: animate ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0)" }}
       onClick={onClose}
     >
