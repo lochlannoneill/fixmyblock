@@ -220,7 +220,7 @@ function LogEntry({ icon, title, description, date, isLast, active, dimmed, acti
   };
 
   return (
-    <div className={`flex gap-3 ${dimmed ? "opacity-50" : ""}`}>
+    <div className={`flex gap-3 ${dimmed ? "opacity-50" : ""}${active ? " animate-pulse" : ""}`}>
       {/* Timeline line + dot */}
       <div className="flex flex-col items-center">
         <div className="relative shrink-0">
@@ -243,7 +243,7 @@ function LogEntry({ icon, title, description, date, isLast, active, dimmed, acti
       </div>
       {/* Content */}
       <div className={`pt-0.5 ${isLast ? "pb-0" : "pb-4"}`}>
-        <p className={`text-sm font-semibold ${active ? `animate-pulse ${icon === "review" ? "text-blue-500 dark:text-blue-400" : "text-amber-500 dark:text-amber-400"}` : "text-slate-700 dark:text-zinc-200"}`}>{title}{active && " ..."}</p>
+        <p className={`text-sm font-semibold ${active ? `${icon === "review" ? "text-blue-500 dark:text-blue-400" : "text-amber-500 dark:text-amber-400"}` : "text-slate-700 dark:text-zinc-200"}`}>{title}{active && " ..."}</p>
         <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5 leading-relaxed">{description}</p>
         {date && <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-1">{date}</p>}
       </div>
