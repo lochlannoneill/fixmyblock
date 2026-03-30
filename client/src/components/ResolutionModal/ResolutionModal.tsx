@@ -147,7 +147,7 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
             <LogEntry
               icon="resolved"
               title="Resolved"
-              description="The issue has been addressed and marked as resolved."
+              description="This issue has been addressed and marked as resolved."
               date={resolvedDate}
               isLast
             />
@@ -260,8 +260,17 @@ function LogEntry({ icon, title, description, date, isLast, active, dimmed, acti
       </div>
       {/* Content */}
       <div className={`pt-0.5 ${isLast ? "pb-0" : "pb-4"}`}>
-        <p className={`text-sm font-semibold ${active ? `${icon === "review" ? "text-blue-500 dark:text-blue-400" : "text-amber-500 dark:text-amber-400"}` : "text-slate-700 dark:text-zinc-200"}`}>{title}{active && " ..."}</p>
-        <p className={`text-xs mt-0.5 leading-relaxed ${active ? "text-slate-700 dark:text-zinc-200" : "text-slate-500 dark:text-zinc-400"}`}>{description}</p>
+        <p className={`text-sm font-semibold ${
+          active
+            ? icon === "review" ? "text-blue-500 dark:text-blue-400" : "text-amber-500 dark:text-amber-400"
+            : isLast
+              ? icon === "resolved" ? "text-emerald-600 dark:text-emerald-400"
+                : icon === "review" ? "text-blue-500 dark:text-blue-400"
+                : icon === "progress" ? "text-amber-500 dark:text-amber-400"
+                : "text-red-500 dark:text-red-400"
+              : "text-slate-700 dark:text-zinc-200"
+        }`}>{title}{active && " ..."}</p>
+        <p className={`text-xs mt-0.5 leading-relaxed ${active || isLast ? "text-slate-700 dark:text-zinc-200" : "text-slate-500 dark:text-zinc-400"}`}>{description}</p>
         {date && <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-1">{date}</p>}
       </div>
     </div>
