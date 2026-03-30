@@ -52,7 +52,9 @@ export default function MapView({
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
-  const markersRef = useRef<maplibregl.Marker[]>([]);
+  const markersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
+  const clusterMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const clusterPopupsRef = useRef<maplibregl.Popup[]>([]);
   const popupRef = useRef<maplibregl.Popup | null>(null);
   const popupCloseHandlerRef = useRef<(() => void) | null>(null);
   const hoverPopupRef = useRef<maplibregl.Popup | null>(null);
@@ -62,6 +64,8 @@ export default function MapView({
   const reportModeRef = useRef(reportMode);
   const onUserLocationRef = useRef(onUserLocation);
   const homeAddressRef = useRef(homeAddress);
+  const requestsRef = useRef(requests);
+  const selectedIdRef = useRef<string | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [activeLayer, setActiveLayer] = useState<MapLayer>("terrain");
   const lastDarkModeApplied = useRef(darkMode);
@@ -107,6 +111,7 @@ export default function MapView({
   useEffect(() => { onUserLocationRef.current = onUserLocation; }, [onUserLocation]);
   useEffect(() => { reportModeRef.current = reportMode; }, [reportMode]);
   useEffect(() => { homeAddressRef.current = homeAddress; }, [homeAddress]);
+  useEffect(() => { requestsRef.current = requests; }, [requests]);
 
   // Initialize map
   useEffect(() => {
@@ -227,15 +232,82 @@ export default function MapView({
     });
   }, [darkMode, mapReady, activeLayer, add3dBuildings]);
 
-  // Sync markers with requests
-  useEffect(() => {
+  // Sync markers with requests (with clustering)
+  const updateMarkers = useCallback(() => {
     if (!map.current || !mapReady) return;
+    const m = map.current;
+    const reqs = requestsRef.current;
 
-    // Remove old markers
-    markersRef.current.forEach((m) => m.remove());
-    markersRef.current = [];
+    // Cluster radius in pixels
+    const CLUSTER_RADIUS = 40;
 
-    requests.forEach((req) => {
+    // Project each request to screen coords
+    const projected = reqs.map((req) => {
+      const pt = m.project([req.longitude, req.latitude]);
+      return { req, x: pt.x, y: pt.y };
+    });
+
+    // Simple greedy clustering
+    const used = new Set<number>();
+    const clusters: { reqs: Request[]; lng: number; lat: number }[] = [];
+
+    for (let i = 0; i < projected.length; i++) {
+      if (used.has(i)) continue;
+      const group: Request[] = [projected[i].req];
+      used.add(i);
+      let sumLng = projected[i].req.longitude;
+      let sumLat = projected[i].req.latitude;
+
+      for (let j = i + 1; j < projected.length; j++) {
+        if (used.has(j)) continue;
+        const dx = projected[i].x - projected[j].x;
+        const dy = projected[i].y - projected[j].y;
+        if (dx * dx + dy * dy < CLUSTER_RADIUS * CLUSTER_RADIUS) {
+          group.push(projected[j].req);
+          used.add(j);
+          sumLng += projected[j].req.longitude;
+          sumLat += projected[j].req.latitude;
+        }
+      }
+
+      clusters.push({
+        reqs: group,
+        lng: sumLng / group.length,
+        lat: sumLat / group.length,
+      });
+    }
+
+    // Determine which individual request IDs are visible (not clustered)
+    const singleIds = new Set<string>();
+    const clusterData: { reqs: Request[]; lng: number; lat: number }[] = [];
+    for (const c of clusters) {
+      if (c.reqs.length === 1) {
+        singleIds.add(c.reqs[0].id);
+      } else {
+        clusterData.push(c);
+      }
+    }
+
+    // Update individual markers — add/remove as needed
+    const existingIds = new Set(markersRef.current.keys());
+    // Remove markers no longer needed
+    for (const [id, marker] of markersRef.current) {
+      if (!singleIds.has(id)) {
+        marker.remove();
+        markersRef.current.delete(id);
+      }
+    }
+    // Add or update individual markers
+    for (const id of singleIds) {
+      const req = reqs.find((r) => r.id === id)!;
+      if (existingIds.has(id)) {
+        // Update position if needed
+        const marker = markersRef.current.get(id)!;
+        const el = marker.getElement();
+        el.style.background = STATUS_COLORS[req.status];
+        continue;
+      }
+      // Create new marker
       const el = document.createElement("div");
       el.className = "request-marker";
       el.style.cssText = `
@@ -251,15 +323,6 @@ export default function MapView({
         justify-content: center;
       `;
 
-      const inner = document.createElement("div");
-      inner.style.cssText = `
-        font-size: 14px;
-        color: white;
-        font-weight: bold;
-      `;
-      inner.textContent = `${(req.likers || []).length}`;
-      el.appendChild(inner);
-
       el.addEventListener("click", (e) => {
         e.stopPropagation();
         hoverPopupRef.current?.remove();
@@ -268,7 +331,6 @@ export default function MapView({
       });
 
       el.addEventListener("mouseenter", () => {
-        // Don't show hover popup if this request already has the active popup
         if (popupRef.current && selectedIdRef.current === req.id) return;
         hoverPopupRef.current?.remove();
         showPopupRef.current?.(req, true);
@@ -281,11 +343,135 @@ export default function MapView({
 
       const marker = new maplibregl.Marker({ element: el })
         .setLngLat([req.longitude, req.latitude])
-        .addTo(map.current!);
+        .addTo(m);
+      markersRef.current.set(id, marker);
+    }
 
-      markersRef.current.push(marker);
-    });
-  }, [requests, mapReady, onSelectRequest, darkMode]);
+    // Remove old cluster markers and their hover popups
+    clusterPopupsRef.current.forEach((p) => p.remove());
+    clusterPopupsRef.current = [];
+    clusterMarkersRef.current.forEach((cm) => cm.remove());
+    clusterMarkersRef.current = [];
+
+    // Create cluster markers with pie chart
+    for (const cluster of clusterData) {
+      const counts: Record<string, number> = {};
+      for (const r of cluster.reqs) {
+        counts[r.status] = (counts[r.status] || 0) + 1;
+      }
+      const total = cluster.reqs.length;
+      const size = Math.min(44 + total * 3, 64);
+
+      // Build pie chart SVG
+      const statusOrder: RequestStatus[] = ["open", "under-review", "in-progress", "resolved"];
+      const slices: { color: string; fraction: number }[] = [];
+      for (const s of statusOrder) {
+        if (counts[s]) slices.push({ color: STATUS_COLORS[s], fraction: counts[s] / total });
+      }
+
+      let svg: string;
+      if (slices.length === 1) {
+        svg = `<circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="${slices[0].color}"/>`;
+      } else {
+        const cx = size / 2, cy = size / 2, r = size / 2;
+        let angle = -Math.PI / 2;
+        const paths: string[] = [];
+        for (const slice of slices) {
+          const startAngle = angle;
+          const endAngle = angle + slice.fraction * 2 * Math.PI;
+          const largeArc = slice.fraction > 0.5 ? 1 : 0;
+          const x1 = cx + r * Math.cos(startAngle);
+          const y1 = cy + r * Math.sin(startAngle);
+          const x2 = cx + r * Math.cos(endAngle);
+          const y2 = cy + r * Math.sin(endAngle);
+          paths.push(`<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${largeArc},1 ${x2},${y2} Z" fill="${slice.color}"/>`);
+          angle = endAngle;
+        }
+        svg = paths.join("");
+      }
+
+      // Build hover tooltip content
+      const tooltipItems = statusOrder
+        .filter((s) => counts[s])
+        .map((s) => {
+          const label = s === "in-progress" ? "In Progress" : s === "under-review" ? "Under Review" : s.charAt(0).toUpperCase() + s.slice(1);
+          return `<div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${STATUS_COLORS[s]};flex-shrink:0"></span><span>${counts[s]} ${label}</span></div>`;
+        })
+        .join("");
+
+      const el = document.createElement("div");
+      el.className = "cluster-marker";
+      el.style.cssText = `
+        width: ${size}px;
+        height: ${size}px;
+        cursor: pointer;
+        position: relative;
+      `;
+      el.innerHTML = `
+        <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35)); border-radius: 50%;">
+          ${svg}
+          <circle cx="${size / 2}" cy="${size / 2}" r="${size * 0.32}" fill="rgba(0,0,0,0.35)"/>
+          <circle cx="${size / 2}" cy="${size / 2}" r="${size * 0.3}" fill="var(--bg-card, #fff)"/>
+          <text x="${size / 2}" y="${size / 2}" text-anchor="middle" dominant-baseline="central" font-size="${Math.max(11, size * 0.28)}px" font-weight="700" fill="var(--text-primary, #334155)">${total}</text>
+        </svg>
+      `;
+
+      // Hover tooltip
+      let hoverPopup: maplibregl.Popup | null = null;
+      el.addEventListener("mouseenter", () => {
+        hoverPopup = new maplibregl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          offset: [0, -(size / 2 + 4)],
+          className: "cluster-tooltip",
+        })
+          .setLngLat([cluster.lng, cluster.lat])
+          .setHTML(`<div style="font-family:system-ui,sans-serif;font-size:12px;padding:6px 10px;display:flex;flex-direction:column;gap:3px;color:var(--text-primary,#334155)">${tooltipItems}</div>`)
+          .addTo(m);
+        clusterPopupsRef.current.push(hoverPopup);
+      });
+      el.addEventListener("mouseleave", () => {
+        if (hoverPopup) {
+          const idx = clusterPopupsRef.current.indexOf(hoverPopup);
+          if (idx !== -1) clusterPopupsRef.current.splice(idx, 1);
+          hoverPopup.remove();
+          hoverPopup = null;
+        }
+      });
+
+      // Click to zoom in
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        m.flyTo({
+          center: [cluster.lng, cluster.lat],
+          zoom: m.getZoom() + 2,
+        });
+      });
+
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([cluster.lng, cluster.lat])
+        .addTo(m);
+      clusterMarkersRef.current.push(marker);
+    }
+  }, [mapReady, onSelectRequest]);
+
+  // Sync markers when requests change
+  useEffect(() => {
+    updateMarkers();
+  }, [requests, mapReady, darkMode, updateMarkers]);
+
+  // Re-cluster on zoom/move
+  useEffect(() => {
+    if (!map.current || !mapReady) return;
+    const m = map.current;
+    const handler = () => updateMarkers();
+    m.on("zoomend", handler);
+    m.on("moveend", handler);
+    return () => {
+      m.off("zoomend", handler);
+      m.off("moveend", handler);
+    };
+  }, [mapReady, updateMarkers]);
 
   // Show popup for selected request
   const showPopup = useCallback(
@@ -486,8 +672,6 @@ export default function MapView({
   );
 
   showPopupRef.current = showPopup;
-
-  const selectedIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (selectedRequest) {
