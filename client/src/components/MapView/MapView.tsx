@@ -61,6 +61,7 @@ export default function MapView({
   const onMapClickRef = useRef(onMapClick);
   const reportModeRef = useRef(reportMode);
   const onUserLocationRef = useRef(onUserLocation);
+  const homeAddressRef = useRef(homeAddress);
   const [mapReady, setMapReady] = useState(false);
   const [activeLayer, setActiveLayer] = useState<MapLayer>("terrain");
   const lastDarkModeApplied = useRef(darkMode);
@@ -105,6 +106,7 @@ export default function MapView({
   useEffect(() => { onMapClickRef.current = onMapClick; }, [onMapClick]);
   useEffect(() => { onUserLocationRef.current = onUserLocation; }, [onUserLocation]);
   useEffect(() => { reportModeRef.current = reportMode; }, [reportMode]);
+  useEffect(() => { homeAddressRef.current = homeAddress; }, [homeAddress]);
 
   // Initialize map
   useEffect(() => {
@@ -152,9 +154,10 @@ export default function MapView({
 
     geolocate.on("error", () => {
       // Geolocation denied/failed — fly to home address if set
-      if (homeAddress) {
+      const ha = homeAddressRef.current;
+      if (ha) {
         map.current?.flyTo({
-          center: [homeAddress.longitude, homeAddress.latitude],
+          center: [ha.longitude, ha.latitude],
           zoom: 15,
           pitch: 45,
         });
