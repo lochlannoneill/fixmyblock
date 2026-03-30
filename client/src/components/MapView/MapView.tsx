@@ -323,11 +323,11 @@ export default function MapView({
             </div>
             <div style="position:relative">
               <span id="popup-status-${req.id}" style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap;${isAdmin && onUpdateStatus ? 'cursor:pointer' : ''}">${statusLabel}${isAdmin && onUpdateStatus ? '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline-block;margin-left:4px;vertical-align:-1px"><path d="M7 10l5 5 5-5z"/></svg>' : ''}</span>
-              ${isAdmin && onUpdateStatus ? `<div id="popup-status-dropdown-${req.id}" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;width:140px;background:var(--popup-bg, #fff);border:1px solid var(--popup-border, #e5e7eb);border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:100;overflow:hidden;padding:4px 0">
+              ${isAdmin && onUpdateStatus ? `<div id="popup-status-dropdown-${req.id}" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;width:140px;background:var(--bg-card);border:1px solid var(--border-input);border-radius:12px;box-shadow:var(--shadow-md);z-index:100;overflow:hidden;padding:4px 0;opacity:0;transform:scale(0.95) translateY(-4px);transition:opacity 150ms ease,transform 150ms ease;transform-origin:top right">
                 ${(['open', 'under-review', 'in-progress', 'resolved'] as const).map(s => {
                   const label = s === 'in-progress' ? 'In Progress' : s === 'under-review' ? 'Under Review' : s.charAt(0).toUpperCase() + s.slice(1);
                   const isCurrentStatus = s === req.status;
-                  return `<button data-status="${s}" class="popup-status-option" style="display:flex;align-items:center;gap:6px;width:100%;text-align:left;padding:6px 10px;font-size:12px;border:none;background:none;cursor:${isCurrentStatus ? 'default' : 'pointer'};color:${isCurrentStatus ? 'var(--text-muted, #9ca3af)' : 'var(--text-main, #334155)'}"><span style="width:8px;height:8px;border-radius:50%;background:${STATUS_COLORS[s]};flex-shrink:0"></span>${label}${isCurrentStatus ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto"><polyline points="20 6 9 17 4 12"/></svg>' : ''}</button>`;
+                  return `<button data-status="${s}" class="popup-status-option" style="display:flex;align-items:center;gap:6px;width:100%;text-align:left;padding:6px 10px;font-size:12px;border:none;background:none;cursor:${isCurrentStatus ? 'default' : 'pointer'};color:${isCurrentStatus ? STATUS_COLORS[s] : 'var(--text-primary)'};${isCurrentStatus ? 'font-weight:600' : ''}"><span style="width:8px;height:8px;border-radius:50%;background:${STATUS_COLORS[s]};flex-shrink:0"></span>${label}${isCurrentStatus ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto"><polyline points="20 6 9 17 4 12"/></svg>' : ''}</button>`;
                 }).join('')}
               </div>` : ''}
             </div>
@@ -390,10 +390,24 @@ export default function MapView({
             statusBadge.addEventListener("click", (e) => {
               e.stopPropagation();
               const isOpen = statusDropdown.style.display !== "none";
-              statusDropdown.style.display = isOpen ? "none" : "block";
+              if (isOpen) {
+                statusDropdown.style.opacity = "0";
+                statusDropdown.style.transform = "scale(0.95) translateY(-4px)";
+                setTimeout(() => { statusDropdown.style.display = "none"; }, 150);
+              } else {
+                statusDropdown.style.display = "block";
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                  statusDropdown.style.opacity = "1";
+                  statusDropdown.style.transform = "scale(1) translateY(0)";
+                }));
+              }
               if (!isOpen) {
                 setTimeout(() => {
-                  const closeDropdown = () => { statusDropdown.style.display = "none"; };
+                  const closeDropdown = () => {
+                    statusDropdown.style.opacity = "0";
+                    statusDropdown.style.transform = "scale(0.95) translateY(-4px)";
+                    setTimeout(() => { statusDropdown.style.display = "none"; }, 150);
+                  };
                   document.addEventListener("click", closeDropdown, { once: true });
                 }, 0);
               }

@@ -44,6 +44,8 @@ export default function RequestDetail({
   const [menuAnimate, setMenuAnimate] = useState(false);
   const [showResolution, setShowResolution] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [statusVisible, setStatusVisible] = useState(false);
+  const [statusAnimate, setStatusAnimate] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
@@ -68,6 +70,17 @@ export default function RequestDetail({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [showMenu]);
+
+  useEffect(() => {
+    if (showStatusDropdown) {
+      setStatusVisible(true);
+      requestAnimationFrame(() => requestAnimationFrame(() => setStatusAnimate(true)));
+    } else {
+      setStatusAnimate(false);
+      const timer = setTimeout(() => setStatusVisible(false), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [showStatusDropdown]);
 
   useEffect(() => {
     if (!showStatusDropdown) return;
@@ -125,16 +138,24 @@ export default function RequestDetail({
                   <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="inline-block ml-1 -mt-px"><path d="M7 10l5 5 5-5z"/></svg>
                 )}
               </button>
-              {showStatusDropdown && (
-                <div className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-[#272727] border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden py-1">
+              {statusVisible && (
+                <div
+                  className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-[#272727] border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden py-1 origin-top-right"
+                  style={{
+                    transition: "opacity 150ms ease, transform 150ms ease",
+                    opacity: statusAnimate ? 1 : 0,
+                    transform: statusAnimate ? "scale(1) translateY(0)" : "scale(0.95) translateY(-4px)",
+                  }}
+                >
                   {STATUS_OPTIONS.map(o => (
                     <button
                       key={o.value}
                       className={`w-full text-left px-3 py-2 text-[13px] cursor-pointer transition-colors flex items-center gap-2 ${
                         o.value === request.status
-                          ? "text-slate-400 dark:text-zinc-500"
+                          ? "font-semibold"
                           : "text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
                       }`}
+                      style={o.value === request.status ? { color: STATUS_COLORS[o.value] } : undefined}
                       disabled={o.value === request.status}
                       onClick={() => { setShowStatusDropdown(false); onUpdateStatus!(request.id, o.value); }}
                     >
