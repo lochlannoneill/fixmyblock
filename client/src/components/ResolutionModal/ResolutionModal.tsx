@@ -96,8 +96,8 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
             </svg>
           </div>
           <div>
-            <h2 className="text-base font-bold text-slate-800 dark:text-zinc-100">Action Log</h2>
-            <p className="text-xs text-slate-400 dark:text-zinc-500">{request.title}</p>
+            <h2 className="text-base font-bold text-slate-800 dark:text-zinc-100">{request.title}</h2>
+            <p className="text-xs text-slate-400 dark:text-zinc-500">Action Log</p>
           </div>
         </div>
 
@@ -108,6 +108,7 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
             title="Issue Reported"
             description="This issue was reported by a member of the community."
             date={reportDate}
+            note={openEntry?.note}
             dimmed={isUnderReview || isInProgress || isResolved}
             nextIcon="review"
           />
@@ -120,6 +121,7 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
                 ? "Moved to review."
                 : "The report was received and queued for assessment by the local authority."}
             date={reviewDate}
+            note={reviewEntry?.note}
             active={isUnderReview}
             isLast={isUnderReview}
             activeLabel="Currently under review..."
@@ -136,6 +138,7 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
                 ? "Work began on resolving the issue."
                 : "Mitigation efforts were scheduled and work began on resolving the issue."}
             date={progressDate}
+            note={progressEntry?.note}
             active={isInProgress}
             isLast={isInProgress}
             activeLabel="In progress..."
@@ -149,6 +152,7 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
               title="Resolved"
               description="This issue has been addressed and marked as resolved."
               date={resolvedDate}
+              note={resolvedEntry?.note}
               isLast
             />
           )}
@@ -182,11 +186,12 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
   );
 }
 
-function LogEntry({ icon, title, description, date, isLast, active, dimmed, activeLabel, nextIcon }: {
+function LogEntry({ icon, title, description, date, note, isLast, active, dimmed, activeLabel, nextIcon }: {
   icon: "report" | "review" | "progress" | "resolved";
   title: string;
   description: string;
   date: string;
+  note?: string;
   isLast?: boolean;
   active?: boolean;
   dimmed?: boolean;
@@ -271,6 +276,11 @@ function LogEntry({ icon, title, description, date, isLast, active, dimmed, acti
               : "text-slate-700 dark:text-zinc-200"
         }`}>{title}{active && " ..."}</p>
         <p className={`text-xs mt-0.5 leading-relaxed ${active || isLast ? "text-slate-700 dark:text-zinc-200" : "text-slate-500 dark:text-zinc-400"}`}>{description}</p>
+        {note && (
+          <p className="text-xs mt-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1e1e1e] text-slate-600 dark:text-zinc-300 italic leading-relaxed border-l-2 border-slate-300 dark:border-zinc-600">
+            "{note}"
+          </p>
+        )}
         {date && <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-1">{date}</p>}
       </div>
     </div>

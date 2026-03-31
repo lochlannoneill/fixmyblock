@@ -300,7 +300,7 @@ export default function App() {
               onLikeComment={(requestId: string, commentId: string) => { if (!user) { setShowAuthModal(true); return; } likeComment(requestId, commentId); }}
               onSave={(id: string) => { if (!user) { setShowAuthModal(true); return; } save(id); }}
               onDelete={(id: string) => { remove(id); setSidebarView("list"); }}
-              onUpdateStatus={(id, status) => updateStatus(id, status)}
+              onUpdateStatus={(id, status, note) => updateStatus(id, status, note)}
               currentUserId={user?.userId}
               isAdmin={profile?.role === "admin" || profile?.role === "moderator"}
             />
@@ -428,7 +428,7 @@ export default function App() {
             flyToTarget={flyToTarget}
             onSignInPrompt={() => setShowAuthModal(true)}
             isAdmin={profile?.role === "admin" || profile?.role === "moderator"}
-            onUpdateStatus={(id, status) => updateStatus(id, status)}
+            onUpdateStatus={(id, status, note) => updateStatus(id, status, note)}
             homeAddress={profile?.homeAddress}
           />
         </main>

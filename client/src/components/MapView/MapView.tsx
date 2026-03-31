@@ -25,7 +25,7 @@ interface MapViewProps {
   flyToTarget?: { lng: number; lat: number } | null;
   onSignInPrompt?: () => void;
   isAdmin?: boolean;
-  onUpdateStatus?: (id: string, status: RequestStatus) => void;
+  onUpdateStatus?: (id: string, status: RequestStatus, note?: string) => void;
   homeAddress?: HomeAddress | null;
 }
 
@@ -556,13 +556,26 @@ export default function MapView({
               <span style="font-size:11px;font-weight:600;color:var(--text-muted)">${timeSince}${!images.length ? ` &middot; ${locationText}` : ''}</span>
             </div>
             <div style="position:relative">
-              <span id="popup-status-${idPrefix}" class="${isAdmin && onUpdateStatus ? 'popup-status-tag-admin' : ''}" style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:6px 8px;border-radius:9999px;white-space:nowrap;transition:opacity 150ms;${isAdmin && onUpdateStatus ? 'cursor:pointer' : ''}">${statusLabel}${isAdmin && onUpdateStatus ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;margin-left:4px;vertical-align:-1px"><polyline points="6 9 12 15 18 9"/></svg>' : ''}</span>
+              <span id="popup-status-${idPrefix}" class="${isAdmin && onUpdateStatus ? 'popup-status-tag-admin' : ''}" style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:6px 14px;border-radius:9999px;white-space:nowrap;transition:opacity 150ms;${isAdmin && onUpdateStatus ? 'cursor:pointer' : ''}">${statusLabel}${isAdmin && onUpdateStatus ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;margin-left:4px;vertical-align:-1px"><polyline points="6 9 12 15 18 9"/></svg>' : ''}</span>
               ${isAdmin && onUpdateStatus ? `<div id="popup-status-dropdown-${idPrefix}" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;width:140px;background:var(--bg-card);border:1px solid var(--border-input);border-radius:12px;box-shadow:var(--shadow-md);z-index:100;overflow:hidden;padding:4px 0;opacity:0;transform:scale(0.95) translateY(-4px);transition:opacity 150ms ease,transform 150ms ease;transform-origin:top right">
+                <div id="popup-status-options-${idPrefix}">
                 ${(['open', 'under-review', 'in-progress', 'resolved'] as const).map(s => {
                   const label = s === 'in-progress' ? 'In Progress' : s === 'under-review' ? 'Under Review' : s.charAt(0).toUpperCase() + s.slice(1);
                   const isCurrentStatus = s === req.status;
                   return `<button data-status="${s}" class="popup-status-option" style="display:flex;align-items:center;gap:6px;width:100%;text-align:left;padding:6px 10px;font-size:12px;border:none;background:none;cursor:${isCurrentStatus ? 'default' : 'pointer'};color:${isCurrentStatus ? STATUS_COLORS[s] : 'var(--text-primary)'};${isCurrentStatus ? 'font-weight:600' : ''}"><span style="width:8px;height:8px;border-radius:50%;background:${STATUS_COLORS[s]};flex-shrink:0"></span>${label}${isCurrentStatus ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto"><polyline points="20 6 9 17 4 12"/></svg>' : ''}</button>`;
                 }).join('')}
+                </div>
+                <div id="popup-status-note-${idPrefix}" style="display:none;padding:8px 10px">
+                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+                    <span id="popup-status-note-dot-${idPrefix}" style="width:8px;height:8px;border-radius:50%;flex-shrink:0"></span>
+                    <span id="popup-status-note-label-${idPrefix}" style="font-size:13px;font-weight:600;color:var(--text-primary)"></span>
+                  </div>
+                  <textarea id="popup-status-note-input-${idPrefix}" placeholder="Add a note (optional)" rows="2" style="width:100%;padding:6px 8px;font-size:12px;border-radius:8px;border:1px solid var(--border-input);background:var(--bg-secondary);color:var(--text-primary);resize:none;font-family:inherit;box-sizing:border-box"></textarea>
+                  <div style="display:flex;gap:6px;margin-top:6px">
+                    <button id="popup-status-note-cancel-${idPrefix}" style="flex:1;font-size:12px;font-weight:500;padding:4px 6px;border-radius:8px;border:none;background:none;color:var(--text-muted);cursor:pointer">Cancel</button>
+                    <button id="popup-status-note-confirm-${idPrefix}" style="flex:1;font-size:12px;font-weight:500;padding:4px 6px;border-radius:8px;border:none;color:#fff;cursor:pointer">Confirm</button>
+                  </div>
+                </div>
               </div>` : ''}
             </div>
           </div>
@@ -626,15 +639,42 @@ export default function MapView({
         if (isAdmin && onUpdateStatus) {
           const statusBadge = document.getElementById(`popup-status-${idPrefix}`);
           const statusDropdown = document.getElementById(`popup-status-dropdown-${idPrefix}`);
-          if (statusBadge && statusDropdown) {
+          const statusOptions = document.getElementById(`popup-status-options-${idPrefix}`);
+          const notePanel = document.getElementById(`popup-status-note-${idPrefix}`);
+          const noteInput = document.getElementById(`popup-status-note-input-${idPrefix}`) as HTMLTextAreaElement | null;
+          const noteDot = document.getElementById(`popup-status-note-dot-${idPrefix}`);
+          const noteLabel = document.getElementById(`popup-status-note-label-${idPrefix}`);
+          const noteCancel = document.getElementById(`popup-status-note-cancel-${idPrefix}`);
+          const noteConfirm = document.getElementById(`popup-status-note-confirm-${idPrefix}`);
+          let pendingStatus: RequestStatus | null = null;
+          if (statusBadge && statusDropdown && statusOptions && notePanel && noteInput && noteCancel && noteConfirm) {
+            const showNotePanel = (status: RequestStatus) => {
+              pendingStatus = status;
+              const label = status === 'in-progress' ? 'In Progress' : status === 'under-review' ? 'Under Review' : status.charAt(0).toUpperCase() + status.slice(1);
+              if (noteDot) noteDot.style.background = STATUS_COLORS[status];
+              if (noteLabel) noteLabel.textContent = label;
+              if (noteConfirm) noteConfirm.style.background = STATUS_COLORS[status];
+              statusOptions.style.display = "none";
+              notePanel.style.display = "block";
+              statusDropdown.style.width = "220px";
+              noteInput.value = "";
+              noteInput.focus();
+            };
+            const resetDropdown = () => {
+              pendingStatus = null;
+              notePanel.style.display = "none";
+              statusOptions.style.display = "block";
+              statusDropdown.style.width = "140px";
+            };
             statusBadge.addEventListener("click", (e) => {
               e.stopPropagation();
               const isOpen = statusDropdown.style.display !== "none";
               if (isOpen) {
                 statusDropdown.style.opacity = "0";
                 statusDropdown.style.transform = "scale(0.95) translateY(-4px)";
-                setTimeout(() => { statusDropdown.style.display = "none"; }, 150);
+                setTimeout(() => { statusDropdown.style.display = "none"; resetDropdown(); }, 150);
               } else {
+                resetDropdown();
                 statusDropdown.style.display = "block";
                 requestAnimationFrame(() => requestAnimationFrame(() => {
                   statusDropdown.style.opacity = "1";
@@ -643,13 +683,30 @@ export default function MapView({
               }
               if (!isOpen) {
                 setTimeout(() => {
-                  const closeDropdown = () => {
+                  const closeDropdown = (ev: MouseEvent) => {
+                    if (statusDropdown.contains(ev.target as Node) || statusBadge.contains(ev.target as Node)) {
+                      document.addEventListener("click", closeDropdown, { once: true });
+                      return;
+                    }
                     statusDropdown.style.opacity = "0";
                     statusDropdown.style.transform = "scale(0.95) translateY(-4px)";
-                    setTimeout(() => { statusDropdown.style.display = "none"; }, 150);
+                    setTimeout(() => { statusDropdown.style.display = "none"; resetDropdown(); }, 150);
                   };
                   document.addEventListener("click", closeDropdown, { once: true });
                 }, 0);
+              }
+            });
+            noteCancel.addEventListener("click", (e) => {
+              e.stopPropagation();
+              resetDropdown();
+            });
+            noteConfirm.addEventListener("click", (e) => {
+              e.stopPropagation();
+              if (pendingStatus) {
+                const note = noteInput.value.trim() || undefined;
+                onUpdateStatus(req.id, pendingStatus, note);
+                statusDropdown.style.display = "none";
+                resetDropdown();
               }
             });
             statusDropdown.querySelectorAll(".popup-status-option").forEach(opt => {
@@ -657,8 +714,7 @@ export default function MapView({
                 e.stopPropagation();
                 const newStatus = (opt as HTMLElement).dataset.status as RequestStatus;
                 if (newStatus && newStatus !== req.status) {
-                  onUpdateStatus(req.id, newStatus);
-                  statusDropdown.style.display = "none";
+                  showNotePanel(newStatus);
                 }
               });
             });

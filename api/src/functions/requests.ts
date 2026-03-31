@@ -389,9 +389,9 @@ async function patchStatus(
     }
   } catch { /* fall back to auth header name */ }
 
-  let body: { status?: string };
+  let body: { status?: string; note?: string };
   try {
-    body = await req.json() as { status?: string };
+    body = await req.json() as { status?: string; note?: string };
   } catch {
     return { status: 400, jsonBody: { error: "Invalid JSON" } };
   }
@@ -401,7 +401,7 @@ async function patchStatus(
     return { status: 400, jsonBody: { error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` } };
   }
 
-  const updated = await updateRequestStatus(id, newStatus, userId, userName);
+  const updated = await updateRequestStatus(id, newStatus, userId, userName, body.note);
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
   return { status: 200, jsonBody: updated };

@@ -42,6 +42,7 @@ export interface StatusChange {
   changedAt: string;
   changedBy?: string;
   changedByName?: string;
+  note?: string;
 }
 
 export interface Comment {
@@ -156,7 +157,8 @@ export async function updateRequestStatus(
   id: string,
   status: string,
   userId?: string,
-  userName?: string
+  userName?: string,
+  note?: string
 ): Promise<RequestDoc | null> {
   const existing = await getRequestById(id);
   if (!existing) return null;
@@ -168,6 +170,7 @@ export async function updateRequestStatus(
     changedAt: new Date().toISOString(),
     ...(userId ? { changedBy: userId } : {}),
     ...(userName ? { changedByName: userName } : {}),
+    ...(note ? { note } : {}),
   });
 
   const { resource } = await getContainer()

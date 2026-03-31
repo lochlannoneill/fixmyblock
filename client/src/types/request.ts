@@ -3,6 +3,7 @@ export interface StatusChange {
   changedAt: string;
   changedBy?: string;
   changedByName?: string;
+  note?: string;
 }
 
 export interface Comment {

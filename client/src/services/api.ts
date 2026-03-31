@@ -83,13 +83,13 @@ export async function saveRequest(id: string): Promise<Request> {
   return res.json();
 }
 
-export async function updateRequestStatus(id: string, status: RequestStatus): Promise<Request> {
+export async function updateRequestStatus(id: string, status: RequestStatus, note?: string): Promise<Request> {
   const res = await fetch(
     `${API_BASE}/posts/${encodeURIComponent(id)}/status`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, ...(note ? { note } : {}) }),
     }
   );
   if (!res.ok) throw new Error("Failed to update status");

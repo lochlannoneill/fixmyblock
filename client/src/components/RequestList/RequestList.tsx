@@ -9,7 +9,7 @@ interface RequestListProps {
   selectedId: string | null;
   currentUserId?: string;
   isAdmin?: boolean;
-  onUpdateStatus?: (id: string, status: RequestStatus) => void;
+  onUpdateStatus?: (id: string, status: RequestStatus, note?: string) => void;
 }
 function SkeletonCard() {
   return (

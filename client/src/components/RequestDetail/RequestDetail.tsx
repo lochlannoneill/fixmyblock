@@ -22,7 +22,7 @@ interface RequestDetailProps {
   onLikeComment: (requestId: string, commentId: string) => void;
   onSave: (id: string) => void;
   onDelete: (id: string) => void;
-  onUpdateStatus?: (id: string, status: RequestStatus) => void;
+  onUpdateStatus?: (id: string, status: RequestStatus, note?: string) => void;
   currentUserId?: string;
   isAdmin?: boolean;
 }
@@ -46,6 +46,8 @@ export default function RequestDetail({
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [statusVisible, setStatusVisible] = useState(false);
   const [statusAnimate, setStatusAnimate] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<RequestStatus | null>(null);
+  const [noteText, setNoteText] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
@@ -88,7 +90,11 @@ export default function RequestDetail({
   useEffect(() => {
     if (!showStatusDropdown) return;
     const handler = (e: MouseEvent) => {
-      if (statusRef.current && !statusRef.current.contains(e.target as Node)) setShowStatusDropdown(false);
+      if (statusRef.current && !statusRef.current.contains(e.target as Node)) {
+        setShowStatusDropdown(false);
+        setPendingStatus(null);
+        setNoteText("");
+      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -146,7 +152,7 @@ export default function RequestDetail({
             <div className="relative" ref={statusRef}>
               <button
                 onClick={() => { if (isAdmin && onUpdateStatus) setShowStatusDropdown(v => !v); }}
-                className={`text-[11px] font-semibold text-white px-2.5 py-1.5 rounded-full shrink-0 ${isAdmin && onUpdateStatus ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}`}
+                className={`text-[11px] font-semibold text-white px-3.5 py-1.5 rounded-full shrink-0 ${isAdmin && onUpdateStatus ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}`}
                 style={{ backgroundColor: STATUS_COLORS[request.status] }}
               >
                 {statusLabel}
@@ -156,32 +162,72 @@ export default function RequestDetail({
               </button>
               {statusVisible && (
                 <div
-                  className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-[#272727] border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden py-1 origin-top-right"
+                  className="absolute right-0 top-full mt-1 bg-white dark:bg-[#272727] border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden py-1 origin-top-right"
                   style={{
                     transition: "opacity 150ms ease, transform 150ms ease",
                     opacity: statusAnimate ? 1 : 0,
                     transform: statusAnimate ? "scale(1) translateY(0)" : "scale(0.95) translateY(-4px)",
+                    width: pendingStatus ? "240px" : "160px",
                   }}
                 >
-                  {STATUS_OPTIONS.map(o => (
-                    <button
-                      key={o.value}
-                      className={`w-full text-left px-3 py-2 text-[13px] cursor-pointer transition-colors flex items-center gap-2 ${
-                        o.value === request.status
-                          ? "font-semibold"
-                          : "text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
-                      }`}
-                      style={o.value === request.status ? { color: STATUS_COLORS[o.value] } : undefined}
-                      disabled={o.value === request.status}
-                      onClick={() => { setShowStatusDropdown(false); onUpdateStatus!(request.id, o.value); }}
-                    >
-                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: STATUS_COLORS[o.value] }} />
-                      {o.label}
-                      {o.value === request.status && (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-auto"><polyline points="20 6 9 17 4 12"/></svg>
-                      )}
-                    </button>
-                  ))}
+                  {pendingStatus ? (
+                    <div className="px-3 py-2">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: STATUS_COLORS[pendingStatus] }} />
+                        <span className="text-[13px] font-semibold text-slate-700 dark:text-zinc-300">
+                          {STATUS_OPTIONS.find(o => o.value === pendingStatus)?.label}
+                        </span>
+                      </div>
+                      <textarea
+                        className="w-full px-2.5 py-2 text-[12px] rounded-lg border border-gray-200 dark:border-zinc-600 bg-slate-50 dark:bg-[#1e1e1e] text-slate-700 dark:text-zinc-300 resize-none placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        placeholder="Add a note (optional)"
+                        rows={2}
+                        value={noteText}
+                        onChange={e => setNoteText(e.target.value)}
+                        autoFocus
+                      />
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          className="flex-1 text-[12px] font-medium px-2 py-1.5 rounded-lg text-slate-500 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-[#333] transition-colors cursor-pointer"
+                          onClick={() => { setPendingStatus(null); setNoteText(""); }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          className="flex-1 text-[12px] font-medium px-2 py-1.5 rounded-lg text-white transition-colors cursor-pointer"
+                          style={{ backgroundColor: STATUS_COLORS[pendingStatus] }}
+                          onClick={() => {
+                            onUpdateStatus!(request.id, pendingStatus, noteText.trim() || undefined);
+                            setShowStatusDropdown(false);
+                            setPendingStatus(null);
+                            setNoteText("");
+                          }}
+                        >
+                          Confirm
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    STATUS_OPTIONS.map(o => (
+                      <button
+                        key={o.value}
+                        className={`w-full text-left px-3 py-2 text-[13px] cursor-pointer transition-colors flex items-center gap-2 ${
+                          o.value === request.status
+                            ? "font-semibold"
+                            : "text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
+                        }`}
+                        style={o.value === request.status ? { color: STATUS_COLORS[o.value] } : undefined}
+                        disabled={o.value === request.status}
+                        onClick={() => setPendingStatus(o.value)}
+                      >
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: STATUS_COLORS[o.value] }} />
+                        {o.label}
+                        {o.value === request.status && (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-auto"><polyline points="20 6 9 17 4 12"/></svg>
+                        )}
+                      </button>
+                    ))
+                  )}
                 </div>
               )}
             </div>

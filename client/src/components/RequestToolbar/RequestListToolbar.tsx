@@ -30,7 +30,7 @@ interface RequestListToolbarProps {
   onSelectRequest: (c: Request) => void;
   selectedId: string | null;
   isAdmin?: boolean;
-  onUpdateStatus?: (id: string, status: RequestStatus) => void;
+  onUpdateStatus?: (id: string, status: RequestStatus, note?: string) => void;
 }
 
 export default function RequestListToolbar({

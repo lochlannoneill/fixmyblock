@@ -91,9 +91,9 @@ export function useRequests() {
     }
   }, []);
 
-  const updateStatus = useCallback(async (id: string, status: RequestStatus) => {
+  const updateStatus = useCallback(async (id: string, status: RequestStatus, note?: string) => {
     try {
-      const updated = await updateRequestStatusApi(id, status);
+      const updated = await updateRequestStatusApi(id, status, note);
       setRequests((prev) =>
         prev.map((c) => (c.id === updated.id ? updated : c))
       );
