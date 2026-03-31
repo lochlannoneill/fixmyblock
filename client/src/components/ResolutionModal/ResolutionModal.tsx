@@ -31,7 +31,7 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
   const isInProgress = request.status === "in-progress";
 
   const history = request.statusHistory || [];
-  const findEntry = (status: RequestStatus) => history.find((h) => h.status === status);
+  const findEntry = (status: RequestStatus) => [...history].reverse().find((h) => h.status === status);
 
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleString(undefined, {
@@ -277,9 +277,21 @@ function LogEntry({ icon, title, description, date, note, isLast, active, dimmed
         }`}>{title}{active && " ..."}</p>
         <p className={`text-xs mt-0.5 leading-relaxed ${active || isLast ? "text-slate-700 dark:text-zinc-200" : "text-slate-500 dark:text-zinc-400"}`}>{description}</p>
         {note && (
-          <p className="text-xs mt-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1e1e1e] text-slate-600 dark:text-zinc-300 italic leading-relaxed border-l-2 border-slate-300 dark:border-zinc-600">
-            "{note}"
-          </p>
+          <div className="mt-1.5 inline-flex items-start gap-1 px-2.5 py-2 rounded-lg bg-slate-100 dark:bg-[#1e1e1e] leading-relaxed">
+            <span className={`text-2xl font-serif leading-none -mt-1 shrink-0 ${
+              icon === "report" ? "text-red-400 dark:text-red-500" :
+              icon === "review" ? "text-indigo-400 dark:text-indigo-500" :
+              icon === "progress" ? "text-amber-400 dark:text-amber-500" :
+              "text-emerald-400 dark:text-emerald-500"
+            }`}>&ldquo;</span>
+            <span className="text-xs text-slate-600 dark:text-zinc-300 italic">{note}</span>
+            <span className={`text-2xl font-serif leading-none self-end -mb-1.5 shrink-0 ${
+              icon === "report" ? "text-red-400 dark:text-red-500" :
+              icon === "review" ? "text-indigo-400 dark:text-indigo-500" :
+              icon === "progress" ? "text-amber-400 dark:text-amber-500" :
+              "text-emerald-400 dark:text-emerald-500"
+            }`}>&rdquo;</span>
+          </div>
         )}
         {date && <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-1">{date}</p>}
       </div>

@@ -315,7 +315,7 @@ export default function App() {
               onSelectRequest={handleSelectRequest}
               selectedId={selectedRequest?.id ?? null}
               isAdmin={profile?.role === "admin" || profile?.role === "moderator"}
-              onUpdateStatus={(id, status) => updateStatus(id, status)}
+              onUpdateStatus={(id, status, note) => updateStatus(id, status, note)}
             />
           )}
         </aside>
