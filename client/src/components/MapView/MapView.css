@@ -127,6 +127,10 @@
   color: var(--text-primary) !important;
 }
 
+.popup-status-tag-admin:hover {
+  opacity: 0.8;
+}
+
 /* Popup content (injected via innerHTML) */
 .popup-content {
   min-width: 200px;

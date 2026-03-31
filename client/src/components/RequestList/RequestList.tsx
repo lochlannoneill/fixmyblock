@@ -1,5 +1,5 @@
 ﻿import { useRef, useState, useEffect, useCallback } from "react";
-import type { Request } from "../../types/request";
+import type { Request, RequestStatus } from "../../types/request";
 import { RequestItem } from "../RequestItem";
 
 interface RequestListProps {
@@ -8,6 +8,8 @@ interface RequestListProps {
   onSelect: (c: Request) => void;
   selectedId: string | null;
   currentUserId?: string;
+  isAdmin?: boolean;
+  onUpdateStatus?: (id: string, status: RequestStatus) => void;
 }
 function SkeletonCard() {
   return (
@@ -30,6 +32,8 @@ export default function RequestList({
   onSelect,
   selectedId,
   currentUserId,
+  isAdmin,
+  onUpdateStatus,
 }: RequestListProps) {
   const PAGE_SIZE = 5;
   const listRef = useRef<HTMLDivElement>(null);
@@ -115,6 +119,8 @@ export default function RequestList({
             onSelect={onSelect}
             selected={c.id === selectedId}
             currentUserId={currentUserId}
+            isAdmin={isAdmin}
+            onUpdateStatus={onUpdateStatus}
           />
         </div>
         );

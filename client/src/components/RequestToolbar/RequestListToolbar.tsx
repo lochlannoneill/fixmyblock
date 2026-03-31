@@ -29,6 +29,8 @@ interface RequestListToolbarProps {
   showingForm: boolean;
   onSelectRequest: (c: Request) => void;
   selectedId: string | null;
+  isAdmin?: boolean;
+  onUpdateStatus?: (id: string, status: RequestStatus) => void;
 }
 
 export default function RequestListToolbar({
@@ -38,6 +40,8 @@ export default function RequestListToolbar({
   userLocation,
   onSelectRequest,
   selectedId,
+  isAdmin,
+  onUpdateStatus,
 }: RequestListToolbarProps) {  const [activeTab, setActiveTab] = useState<"active" | "resolved">("active");  const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<RequestCategory | "">("");
   const [filterStatus, setFilterStatus] = useState<RequestStatus | "">("");
@@ -262,6 +266,8 @@ export default function RequestListToolbar({
         onSelect={onSelectRequest}
         selectedId={selectedId}
         currentUserId={currentUserId}
+        isAdmin={isAdmin}
+        onUpdateStatus={onUpdateStatus}
       />
     </>
   );

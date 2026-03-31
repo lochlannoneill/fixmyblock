@@ -314,6 +314,8 @@ export default function App() {
               showingForm={showForm}
               onSelectRequest={handleSelectRequest}
               selectedId={selectedRequest?.id ?? null}
+              isAdmin={profile?.role === "admin" || profile?.role === "moderator"}
+              onUpdateStatus={(id, status) => updateStatus(id, status)}
             />
           )}
         </aside>

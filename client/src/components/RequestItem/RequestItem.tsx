@@ -1,10 +1,17 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart as faHeartSolid, faComment as faCommentSolid, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as faHeartRegular, faComment as faCommentRegular } from "@fortawesome/free-regular-svg-icons";
-import type { Request } from "../../types/request";
+import type { Request, RequestStatus } from "../../types/request";
 import { STATUS_COLORS } from "../../types/request";
 import { ResolutionModal } from "../ResolutionModal";
+
+const STATUS_OPTIONS: { value: RequestStatus; label: string }[] = [
+  { value: "open", label: "Open" },
+  { value: "under-review", label: "Under Review" },
+  { value: "in-progress", label: "In Progress" },
+  { value: "resolved", label: "Resolved" },
+];
 
 function getTimeSince(dateStr: string): string {
   const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
@@ -18,19 +25,46 @@ function getTimeSince(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString();
 }
 
-export default function RequestItem({ request: c, onSelect, selected, currentUserId }: {
+export default function RequestItem({ request: c, onSelect, selected, currentUserId, isAdmin, onUpdateStatus }: {
   request: Request;
   onSelect: (r: Request) => void;
   selected?: boolean;
   currentUserId?: string;
+  isAdmin?: boolean;
+  onUpdateStatus?: (id: string, status: RequestStatus) => void;
 }) {
   const [showResolution, setShowResolution] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [statusVisible, setStatusVisible] = useState(false);
+  const [statusAnimate, setStatusAnimate] = useState(false);
+  const statusRef = useRef<HTMLDivElement>(null);
   const comments = c.comments || [];
   const likeCount = (c.likers || []).length;
   const hasLiked = !!(currentUserId && (c.likers || []).includes(currentUserId));
   const hasCommented = !!(currentUserId && comments.some(com => com.userId === currentUserId));
   const timeSince = getTimeSince(c.createdAt);
   const locationName = c.location || `${c.latitude.toFixed(4)}, ${c.longitude.toFixed(4)}`;
+  const statusLabel = c.status === "in-progress" ? "In Progress" : c.status === "under-review" ? "Under Review" : c.status.charAt(0).toUpperCase() + c.status.slice(1);
+
+  useEffect(() => {
+    if (showStatusDropdown) {
+      setStatusVisible(true);
+      requestAnimationFrame(() => requestAnimationFrame(() => setStatusAnimate(true)));
+    } else {
+      setStatusAnimate(false);
+      const timer = setTimeout(() => setStatusVisible(false), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [showStatusDropdown]);
+
+  useEffect(() => {
+    if (!showStatusDropdown) return;
+    const handler = (e: MouseEvent) => {
+      if (statusRef.current && !statusRef.current.contains(e.target as Node)) setShowStatusDropdown(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showStatusDropdown]);
 
   return (
     <>
@@ -52,12 +86,48 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
           <span className="text-[13px] font-semibold text-slate-700 dark:text-zinc-300 truncate">{c.userName || "Anonymous"}</span>
           <span className="text-[11px] font-semibold text-slate-400 dark:text-zinc-500">{timeSince}</span>
         </div>
-        <span
-          className="text-[11px] font-semibold text-white px-2 py-1.5 rounded-full shrink-0"
-          style={{ backgroundColor: STATUS_COLORS[c.status] }}
-        >
-          {c.status === "in-progress" ? "In Progress" : c.status === "under-review" ? "Under Review" : c.status.charAt(0).toUpperCase() + c.status.slice(1)}
-        </span>
+        <div className="relative shrink-0" ref={statusRef}>
+          <button
+            onClick={(e) => { e.stopPropagation(); if (isAdmin && onUpdateStatus) setShowStatusDropdown(v => !v); }}
+            className={`text-[11px] font-semibold text-white px-2 py-1.5 rounded-full ${isAdmin && onUpdateStatus ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}`}
+            style={{ backgroundColor: STATUS_COLORS[c.status] }}
+          >
+            {statusLabel}
+            {isAdmin && onUpdateStatus && (
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="inline-block ml-1 -mt-px"><polyline points="6 9 12 15 18 9" /></svg>
+            )}
+          </button>
+          {statusVisible && (
+            <div
+              className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-[#272727] border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden py-1 origin-top-right"
+              style={{
+                transition: "opacity 150ms ease, transform 150ms ease",
+                opacity: statusAnimate ? 1 : 0,
+                transform: statusAnimate ? "scale(1) translateY(0)" : "scale(0.95) translateY(-4px)",
+              }}
+            >
+              {STATUS_OPTIONS.map(o => (
+                <button
+                  key={o.value}
+                  className={`w-full text-left px-3 py-2 text-[13px] cursor-pointer transition-colors flex items-center gap-2 ${
+                    o.value === c.status
+                      ? "font-semibold"
+                      : "text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
+                  }`}
+                  style={o.value === c.status ? { color: STATUS_COLORS[o.value] } : undefined}
+                  disabled={o.value === c.status}
+                  onClick={(e) => { e.stopPropagation(); setShowStatusDropdown(false); onUpdateStatus!(c.id, o.value); }}
+                >
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: STATUS_COLORS[o.value] }} />
+                  {o.label}
+                  {o.value === c.status && (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-auto"><polyline points="20 6 9 17 4 12"/></svg>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       {(c.imageUrls || []).length > 0 ? (
         <div className="mt-3 relative rounded-lg overflow-hidden h-80">
