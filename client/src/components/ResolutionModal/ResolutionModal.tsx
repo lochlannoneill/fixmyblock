@@ -159,14 +159,14 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
           isResolved
             ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20"
             : isUnderReview
-              ? "bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20"
+              ? "bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/20"
               : "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20"
         }`}>
           <p className={`text-xs leading-relaxed ${
             isResolved
               ? "text-emerald-700 dark:text-emerald-300"
               : isUnderReview
-                ? "text-blue-700 dark:text-blue-300"
+                ? "text-indigo-700 dark:text-indigo-300"
                 : "text-amber-700 dark:text-amber-300"
           }`}>
             {isResolved
@@ -195,14 +195,14 @@ function LogEntry({ icon, title, description, date, isLast, active, dimmed, acti
 }) {
   const iconColors: Record<string, string> = {
     report: "bg-red-100 dark:bg-red-500/15 text-red-500",
-    review: "bg-blue-100 dark:bg-blue-500/15 text-blue-500",
+    review: "bg-indigo-100 dark:bg-indigo-500/15 text-indigo-500",
     progress: "bg-amber-100 dark:bg-amber-500/15 text-amber-500",
     resolved: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-500",
   };
 
   const lineColors: Record<string, string> = {
     report: "bg-red-300 dark:bg-red-500/40",
-    review: "bg-blue-300 dark:bg-blue-500/40",
+    review: "bg-indigo-300 dark:bg-indigo-500/40",
     progress: "bg-amber-300 dark:bg-amber-500/40",
     resolved: "bg-emerald-300 dark:bg-emerald-500/40",
   };
@@ -246,8 +246,8 @@ function LogEntry({ icon, title, description, date, isLast, active, dimmed, acti
               className="absolute inset-[-4px] rounded-full animate-spin"
               style={{
                 border: "2px solid transparent",
-                borderTopColor: icon === "review" ? "#3b82f6" : "#f59e0b",
-                borderRightColor: icon === "review" ? "#3b82f680" : "#f59e0b80",
+                borderTopColor: icon === "review" ? "#6366f1" : "#f59e0b",
+                borderRightColor: icon === "review" ? "#6366f180" : "#f59e0b80",
                 animationDuration: "1.2s",
               }}
             />
@@ -262,10 +262,10 @@ function LogEntry({ icon, title, description, date, isLast, active, dimmed, acti
       <div className={`pt-0.5 ${isLast ? "pb-0" : "pb-4"}`}>
         <p className={`text-sm font-semibold ${
           active
-            ? icon === "review" ? "text-blue-500 dark:text-blue-400" : "text-amber-500 dark:text-amber-400"
+            ? icon === "review" ? "text-indigo-500 dark:text-indigo-400" : "text-amber-500 dark:text-amber-400"
             : isLast
               ? icon === "resolved" ? "text-emerald-600 dark:text-emerald-400"
-                : icon === "review" ? "text-blue-500 dark:text-blue-400"
+                : icon === "review" ? "text-indigo-500 dark:text-indigo-400"
                 : icon === "progress" ? "text-amber-500 dark:text-amber-400"
                 : "text-red-500 dark:text-red-400"
               : "text-slate-700 dark:text-zinc-200"

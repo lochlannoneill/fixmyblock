@@ -300,9 +300,9 @@ export default function RequestDetail({
             <button
               className="flex items-center justify-center gap-1.5 w-full mt-3 px-3 py-2.5 rounded-lg text-xs font-medium cursor-pointer transition-all border hover:brightness-75"
               style={{
-                color: request.status === 'resolved' ? '#059669' : request.status === 'under-review' ? '#3b82f6' : '#d97706',
-                background: request.status === 'resolved' ? 'rgba(16,185,129,0.08)' : request.status === 'under-review' ? 'rgba(59,130,246,0.08)' : 'rgba(245,158,11,0.08)',
-                borderColor: request.status === 'resolved' ? 'rgba(16,185,129,0.2)' : request.status === 'under-review' ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)',
+                color: request.status === 'resolved' ? '#059669' : request.status === 'under-review' ? '#6366f1' : '#d97706',
+                background: request.status === 'resolved' ? 'rgba(16,185,129,0.08)' : request.status === 'under-review' ? 'rgba(99,102,241,0.08)' : 'rgba(245,158,11,0.08)',
+                borderColor: request.status === 'resolved' ? 'rgba(16,185,129,0.2)' : request.status === 'under-review' ? 'rgba(99,102,241,0.2)' : 'rgba(245,158,11,0.2)',
               }}
               onClick={() => setShowResolution(true)}
             >

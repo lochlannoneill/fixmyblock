@@ -71,7 +71,7 @@ export const CATEGORY_LABELS: Record<RequestCategory, string> = {
 
 export const STATUS_COLORS: Record<RequestStatus, string> = {
   open: "#ef4444",
-  "under-review": "#3b82f6",
+  "under-review": "#6366f1",
   "in-progress": "#f59e0b",
   resolved: "#22c55e",
 };
