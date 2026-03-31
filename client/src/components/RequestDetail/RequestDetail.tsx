@@ -336,7 +336,11 @@ export default function RequestDetail({
               <FontAwesomeIcon icon={hasLiked ? faHeartSolid : faHeartRegular} /> {likeCount}
             </button>
             <button
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-[#2a2a2a] text-slate-500 dark:text-[#8c8c96] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
+                currentUserId && comments.some(com => com.userId === currentUserId)
+                  ? "text-blue-500 font-semibold bg-blue-50 dark:bg-blue-500/10"
+                  : "text-slate-500 dark:text-[#8c8c96] bg-slate-100 dark:bg-[#2a2a2a] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+              }`}
             >
               <FontAwesomeIcon icon={currentUserId && comments.some(com => com.userId === currentUserId) ? faCommentSolid : faCommentRegular} /> {comments.length}
             </button>
@@ -345,8 +349,8 @@ export default function RequestDetail({
             <button
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
                 hasSaved
-                  ? "text-blue-500 font-semibold bg-blue-50 dark:bg-blue-500/10"
-                  : "text-slate-500 dark:text-[#8c8c96] bg-slate-100 dark:bg-[#2a2a2a] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+                  ? "text-green-500 font-semibold bg-green-50 dark:bg-green-500/10"
+                  : "text-slate-500 dark:text-[#8c8c96] bg-slate-100 dark:bg-[#2a2a2a] hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-500/10"
               }`}
               onClick={() => onSave(request.id)}
               title={hasSaved ? "Unsave" : "Save"}
@@ -355,7 +359,7 @@ export default function RequestDetail({
               Save
             </button>
             <button
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-[#2a2a2a] text-slate-500 dark:text-[#8c8c96] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-[#2a2a2a] text-slate-500 dark:text-[#8c8c96] hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-colors cursor-pointer"
               onClick={() => {
                 if (navigator.share) {
                   navigator.share({ title: request.title, text: request.description, url: window.location.href });

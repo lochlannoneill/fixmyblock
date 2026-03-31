@@ -98,7 +98,7 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
         <span className={`flex items-center gap-1 ${hasLiked ? "text-red-500" : ""}`}>
           <FontAwesomeIcon icon={hasLiked ? faHeartSolid : faHeartRegular} /> {likeCount}
         </span>
-        <span className="flex items-center gap-1">
+        <span className={`flex items-center gap-1 ${hasCommented ? "text-blue-500" : ""}`}>
           <FontAwesomeIcon icon={hasCommented ? faCommentSolid : faCommentRegular} /> {comments.length}
         </span>
       </div>
