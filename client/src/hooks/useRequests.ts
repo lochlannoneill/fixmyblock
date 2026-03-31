@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import type { Request, NewRequest } from "../types/request";
-import { fetchRequests, createRequest, likeRequest, deleteRequest, addComment as addCommentApi, likeComment as likeCommentApi, saveRequest as saveRequestApi } from "../services/api";
+import type { Request, NewRequest, RequestStatus } from "../types/request";
+import { fetchRequests, createRequest, likeRequest, deleteRequest, addComment as addCommentApi, likeComment as likeCommentApi, saveRequest as saveRequestApi, updateRequestStatus as updateRequestStatusApi } from "../services/api";
 
 export function useRequests() {
   const [requests, setRequests] = useState<Request[]>([]);
@@ -91,5 +91,19 @@ export function useRequests() {
     }
   }, []);
 
-  return { requests, loading, selectedRequest, selectRequest, like, remove, create, addComment, likeComment, save };
+  const updateStatus = useCallback(async (id: string, status: RequestStatus, note?: string) => {
+    try {
+      const updated = await updateRequestStatusApi(id, status, note);
+      setRequests((prev) =>
+        prev.map((c) => (c.id === updated.id ? updated : c))
+      );
+      setSelectedRequest((prev) =>
+        prev?.id === updated.id ? updated : prev
+      );
+    } catch {
+      console.error("Failed to update status");
+    }
+  }, []);
+
+  return { requests, loading, selectedRequest, selectRequest, like, remove, create, addComment, likeComment, save, updateStatus };
 }

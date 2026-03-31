@@ -1,3 +1,11 @@
+export interface StatusChange {
+  status: RequestStatus;
+  changedAt: string;
+  changedBy?: string;
+  changedByName?: string;
+  note?: string;
+}
+
 export interface Comment {
   id: string;
   userId: string;
@@ -26,6 +34,7 @@ export interface Request {
   userId: string;
   userName?: string;
   comments: Comment[];
+  statusHistory: StatusChange[];
 }
 
 export type RequestCategory =
@@ -38,7 +47,7 @@ export type RequestCategory =
   | "signage"
   | "other";
 
-export type RequestStatus = "open" | "in-progress" | "resolved";
+export type RequestStatus = "open" | "under-review" | "in-progress" | "resolved";
 
 export interface NewRequest {
   title: string;
@@ -63,6 +72,7 @@ export const CATEGORY_LABELS: Record<RequestCategory, string> = {
 
 export const STATUS_COLORS: Record<RequestStatus, string> = {
   open: "#ef4444",
+  "under-review": "#6366f1",
   "in-progress": "#f59e0b",
   resolved: "#22c55e",
 };
@@ -70,6 +80,12 @@ export const STATUS_COLORS: Record<RequestStatus, string> = {
 export interface UserSettings {
   darkMode: boolean;
   highAccuracy: boolean;
+}
+
+export interface HomeAddress {
+  address: string;
+  latitude: number;
+  longitude: number;
 }
 
 export type UserRole = "admin" | "moderator" | "developer" | "user";
@@ -85,4 +101,5 @@ export interface UserProfile {
   createdAt: string;
   settings: UserSettings;
   profilePictureUrl?: string;
+  homeAddress?: HomeAddress;
 }

@@ -8,7 +8,7 @@ import RequestList from "../RequestList";
 type SortBy = "newest" | "oldest" | "likes" | "comments" | "nearest";
 type OpenDropdown = "category" | "status" | "sort" | null;
 
-const STATUS_LABELS: Record<RequestStatus, string> = { open: "Open", "in-progress": "In Progress", resolved: "Resolved" };
+const STATUS_LABELS: Record<RequestStatus, string> = { open: "Open", "under-review": "Under Review", "in-progress": "In Progress", resolved: "Resolved" };
 const SORT_LABELS: Record<SortBy, string> = { newest: "Most Recent", oldest: "Oldest", likes: "Most Liked", comments: "Most Comments", nearest: "Nearest" };
 
 function distanceBetween(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -29,6 +29,8 @@ interface RequestListToolbarProps {
   showingForm: boolean;
   onSelectRequest: (c: Request) => void;
   selectedId: string | null;
+  isAdmin?: boolean;
+  onUpdateStatus?: (id: string, status: RequestStatus, note?: string) => void;
 }
 
 export default function RequestListToolbar({
@@ -38,8 +40,9 @@ export default function RequestListToolbar({
   userLocation,
   onSelectRequest,
   selectedId,
-}: RequestListToolbarProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  isAdmin,
+  onUpdateStatus,
+}: RequestListToolbarProps) {  const [activeTab, setActiveTab] = useState<"active" | "resolved">("active");  const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<RequestCategory | "">("");
   const [filterStatus, setFilterStatus] = useState<RequestStatus | "">("");
   const [sortBy, setSortBy] = useState<SortBy>("newest");
@@ -100,6 +103,10 @@ export default function RequestListToolbar({
       return (b.likers || []).length - (a.likers || []).length;
     });
   }, [requests, filterCategory, filterStatus, sortBy, searchQuery, userLocation]);
+
+  const activeRequests = useMemo(() => filteredSorted.filter((r) => r.status !== "resolved"), [filteredSorted]);
+  const resolvedRequests = useMemo(() => filteredSorted.filter((r) => r.status === "resolved"), [filteredSorted]);
+  const displayedRequests = activeTab === "active" ? activeRequests : resolvedRequests;
 
   const toggle = (dropdown: OpenDropdown) => setOpenDropdown((prev) => (prev === dropdown ? null : dropdown));
 
@@ -224,12 +231,43 @@ export default function RequestListToolbar({
           </span>
         )}
       </div>
+
+      {/* Tabs */}
+      <div className="relative flex border-b border-slate-200 dark:border-[#3a3a3a] mx-3 mt-3">
+        <div
+          className="absolute bottom-0 h-0.5 bg-blue-500 transition-all duration-300 ease-in-out"
+          style={{ width: "50%", left: activeTab === "active" ? "0%" : "50%" }}
+        />
+        <button
+          onClick={() => setActiveTab("active")}
+          className={`flex-1 text-xs font-medium py-2.5 cursor-pointer transition-colors ${
+            activeTab === "active"
+              ? "text-slate-800 dark:text-zinc-200"
+              : "text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300"
+          }`}
+        >
+          Active ({activeRequests.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("resolved")}
+          className={`flex-1 text-xs font-medium py-2.5 cursor-pointer transition-colors ${
+            activeTab === "resolved"
+              ? "text-slate-800 dark:text-zinc-200"
+              : "text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300"
+          }`}
+        >
+          Resolved ({resolvedRequests.length})
+        </button>
+      </div>
+
       <RequestList
-        requests={filteredSorted}
+        requests={displayedRequests}
         loading={loading}
         onSelect={onSelectRequest}
         selectedId={selectedId}
         currentUserId={currentUserId}
+        isAdmin={isAdmin}
+        onUpdateStatus={onUpdateStatus}
       />
     </>
   );

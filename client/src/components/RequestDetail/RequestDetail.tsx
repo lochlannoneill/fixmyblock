@@ -2,9 +2,17 @@ import { useState, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart as faHeartSolid, faComment as faCommentSolid, faMapMarkerAlt, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as faHeartRegular, faComment as faCommentRegular } from "@fortawesome/free-regular-svg-icons";
-import type { Request } from "../../types/request";
+import type { Request, RequestStatus } from "../../types/request";
 import { STATUS_COLORS } from "../../types/request";
 import { Comments } from "../Comments";
+import { ResolutionModal } from "../ResolutionModal";
+
+const STATUS_OPTIONS: { value: RequestStatus; label: string }[] = [
+  { value: "open", label: "Open" },
+  { value: "under-review", label: "Under Review" },
+  { value: "in-progress", label: "In Progress" },
+  { value: "resolved", label: "Resolved" },
+];
 
 interface RequestDetailProps {
   request: Request;
@@ -14,7 +22,9 @@ interface RequestDetailProps {
   onLikeComment: (requestId: string, commentId: string) => void;
   onSave: (id: string) => void;
   onDelete: (id: string) => void;
+  onUpdateStatus?: (id: string, status: RequestStatus, note?: string) => void;
   currentUserId?: string;
+  isAdmin?: boolean;
 }
 
 export default function RequestDetail({
@@ -25,12 +35,24 @@ export default function RequestDetail({
   onLikeComment,
   onSave,
   onDelete,
+  onUpdateStatus,
   currentUserId,
+  isAdmin,
 }: RequestDetailProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuAnimate, setMenuAnimate] = useState(false);
+  const [showResolution, setShowResolution] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [statusVisible, setStatusVisible] = useState(false);
+  const [statusAnimate, setStatusAnimate] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<RequestStatus | null>(null);
+  const [noteText, setNoteText] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
+
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const isOwner = currentUserId && currentUserId === request.userId;
 
@@ -54,18 +76,44 @@ export default function RequestDetail({
     return () => document.removeEventListener("mousedown", handler);
   }, [showMenu]);
 
+  useEffect(() => {
+    if (showStatusDropdown) {
+      setStatusVisible(true);
+      requestAnimationFrame(() => requestAnimationFrame(() => setStatusAnimate(true)));
+    } else {
+      setStatusAnimate(false);
+      const timer = setTimeout(() => setStatusVisible(false), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [showStatusDropdown]);
+
+  useEffect(() => {
+    if (!showStatusDropdown) return;
+    const handler = (e: MouseEvent) => {
+      if (statusRef.current && !statusRef.current.contains(e.target as Node)) {
+        setShowStatusDropdown(false);
+        setPendingStatus(null);
+        setNoteText("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showStatusDropdown]);
+
   const comments = request.comments || [];
   const likeCount = (request.likers || []).length;
   const hasLiked = currentUserId && (request.likers || []).includes(currentUserId);
   const hasSaved = currentUserId && (request.savedBy || []).includes(currentUserId);
 
   const displayLocation = request.location || `${request.latitude.toFixed(4)}, ${request.longitude.toFixed(4)}`;
-  const statusLabel = request.status === "in-progress" ? "In Progress" : request.status.charAt(0).toUpperCase() + request.status.slice(1);
+  const statusLabel = request.status === "in-progress" ? "In Progress" : request.status === "under-review" ? "Under Review" : request.status.charAt(0).toUpperCase() + request.status.slice(1);
 
   return (
+    <>
+    <ResolutionModal request={showResolution ? request : null} onClose={() => setShowResolution(false)} />
     <div className="flex flex-col h-full">
-      {/* Header - desktop only */}
-      <div className="hidden md:flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-[#2a2a2a]">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-1 md:py-3 border-b border-slate-200 dark:border-[#2a2a2a]">
         <button
           onClick={onBack}
           className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-[#2a2a2a] transition-colors cursor-pointer text-slate-500 dark:text-zinc-400"
@@ -75,25 +123,114 @@ export default function RequestDetail({
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-4">
-          {/* Poster info */}
-          <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+      <div
+        className="flex-1 overflow-y-auto relative"
+        ref={scrollRef}
+        onScroll={() => { if (scrollRef.current) setShowBackToTop(scrollRef.current.scrollTop > 150); }}
+      >
+        {showBackToTop && (
+          <button
+            onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
+            className="sticky top-2 z-20 block mx-auto mb-2 px-3 py-1.5 text-xs font-medium text-slate-500 dark:text-zinc-400 bg-slate-100/90 dark:bg-[#1e1e1e]/90 backdrop-blur-sm rounded-full hover:text-blue-500 cursor-pointer transition-colors"
+          >
+            Back to top
+          </button>
+        )}
+        <div className="p-4 md:p-5">
+          {/* Top bar – avatar, name/time, status, menu */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0" style={{background:'linear-gradient(135deg,#ec4899,#a855f7,#f97316)'}}>
               {((request.userName || "A")[0] ?? "A").toUpperCase()}
             </div>
-            <div className="flex flex-col flex-1 min-w-0">
-              <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">
+            <div className="flex flex-col flex-1 min-w-0 leading-tight">
+              <span className="text-[13px] font-semibold text-slate-700 dark:text-zinc-300 truncate">
                 {request.userName || "Anonymous"}
               </span>
-              <span className="text-xs text-slate-400 dark:text-[#6e6e79]">{getTimeSince(request.createdAt)}</span>
+              <span className="text-[11px] font-semibold text-slate-400 dark:text-zinc-500">{getTimeSince(request.createdAt)}</span>
             </div>
-            <span
-              className="text-[11px] font-semibold text-white px-2.5 py-0.5 rounded-full shrink-0"
-              style={{ backgroundColor: STATUS_COLORS[request.status] }}
-            >
-              {statusLabel}
-            </span>
+            <div className="flex items-center gap-0.5 shrink-0 -mr-2">
+            <div className="relative" ref={statusRef}>
+              <button
+                onClick={() => { if (isAdmin && onUpdateStatus) setShowStatusDropdown(v => !v); }}
+                className={`text-[11px] font-semibold text-white px-3.5 py-1.5 rounded-full shrink-0 ${isAdmin && onUpdateStatus ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}`}
+                style={{ backgroundColor: STATUS_COLORS[request.status] }}
+              >
+                {statusLabel}
+                {isAdmin && onUpdateStatus && (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="inline-block ml-1 -mt-px"><polyline points="6 9 12 15 18 9" /></svg>
+                )}
+              </button>
+              {statusVisible && (
+                <div
+                  className="absolute right-0 top-full mt-1 bg-white dark:bg-[#272727] border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden py-1 origin-top-right"
+                  style={{
+                    transition: "opacity 150ms ease, transform 150ms ease",
+                    opacity: statusAnimate ? 1 : 0,
+                    transform: statusAnimate ? "scale(1) translateY(0)" : "scale(0.95) translateY(-4px)",
+                    width: pendingStatus ? "240px" : "160px",
+                  }}
+                >
+                  {pendingStatus ? (
+                    <div className="px-3 py-2">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: STATUS_COLORS[pendingStatus] }} />
+                        <span className="text-[13px] font-semibold text-slate-700 dark:text-zinc-300">
+                          {STATUS_OPTIONS.find(o => o.value === pendingStatus)?.label}
+                        </span>
+                      </div>
+                      <textarea
+                        className="w-full px-2.5 py-2 text-[12px] rounded-lg border border-gray-200 dark:border-zinc-600 bg-slate-50 dark:bg-[#1e1e1e] text-slate-700 dark:text-zinc-300 resize-none placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        placeholder="Add a note (optional)"
+                        rows={2}
+                        value={noteText}
+                        onChange={e => setNoteText(e.target.value)}
+                        autoFocus
+                      />
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          className="flex-1 text-[12px] font-medium px-2 py-1.5 rounded-lg text-slate-500 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-[#333] transition-colors cursor-pointer"
+                          onClick={() => { setPendingStatus(null); setNoteText(""); }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          className="flex-1 text-[12px] font-medium px-2 py-1.5 rounded-lg text-white transition-colors cursor-pointer"
+                          style={{ backgroundColor: STATUS_COLORS[pendingStatus] }}
+                          onClick={() => {
+                            onUpdateStatus!(request.id, pendingStatus, noteText.trim() || undefined);
+                            setShowStatusDropdown(false);
+                            setPendingStatus(null);
+                            setNoteText("");
+                          }}
+                        >
+                          Confirm
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    STATUS_OPTIONS.map(o => (
+                      <button
+                        key={o.value}
+                        className={`w-full text-left px-3 py-2 text-[13px] cursor-pointer transition-colors flex items-center gap-2 ${
+                          o.value === request.status
+                            ? "font-semibold"
+                            : "text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333]"
+                        }`}
+                        style={o.value === request.status ? { color: STATUS_COLORS[o.value] } : undefined}
+                        disabled={o.value === request.status}
+                        onClick={() => setPendingStatus(o.value)}
+                      >
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: STATUS_COLORS[o.value] }} />
+                        {o.label}
+                        {o.value === request.status && (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-auto"><polyline points="20 6 9 17 4 12"/></svg>
+                        )}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setShowMenu(v => !v)}
@@ -132,6 +269,16 @@ export default function RequestDetail({
                         Delete
                       </button>
                     </>
+                  ) : isAdmin ? (
+                    <button
+                      className="w-full text-left px-3 py-2 text-[13px] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors"
+                      onClick={() => {
+                        setShowMenu(false);
+                        if (confirm("Delete this request?")) onDelete(request.id);
+                      }}
+                    >
+                      Delete
+                    </button>
                   ) : (
                     <button
                       className="w-full text-left px-3 py-2 text-[13px] text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333] cursor-pointer transition-colors"
@@ -142,6 +289,7 @@ export default function RequestDetail({
                   )}
                 </div>
               )}
+            </div>
             </div>
           </div>
 
@@ -193,8 +341,26 @@ export default function RequestDetail({
             </a>
           </div>
 
+          {/* Action log button */}
+          {request.status !== "open" && (
+            <button
+              className="flex items-center justify-center gap-1.5 w-full mt-3 px-3 py-2.5 rounded-lg text-xs font-medium cursor-pointer transition-all border hover:brightness-75"
+              style={{
+                color: request.status === 'resolved' ? '#059669' : request.status === 'under-review' ? '#6366f1' : '#d97706',
+                background: request.status === 'resolved' ? 'rgba(16,185,129,0.08)' : request.status === 'under-review' ? 'rgba(99,102,241,0.08)' : 'rgba(245,158,11,0.08)',
+                borderColor: request.status === 'resolved' ? 'rgba(16,185,129,0.2)' : request.status === 'under-review' ? 'rgba(99,102,241,0.2)' : 'rgba(245,158,11,0.2)',
+              }}
+              onClick={() => setShowResolution(true)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+              View Action Log
+            </button>
+          )}
+
           {/* Title */}
-          <h2 className="text-base font-semibold text-slate-800 dark:text-zinc-200 mt-5">{request.title}</h2>
+          <h2 className="text-base font-semibold text-slate-800 dark:text-zinc-200 mt-3">{request.title}</h2>
 
           {/* Description */}
           <p className="text-[13px] text-slate-600 dark:text-[#b0b0b8] mt-1 leading-relaxed whitespace-pre-wrap">
@@ -216,7 +382,11 @@ export default function RequestDetail({
               <FontAwesomeIcon icon={hasLiked ? faHeartSolid : faHeartRegular} /> {likeCount}
             </button>
             <button
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-[#2a2a2a] text-slate-500 dark:text-[#8c8c96] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
+                currentUserId && comments.some(com => com.userId === currentUserId)
+                  ? "text-blue-500 font-semibold bg-blue-50 dark:bg-blue-500/10"
+                  : "text-slate-500 dark:text-[#8c8c96] bg-slate-100 dark:bg-[#2a2a2a] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+              }`}
             >
               <FontAwesomeIcon icon={currentUserId && comments.some(com => com.userId === currentUserId) ? faCommentSolid : faCommentRegular} /> {comments.length}
             </button>
@@ -225,8 +395,8 @@ export default function RequestDetail({
             <button
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
                 hasSaved
-                  ? "text-blue-500 font-semibold bg-blue-50 dark:bg-blue-500/10"
-                  : "text-slate-500 dark:text-[#8c8c96] bg-slate-100 dark:bg-[#2a2a2a] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+                  ? "text-green-500 font-semibold bg-green-50 dark:bg-green-500/10"
+                  : "text-slate-500 dark:text-[#8c8c96] bg-slate-100 dark:bg-[#2a2a2a] hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-500/10"
               }`}
               onClick={() => onSave(request.id)}
               title={hasSaved ? "Unsave" : "Save"}
@@ -235,7 +405,7 @@ export default function RequestDetail({
               Save
             </button>
             <button
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-[#2a2a2a] text-slate-500 dark:text-[#8c8c96] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-[#2a2a2a] text-slate-500 dark:text-[#8c8c96] hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-colors cursor-pointer"
               onClick={() => {
                 if (navigator.share) {
                   navigator.share({ title: request.title, text: request.description, url: window.location.href });
@@ -261,6 +431,7 @@ export default function RequestDetail({
         </div>
       </div>
     </div>
+    </>
   );
 }
 

@@ -14,6 +14,7 @@ import {
   UserDoc,
   UserSettings,
   UserRole,
+  HomeAddress,
 } from "../cosmos.js";
 import { uploadImage } from "../storage.js";
 
@@ -199,6 +200,38 @@ async function deleteAvatar(
 
 const VALID_ROLES: UserRole[] = ["admin", "moderator", "developer", "user"];
 
+// PATCH /api/users/me/home-address — set or clear home address
+async function patchHomeAddress(
+  req: HttpRequest,
+  _ctx: InvocationContext
+): Promise<HttpResponseInit> {
+  const auth = parseAuthPrincipal(req);
+  if (!auth) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  let body: { homeAddress?: HomeAddress | null };
+  try {
+    body = (await req.json()) as { homeAddress?: HomeAddress | null };
+  } catch {
+    return { status: 400, jsonBody: { error: "Invalid JSON" } };
+  }
+
+  const existing = await getUserById(auth.userId);
+  if (!existing) return { status: 404, jsonBody: { error: "User not found" } };
+
+  if (body.homeAddress) {
+    const { address, latitude, longitude } = body.homeAddress;
+    if (typeof address !== "string" || typeof latitude !== "number" || typeof longitude !== "number") {
+      return { status: 400, jsonBody: { error: "homeAddress must have address (string), latitude (number), longitude (number)" } };
+    }
+    existing.homeAddress = { address: address.trim().slice(0, 200), latitude, longitude };
+  } else {
+    delete existing.homeAddress;
+  }
+
+  const saved = await upsertUser(existing);
+  return { status: 200, jsonBody: saved };
+}
+
 // GET /api/users — admin only: list all users
 async function listUsers(
   req: HttpRequest,
@@ -309,4 +342,11 @@ app.http("deleteAvatar", {
   authLevel: "anonymous",
   route: "users/me/avatar",
   handler: deleteAvatar,
+});
+
+app.http("patchHomeAddress", {
+  methods: ["PATCH"],
+  authLevel: "anonymous",
+  route: "users/me/home-address",
+  handler: patchHomeAddress,
 });

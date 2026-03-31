@@ -43,7 +43,7 @@ export default function WelcomeModal({ onComplete }: WelcomeModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-2xl w-full max-w-sm border border-slate-200 dark:border-[#3a3a3a] overflow-hidden">
         {/* Header */}
         <div className="p-6 pb-2 text-center">

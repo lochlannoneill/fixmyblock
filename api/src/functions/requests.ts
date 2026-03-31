@@ -14,6 +14,7 @@ import {
   toggleCommentLike,
   addComment as addCommentDoc,
   deleteRequest as deleteRequestDoc,
+  updateRequestStatus,
   RequestDoc,
   getUserById,
 } from "../cosmos.js";
@@ -119,6 +120,8 @@ async function postRequest(
       imageUrls.push(url);
     }
 
+    const now = new Date().toISOString();
+
     const doc: RequestDoc = {
       id: uuidv4(),
       type: "complaint",
@@ -130,13 +133,14 @@ async function postRequest(
       longitude,
       location: location || undefined,
       imageUrls,
-      createdAt: new Date().toISOString(),
+      createdAt: now,
       likes: 0,
       likers: [],
       savedBy: [],
       userId: visitorUserId,
       userName: visitorUserName,
       comments: [],
+      statusHistory: [{ status: "open", changedAt: now, changedBy: visitorUserId, changedByName: visitorUserName }],
     };
 
     const created = await createRequestDoc(doc);
@@ -351,4 +355,61 @@ app.http("likeComment", {
   authLevel: "anonymous",
   route: "posts/{id}/comments/{commentId}/like",
   handler: likeComment,
+});
+
+// PATCH /api/posts/{id}/status
+const VALID_STATUSES = ["open", "under-review", "in-progress", "resolved"];
+
+async function patchStatus(
+  req: HttpRequest,
+  _ctx: InvocationContext
+): Promise<HttpResponseInit> {
+  const id = req.params.id;
+  if (!id) return { status: 400, jsonBody: { error: "Missing id" } };
+
+  const principal = req.headers.get("x-ms-client-principal");
+  if (!principal) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  let userId: string;
+  let userName: string;
+  try {
+    const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
+    userId = decoded.userId;
+    userName = decoded.userDetails || "Unknown";
+  } catch {
+    return { status: 401, jsonBody: { error: "Invalid auth token" } };
+  }
+  if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
+
+  // Use display name from user profile if available
+  try {
+    const userProfile = await getUserById(userId);
+    if (userProfile?.firstName) {
+      userName = userProfile.displayName;
+    }
+  } catch { /* fall back to auth header name */ }
+
+  let body: { status?: string; note?: string };
+  try {
+    body = await req.json() as { status?: string; note?: string };
+  } catch {
+    return { status: 400, jsonBody: { error: "Invalid JSON" } };
+  }
+
+  const newStatus = body.status;
+  if (!newStatus || !VALID_STATUSES.includes(newStatus)) {
+    return { status: 400, jsonBody: { error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` } };
+  }
+
+  const updated = await updateRequestStatus(id, newStatus, userId, userName, body.note);
+  if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
+
+  return { status: 200, jsonBody: updated };
+}
+
+app.http("patchStatus", {
+  methods: ["PATCH"],
+  authLevel: "anonymous",
+  route: "posts/{id}/status",
+  handler: patchStatus,
 });

@@ -1,4 +1,4 @@
-import type { Request, NewRequest, UserProfile, UserSettings, UserRole } from "../types/request";
+import type { Request, NewRequest, RequestStatus, UserProfile, UserSettings, UserRole, HomeAddress } from "../types/request";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
@@ -83,6 +83,19 @@ export async function saveRequest(id: string): Promise<Request> {
   return res.json();
 }
 
+export async function updateRequestStatus(id: string, status: RequestStatus, note?: string): Promise<Request> {
+  const res = await fetch(
+    `${API_BASE}/posts/${encodeURIComponent(id)}/status`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status, ...(note ? { note } : {}) }),
+    }
+  );
+  if (!res.ok) throw new Error("Failed to update status");
+  return res.json();
+}
+
 // ── User API ──
 
 export async function fetchMe(): Promise<UserProfile> {
@@ -134,6 +147,16 @@ export async function uploadAvatar(file: File): Promise<UserProfile> {
 export async function deleteAvatar(): Promise<UserProfile> {
   const res = await fetch(`${API_BASE}/users/me/avatar`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to remove avatar");
+  return res.json();
+}
+
+export async function updateHomeAddress(homeAddress: HomeAddress | null): Promise<UserProfile> {
+  const res = await fetch(`${API_BASE}/users/me/home-address`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ homeAddress }),
+  });
+  if (!res.ok) throw new Error("Failed to update home address");
   return res.json();
 }
 

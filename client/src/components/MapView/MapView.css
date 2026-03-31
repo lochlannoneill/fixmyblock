@@ -67,6 +67,57 @@
   border-top-color: rgba(39, 39, 39, 0.7) !important;
 }
 
+/* Hover popup – identical styling, just stacks above the active popup */
+.hover-popup {
+  z-index: 10 !important;
+}
+
+.hover-popup .maplibregl-popup-content {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(12px);
+}
+
+.hover-popup .maplibregl-popup-tip {
+  border-top-color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.dark .hover-popup .maplibregl-popup-content {
+  background: rgba(39, 39, 39, 0.85) !important;
+}
+
+.dark .hover-popup .maplibregl-popup-tip {
+  border-top-color: rgba(39, 39, 39, 0.85) !important;
+}
+
+/* Cluster tooltip */
+.cluster-tooltip .maplibregl-popup-content {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(12px);
+  border-radius: 10px !important;
+  padding: 0 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+.cluster-tooltip .maplibregl-popup-tip {
+  border-top-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.dark .cluster-tooltip .maplibregl-popup-content {
+  background: rgba(39, 39, 39, 0.9) !important;
+}
+
+.dark .cluster-tooltip .maplibregl-popup-tip {
+  border-top-color: rgba(39, 39, 39, 0.9) !important;
+}
+
+.cluster-marker {
+  transition: transform 150ms ease;
+}
+
+.cluster-marker:hover {
+  transform: scale(1.15);
+}
+
 .maplibregl-popup-close-button {
   color: var(--text-muted) !important;
   font-size: 18px;
@@ -74,6 +125,10 @@
 
 .maplibregl-popup-close-button:hover {
   color: var(--text-primary) !important;
+}
+
+.popup-status-tag-admin:hover {
+  opacity: 0.8;
 }
 
 /* Popup content (injected via innerHTML) */
@@ -158,6 +213,10 @@
 
 .popup-metric-btn:hover {
   color: var(--accent);
+}
+
+.popup-action-log-btn:hover {
+  filter: brightness(0.75);
 }
 
 .popup-metric {
