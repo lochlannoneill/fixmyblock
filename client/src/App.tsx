@@ -156,12 +156,8 @@ export default function App() {
     selectRequest(c);
     if (c) {
       setShowForm(false);
-      if (window.innerWidth >= 768) {
-        setSidebarView("detail");
-        setMobileSlide("middle");
-      } else {
-        setMobileSlide("bottom");
-      }
+      setSidebarView("detail");
+      setMobileSlide("middle");
     } else {
       setSidebarView("list");
       if (window.innerWidth < 768) setMobileSlide("bottom");
@@ -298,7 +294,7 @@ export default function App() {
           ) : sidebarView === "detail" && selectedRequest ? (
             <RequestDetail
               request={selectedRequest}
-              onBack={() => { if (window.innerWidth < 768) { setMobileSlide("bottom"); } else { setSidebarView("list"); } }}
+              onBack={() => { setSidebarView("list"); if (window.innerWidth < 768) setMobileSlide("top"); }}
               onLike={(id: string) => { if (!user) { setShowAuthModal(true); return; } like(id); }}
               onAddComment={(id: string, text: string, parentId?: string) => { if (!user) { setShowAuthModal(true); return; } addComment(id, text, parentId); }}
               onLikeComment={(requestId: string, commentId: string) => { if (!user) { setShowAuthModal(true); return; } likeComment(requestId, commentId); }}

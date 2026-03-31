@@ -49,6 +49,9 @@ export default function RequestDetail({
   const menuRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
 
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   const isOwner = currentUserId && currentUserId === request.userId;
 
   useEffect(() => {
@@ -103,8 +106,8 @@ export default function RequestDetail({
     <>
     <ResolutionModal request={showResolution ? request : null} onClose={() => setShowResolution(false)} />
     <div className="flex flex-col h-full">
-      {/* Header - desktop only */}
-      <div className="hidden md:flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-[#2a2a2a]">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-1 md:py-3 border-b border-slate-200 dark:border-[#2a2a2a]">
         <button
           onClick={onBack}
           className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-[#2a2a2a] transition-colors cursor-pointer text-slate-500 dark:text-zinc-400"
@@ -114,7 +117,19 @@ export default function RequestDetail({
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto">
+      <div
+        className="flex-1 overflow-y-auto relative"
+        ref={scrollRef}
+        onScroll={() => { if (scrollRef.current) setShowBackToTop(scrollRef.current.scrollTop > 150); }}
+      >
+        {showBackToTop && (
+          <button
+            onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
+            className="sticky top-2 z-20 block mx-auto mb-2 px-3 py-1.5 text-xs font-medium text-slate-500 dark:text-zinc-400 bg-slate-100/90 dark:bg-[#1e1e1e]/90 backdrop-blur-sm rounded-full hover:text-blue-500 cursor-pointer transition-colors"
+          >
+            Back to top
+          </button>
+        )}
         <div className="p-4">
           {/* Poster info */}
           <div className="flex items-center gap-2.5 mb-3">
