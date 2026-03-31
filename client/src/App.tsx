@@ -246,7 +246,7 @@ export default function App() {
             ? "w-full flex-1"
             : mobileSlide === "bottom"
               ? "hidden md:block md:w-0 md:min-w-0 md:overflow-hidden"
-              : "w-full flex-1 md:w-96 md:min-w-96 md:flex-none"
+              : "w-full flex-1 md:w-[440px] md:min-w-[440px] md:flex-none"
         }`}>
           {sidebarView === "form" ? (
             <RequestForm

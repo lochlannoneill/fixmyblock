@@ -80,7 +80,7 @@ export default function RequestList({
 
   if (loading) {
     return (
-      <div className="p-3">
+      <div className="p-3 md:p-5">
         {Array.from({ length: 5 }).map((_, i) => (
           <SkeletonCard key={i} />
         ))}
@@ -97,7 +97,7 @@ export default function RequestList({
   }
 
   return (
-    <div className="p-3 relative" ref={listRef}>
+    <div className="p-3 md:p-5 relative" ref={listRef}>
       {showBackToTop && (
         <button
           onClick={scrollToTop}

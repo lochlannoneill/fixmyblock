@@ -229,7 +229,7 @@ export default function RequestListToolbar({
       </div>
 
       {/* Tabs */}
-      <div className="relative flex border-b border-slate-200 dark:border-[#3a3a3a] mx-3">
+      <div className="relative flex border-b border-slate-200 dark:border-[#3a3a3a] mx-3 mt-3">
         <div
           className="absolute bottom-0 h-0.5 bg-blue-500 transition-all duration-300 ease-in-out"
           style={{ width: "50%", left: activeTab === "active" ? "0%" : "50%" }}
