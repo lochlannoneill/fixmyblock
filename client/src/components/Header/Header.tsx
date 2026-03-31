@@ -179,7 +179,7 @@ export default function Header({ user, profile, onLocationSelect, onLoginClick, 
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md shadow-sm hover:bg-white/60 dark:hover:bg-black/40 cursor-pointer transition-colors text-slate-700 dark:text-white"
             >
-              <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold overflow-hidden">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold overflow-hidden" style={{background:'linear-gradient(135deg,#ec4899,#a855f7,#f97316)'}}>
                 {profile?.profilePictureUrl ? (
                   <img src={profile.profilePictureUrl} alt="" className="w-full h-full object-cover" />
                 ) : (

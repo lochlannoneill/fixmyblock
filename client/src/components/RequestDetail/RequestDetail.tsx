@@ -133,7 +133,7 @@ export default function RequestDetail({
         <div className="p-4">
           {/* Top bar – avatar, name/time, status, menu */}
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-[11px] font-bold shrink-0">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0" style={{background:'linear-gradient(135deg,#ec4899,#a855f7,#f97316)'}}>
               {((request.userName || "A")[0] ?? "A").toUpperCase()}
             </div>
             <div className="flex flex-col flex-1 min-w-0 leading-tight">

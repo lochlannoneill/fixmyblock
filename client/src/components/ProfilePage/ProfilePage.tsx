@@ -201,7 +201,8 @@ export default function ProfilePage({ user, profile, requests, onClose, onSelect
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploadingAvatar}
-          className="relative w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center text-white text-xl font-bold shrink-0 cursor-pointer group overflow-hidden border-0 p-0"
+          className="relative w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold shrink-0 cursor-pointer group overflow-hidden border-0 p-0"
+          style={{background:'linear-gradient(135deg,#ec4899,#a855f7,#f97316)'}}
           aria-label="Change profile picture"
         >
           {profile?.profilePictureUrl ? (
