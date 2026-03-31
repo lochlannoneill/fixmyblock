@@ -501,7 +501,7 @@ export default function MapView({
       const locationText = req.location || `${req.latitude.toFixed(4)}, ${req.longitude.toFixed(4)}`;
       const images = req.imageUrls || [];
       const thumbs = images.length
-        ? `<div style="margin-top:16px;border-radius:8px;overflow:hidden;height:${isMobile ? '100px' : '120px'};position:relative">
+        ? `<div style="margin-top:12px;border-radius:8px;overflow:hidden;height:${isMobile ? '100px' : '120px'};position:relative">
             <img src="${images[0]}" style="width:100%;height:100%;object-fit:cover" />
             <div style="position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:4px;padding:4px 0;font-size:11px;color:#fff;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)">
               <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 384 512" fill="currentColor"><path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/></svg>
@@ -554,7 +554,7 @@ export default function MapView({
               <span style="font-size:11px;color:var(--text-muted)">${timeSince}${!images.length ? ` &middot; ${locationText}` : ''}</span>
             </div>
             <div style="position:relative">
-              <span id="popup-status-${idPrefix}" style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9999px;white-space:nowrap;${isAdmin && onUpdateStatus ? 'cursor:pointer' : ''}">${statusLabel}${isAdmin && onUpdateStatus ? '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline-block;margin-left:4px;vertical-align:-1px"><path d="M7 10l5 5 5-5z"/></svg>' : ''}</span>
+              <span id="popup-status-${idPrefix}" style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:6px 8px;border-radius:9999px;white-space:nowrap;${isAdmin && onUpdateStatus ? 'cursor:pointer' : ''}">${statusLabel}${isAdmin && onUpdateStatus ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;margin-left:4px;vertical-align:-1px"><polyline points="6 9 12 15 18 9"/></svg>' : ''}</span>
               ${isAdmin && onUpdateStatus ? `<div id="popup-status-dropdown-${idPrefix}" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;width:140px;background:var(--bg-card);border:1px solid var(--border-input);border-radius:12px;box-shadow:var(--shadow-md);z-index:100;overflow:hidden;padding:4px 0;opacity:0;transform:scale(0.95) translateY(-4px);transition:opacity 150ms ease,transform 150ms ease;transform-origin:top right">
                 ${(['open', 'under-review', 'in-progress', 'resolved'] as const).map(s => {
                   const label = s === 'in-progress' ? 'In Progress' : s === 'under-review' ? 'Under Review' : s.charAt(0).toUpperCase() + s.slice(1);

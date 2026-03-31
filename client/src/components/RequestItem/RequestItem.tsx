@@ -43,21 +43,21 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
       }`}
       onClick={() => onSelect(c)}
     >
-      <div className="flex items-center gap-2">
-        <span className="flex-1 font-semibold text-sm text-slate-800 dark:text-zinc-200">{c.title}</span>
+      {/* Top bar – avatar, name/time, status */}
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-[11px] font-bold shrink-0">
+          {((c.userName || "A")[0] ?? "A").toUpperCase()}
+        </div>
+        <div className="flex flex-col flex-1 min-w-0 leading-tight">
+          <span className="text-[13px] font-semibold text-slate-700 dark:text-zinc-300 truncate">{c.userName || "Anonymous"}</span>
+          <span className="text-[11px] text-slate-400 dark:text-[#6e6e79]">{timeSince}</span>
+        </div>
         <span
-          className="text-[11px] font-semibold text-white px-2 py-0.5 rounded-full shrink-0"
+          className="text-[11px] font-semibold text-white px-2 py-1.5 rounded-full shrink-0"
           style={{ backgroundColor: STATUS_COLORS[c.status] }}
         >
           {c.status === "in-progress" ? "In Progress" : c.status === "under-review" ? "Under Review" : c.status.charAt(0).toUpperCase() + c.status.slice(1)}
         </span>
-      </div>
-      <div className="flex items-center justify-between text-xs text-slate-400 dark:text-[#6e6e79] mt-1">
-        <span className="flex items-center gap-1 shrink-0">
-          <FontAwesomeIcon icon={faMapMarkerAlt} className="text-[10px]" />
-          {locationName}
-        </span>
-        <span>{timeSince}</span>
       </div>
       {c.status !== "open" && (
         <button
@@ -76,12 +76,22 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
           View Action Log
         </button>
       )}
-      {(c.imageUrls || []).length > 0 && (
-        <div className="mt-2 rounded-lg overflow-hidden h-80">
+      {(c.imageUrls || []).length > 0 ? (
+        <div className="mt-3 relative rounded-lg overflow-hidden h-80">
           <img className="w-full h-full object-cover" src={c.imageUrls[0]} alt={c.title} />
+          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1 py-1.5 text-xs text-white bg-black/40 backdrop-blur-sm">
+            <FontAwesomeIcon icon={faMapMarkerAlt} className="text-[10px]" />
+            {locationName}
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-1 mt-2 text-xs text-slate-400 dark:text-[#6e6e79]">
+          <FontAwesomeIcon icon={faMapMarkerAlt} className="text-[10px]" />
+          {locationName}
         </div>
       )}
-      <p className="text-[13px] text-slate-500 dark:text-[#8c8c96] mt-2 leading-relaxed">
+      <span className="font-semibold text-sm text-slate-800 dark:text-zinc-200 block mt-3">{c.title}</span>
+      <p className="text-[13px] text-slate-500 dark:text-[#8c8c96] mt-1 leading-relaxed">
         {c.description.slice(0, 200)}
         {c.description.length > 200 ? "..." : ""}
       </p>

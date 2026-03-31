@@ -131,26 +131,27 @@ export default function RequestDetail({
           </button>
         )}
         <div className="p-4">
-          {/* Poster info */}
-          <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+          {/* Top bar – avatar, name/time, status, menu */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-[11px] font-bold shrink-0">
               {((request.userName || "A")[0] ?? "A").toUpperCase()}
             </div>
-            <div className="flex flex-col flex-1 min-w-0">
-              <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">
+            <div className="flex flex-col flex-1 min-w-0 leading-tight">
+              <span className="text-[13px] font-semibold text-slate-700 dark:text-zinc-300 truncate">
                 {request.userName || "Anonymous"}
               </span>
-              <span className="text-xs text-slate-400 dark:text-[#6e6e79]">{getTimeSince(request.createdAt)}</span>
+              <span className="text-[11px] text-slate-400 dark:text-[#6e6e79]">{getTimeSince(request.createdAt)}</span>
             </div>
+            <div className="flex items-center gap-0.5 shrink-0 -mr-2">
             <div className="relative" ref={statusRef}>
               <button
                 onClick={() => { if (isAdmin && onUpdateStatus) setShowStatusDropdown(v => !v); }}
-                className={`text-[11px] font-semibold text-white px-2.5 py-0.5 rounded-full shrink-0 ${isAdmin && onUpdateStatus ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}`}
+                className={`text-[11px] font-semibold text-white px-2.5 py-1.5 rounded-full shrink-0 ${isAdmin && onUpdateStatus ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}`}
                 style={{ backgroundColor: STATUS_COLORS[request.status] }}
               >
                 {statusLabel}
                 {isAdmin && onUpdateStatus && (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="inline-block ml-1 -mt-px"><path d="M7 10l5 5 5-5z"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="inline-block ml-1 -mt-px"><polyline points="6 9 12 15 18 9" /></svg>
                 )}
               </button>
               {statusVisible && (
@@ -242,6 +243,7 @@ export default function RequestDetail({
                   )}
                 </div>
               )}
+            </div>
             </div>
           </div>
 
