@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import type { Request, RequestStatus } from "../../types/request";
+import type { Request } from "../../types/request";
 
 interface ResolutionModalProps {
   request: Request | null;
@@ -10,13 +10,17 @@ interface ResolutionModalProps {
 export default function ResolutionModal({ request, onClose }: ResolutionModalProps) {
   const [visible, setVisible] = useState(false);
   const [animate, setAnimate] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const open = !!request;
 
   useEffect(() => {
     if (open) {
       setVisible(true);
-      requestAnimationFrame(() => requestAnimationFrame(() => setAnimate(true)));
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        setAnimate(true);
+        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }));
     } else {
       setAnimate(false);
       const timer = setTimeout(() => setVisible(false), 200);
@@ -28,10 +32,8 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
 
   const isResolved = request.status === "resolved";
   const isUnderReview = request.status === "under-review";
-  const isInProgress = request.status === "in-progress";
 
   const history = request.statusHistory || [];
-  const findEntry = (status: RequestStatus) => [...history].reverse().find((h) => h.status === status);
 
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleString(undefined, {
@@ -42,27 +44,26 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
       minute: "2-digit",
     });
 
-  const openEntry = findEntry("open");
-  const reviewEntry = findEntry("under-review");
-  const progressEntry = findEntry("in-progress");
-  const resolvedEntry = findEntry("resolved");
+  const statusIcon = (s: string): "report" | "review" | "progress" | "resolved" =>
+    s === "under-review" ? "review" : s === "in-progress" ? "progress" : s === "resolved" ? "resolved" : "report";
 
-  const reportAuthor = openEntry?.changedByName || request.userName;
-  const reportDate = openEntry
-    ? `${formatDate(openEntry.changedAt)}${reportAuthor ? ` by ${reportAuthor}` : ''}`
-    : `${formatDate(request.createdAt)}${request.userName ? ` by ${request.userName}` : ''}`;
+  const statusTitle = (s: string) =>
+    s === "open" ? "Issue Reported"
+    : s === "under-review" ? "Under Review"
+    : s === "in-progress" ? "Work In Progress"
+    : s === "resolved" ? "Resolved"
+    : s;
 
-  const reviewDate = reviewEntry
-    ? `${formatDate(reviewEntry.changedAt)}${reviewEntry.changedByName ? ` by ${reviewEntry.changedByName}` : ''}`
-    : '';
+  const statusDescription = (s: string, isActive: boolean, isCurrent: boolean) => {
+    if (s === "open") return "This issue was reported by a member of the community.";
+    if (s === "under-review") return isCurrent && isActive ? "The report is currently being assessed by the local authority." : "Status moved to under review.";
+    if (s === "in-progress") return isCurrent && isActive ? "Mitigation efforts are underway. Work is actively being done to resolve this issue." : "Status moved to in progress.";
+    if (s === "resolved") return "This issue has been addressed and marked as resolved.";
+    return "";
+  };
 
-  const progressDate = progressEntry
-    ? `${formatDate(progressEntry.changedAt)}${progressEntry.changedByName ? ` by ${progressEntry.changedByName}` : ''}`
-    : '';
-
-  const resolvedDate = resolvedEntry
-    ? `${formatDate(resolvedEntry.changedAt)}${resolvedEntry.changedByName ? ` by ${resolvedEntry.changedByName}` : ''}`
-    : '';
+  // Build entries: if no history, create a synthetic "open" entry
+  const entries = history.length > 0 ? history : [{ status: "open" as const, changedAt: request.createdAt, changedByName: request.userName }];
 
   return createPortal(
     <div
@@ -71,7 +72,7 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
       onClick={onClose}
     >
       <div
-        className="bg-white/80 dark:bg-[#272727]/80 backdrop-blur-xl rounded-2xl shadow-2xl w-[90vw] max-w-md p-6 relative transition-all duration-200 max-h-[80vh] overflow-y-auto"
+        className="bg-white/80 dark:bg-[#272727]/80 backdrop-blur-xl rounded-2xl shadow-2xl w-[90vw] max-w-md relative transition-all duration-200 max-h-[80vh] flex flex-col overflow-hidden"
         style={{
           opacity: animate ? 1 : 0,
           transform: animate ? "scale(1)" : "scale(0.95)",
@@ -80,7 +81,7 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
       >
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-[#333] text-slate-400 dark:text-zinc-500 cursor-pointer transition-colors"
+          className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-[#333] text-slate-400 dark:text-zinc-500 cursor-pointer transition-colors"
           aria-label="Close"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -88,74 +89,48 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
           </svg>
         </button>
 
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-slate-100 dark:bg-[#333] text-slate-600 dark:text-zinc-300">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-            </svg>
-          </div>
-          <div>
-            <h2 className="text-base font-bold text-slate-800 dark:text-zinc-100">{request.title}</h2>
-            <p className="text-xs text-slate-400 dark:text-zinc-500">Action Log</p>
+        {/* Header – sticky */}
+        <div className="sticky top-0 bg-white/80 dark:bg-[#272727]/80 backdrop-blur-xl px-6 pt-6 pb-4 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-slate-100 dark:bg-[#333] text-slate-600 dark:text-zinc-300">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-slate-800 dark:text-zinc-100">{request.title}</h2>
+              <p className="text-xs text-slate-400 dark:text-zinc-500">Action Log</p>
+            </div>
           </div>
         </div>
 
+        {/* Scrollable content */}
+        <div ref={scrollRef} className="sidebar flex-1 overflow-y-auto px-6 py-6">
+
         {/* Mitigation timeline */}
         <div className="space-y-0">
-          <LogEntry
-            icon="report"
-            title="Issue Reported"
-            description="This issue was reported by a member of the community."
-            date={reportDate}
-            note={openEntry?.note}
-            dimmed={isUnderReview || isInProgress || isResolved}
-            nextIcon="review"
-          />
-          <LogEntry
-            icon="review"
-            title="Under Review"
-            description={isUnderReview
-              ? "The report is currently being assessed by the local authority."
-              : reviewEntry
-                ? "Moved to review."
-                : "The report was received and queued for assessment by the local authority."}
-            date={reviewDate}
-            note={reviewEntry?.note}
-            active={isUnderReview}
-            isLast={isUnderReview}
-            activeLabel="Currently under review..."
-            dimmed={isInProgress || isResolved}
-            nextIcon={isUnderReview ? undefined : "progress"}
-          />
-          {!isUnderReview && (
-          <LogEntry
-            icon="progress"
-            title="Work In Progress"
-            description={isInProgress
-              ? "Mitigation efforts are underway. Work is actively being done to resolve this issue."
-              : progressEntry
-                ? "Work began on resolving the issue."
-                : "Mitigation efforts were scheduled and work began on resolving the issue."}
-            date={progressDate}
-            note={progressEntry?.note}
-            active={isInProgress}
-            isLast={isInProgress}
-            activeLabel="In progress..."
-            dimmed={isResolved}
-            nextIcon={isResolved ? "resolved" : undefined}
-          />
-          )}
-          {isResolved && (
-            <LogEntry
-              icon="resolved"
-              title="Resolved"
-              description="This issue has been addressed and marked as resolved."
-              date={resolvedDate}
-              note={resolvedEntry?.note}
-              isLast
-            />
-          )}
+          {entries.map((entry, i) => {
+            const isLast = i === entries.length - 1;
+            const isActive = isLast && !isResolved;
+            const icon = statusIcon(entry.status);
+            const author = entry.status === "open" ? (entry.changedByName || request.userName) : entry.changedByName;
+            const date = entry.changedAt
+              ? `${formatDate(entry.changedAt)}${author ? ` by ${author}` : ''}`
+              : '';
+            return (
+              <LogEntry
+                key={i}
+                icon={icon}
+                title={statusTitle(entry.status)}
+                description={statusDescription(entry.status, isActive, isLast)}
+                date={date}
+                note={entry.note}
+                active={isActive}
+                isLast={isLast}
+                dimmed={!isLast && !isActive}
+              />
+            );
+          })}
         </div>
 
         {/* Summary */}
@@ -180,13 +155,14 @@ export default function ResolutionModal({ request, onClose }: ResolutionModalPro
                 : "This issue is currently being worked on. Check back later for updates on the resolution progress."}
           </p>
         </div>
+        </div>
       </div>
     </div>,
     document.body
   );
 }
 
-function LogEntry({ icon, title, description, date, note, isLast, active, dimmed, activeLabel, nextIcon }: {
+function LogEntry({ icon, title, description, date, note, isLast, active, dimmed }: {
   icon: "report" | "review" | "progress" | "resolved";
   title: string;
   description: string;
@@ -195,8 +171,6 @@ function LogEntry({ icon, title, description, date, note, isLast, active, dimmed
   isLast?: boolean;
   active?: boolean;
   dimmed?: boolean;
-  activeLabel?: string;
-  nextIcon?: "report" | "review" | "progress" | "resolved";
 }) {
   const iconColors: Record<string, string> = {
     report: "bg-red-100 dark:bg-red-500/15 text-red-500",
