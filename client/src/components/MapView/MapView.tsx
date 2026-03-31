@@ -551,7 +551,7 @@ export default function MapView({
             <div style="width:28px;height:28px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">${userInitial}</div>
             <div style="display:flex;flex-direction:column;flex:1;min-width:0;line-height:1.2">
               <span class="popup-title" style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${userName}</span>
-              <span style="font-size:11px;color:var(--text-muted)">${timeSince}${!images.length ? ` &middot; ${locationText}` : ''}</span>
+              <span style="font-size:11px;font-weight:600;color:var(--text-muted)">${timeSince}${!images.length ? ` &middot; ${locationText}` : ''}</span>
             </div>
             <div style="position:relative">
               <span id="popup-status-${idPrefix}" style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:6px 8px;border-radius:9999px;white-space:nowrap;${isAdmin && onUpdateStatus ? 'cursor:pointer' : ''}">${statusLabel}${isAdmin && onUpdateStatus ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;margin-left:4px;vertical-align:-1px"><polyline points="6 9 12 15 18 9"/></svg>' : ''}</span>
@@ -564,8 +564,8 @@ export default function MapView({
               </div>` : ''}
             </div>
           </div>
-          ${actionLogBtn}
           ${thumbs}
+          ${actionLogBtn}
           <div style="margin-top:12px">
             <span style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block" class="popup-title">${req.title}</span>
           </div>

@@ -140,7 +140,7 @@ export default function RequestDetail({
               <span className="text-[13px] font-semibold text-slate-700 dark:text-zinc-300 truncate">
                 {request.userName || "Anonymous"}
               </span>
-              <span className="text-[11px] text-slate-400 dark:text-[#6e6e79]">{getTimeSince(request.createdAt)}</span>
+              <span className="text-[11px] font-semibold text-slate-400 dark:text-zinc-500">{getTimeSince(request.createdAt)}</span>
             </div>
             <div className="flex items-center gap-0.5 shrink-0 -mr-2">
             <div className="relative" ref={statusRef}>
@@ -247,25 +247,6 @@ export default function RequestDetail({
             </div>
           </div>
 
-          {/* Action log button */}
-          {request.status !== "open" && (
-            <button
-              className={`flex items-center justify-center gap-1.5 w-full mt-3 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
-                request.status === "resolved"
-                  ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 hover:bg-emerald-100 dark:hover:bg-emerald-500/20"
-                  : request.status === "under-review"
-                    ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/20"
-                    : "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 hover:bg-amber-100 dark:hover:bg-amber-500/20"
-              }`}
-              onClick={() => setShowResolution(true)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-              </svg>
-              View Action Log
-            </button>
-          )}
-
           {/* Images */}
           {(request.imageUrls || []).length > 0 ? (
             <div className="mt-3 flex flex-col gap-2">
@@ -314,8 +295,26 @@ export default function RequestDetail({
             </a>
           </div>
 
+          {/* Action log button */}
+          {request.status !== "open" && (
+            <button
+              className="flex items-center justify-center gap-1.5 w-full mt-3 px-3 py-2.5 rounded-lg text-xs font-medium cursor-pointer transition-colors border"
+              style={{
+                color: request.status === 'resolved' ? '#059669' : request.status === 'under-review' ? '#3b82f6' : '#d97706',
+                background: request.status === 'resolved' ? 'rgba(16,185,129,0.08)' : request.status === 'under-review' ? 'rgba(59,130,246,0.08)' : 'rgba(245,158,11,0.08)',
+                borderColor: request.status === 'resolved' ? 'rgba(16,185,129,0.2)' : request.status === 'under-review' ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)',
+              }}
+              onClick={() => setShowResolution(true)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+              View Action Log
+            </button>
+          )}
+
           {/* Title */}
-          <h2 className="text-base font-semibold text-slate-800 dark:text-zinc-200 mt-5">{request.title}</h2>
+          <h2 className="text-base font-semibold text-slate-800 dark:text-zinc-200 mt-3">{request.title}</h2>
 
           {/* Description */}
           <p className="text-[13px] text-slate-600 dark:text-[#b0b0b8] mt-1 leading-relaxed whitespace-pre-wrap">

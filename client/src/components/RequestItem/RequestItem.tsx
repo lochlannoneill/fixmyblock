@@ -50,7 +50,7 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
         </div>
         <div className="flex flex-col flex-1 min-w-0 leading-tight">
           <span className="text-[13px] font-semibold text-slate-700 dark:text-zinc-300 truncate">{c.userName || "Anonymous"}</span>
-          <span className="text-[11px] text-slate-400 dark:text-[#6e6e79]">{timeSince}</span>
+          <span className="text-[11px] font-semibold text-slate-400 dark:text-zinc-500">{timeSince}</span>
         </div>
         <span
           className="text-[11px] font-semibold text-white px-2 py-1.5 rounded-full shrink-0"
@@ -59,23 +59,6 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
           {c.status === "in-progress" ? "In Progress" : c.status === "under-review" ? "Under Review" : c.status.charAt(0).toUpperCase() + c.status.slice(1)}
         </span>
       </div>
-      {c.status !== "open" && (
-        <button
-          className={`flex items-center justify-center gap-1.5 w-full mt-2 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
-            c.status === "resolved"
-              ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 hover:bg-emerald-100 dark:hover:bg-emerald-500/20"
-              : c.status === "under-review"
-                ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/20"
-                : "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 hover:bg-amber-100 dark:hover:bg-amber-500/20"
-          }`}
-          onClick={(e) => { e.stopPropagation(); setShowResolution(true); }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-          </svg>
-          View Action Log
-        </button>
-      )}
       {(c.imageUrls || []).length > 0 ? (
         <div className="mt-3 relative rounded-lg overflow-hidden h-80">
           <img className="w-full h-full object-cover" src={c.imageUrls[0]} alt={c.title} />
@@ -89,6 +72,22 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
           <FontAwesomeIcon icon={faMapMarkerAlt} className="text-[10px]" />
           {locationName}
         </div>
+      )}
+      {c.status !== "open" && (
+        <button
+          className="flex items-center justify-center gap-1.5 w-full mt-3 px-3 py-2.5 rounded-lg text-xs font-medium cursor-pointer transition-colors border"
+          style={{
+            color: c.status === 'resolved' ? '#059669' : c.status === 'under-review' ? '#3b82f6' : '#d97706',
+            background: c.status === 'resolved' ? 'rgba(16,185,129,0.08)' : c.status === 'under-review' ? 'rgba(59,130,246,0.08)' : 'rgba(245,158,11,0.08)',
+            borderColor: c.status === 'resolved' ? 'rgba(16,185,129,0.2)' : c.status === 'under-review' ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)',
+          }}
+          onClick={(e) => { e.stopPropagation(); setShowResolution(true); }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+          </svg>
+          View Action Log
+        </button>
       )}
       <span className="font-semibold text-sm text-slate-800 dark:text-zinc-200 block mt-3">{c.title}</span>
       <p className="text-[13px] text-slate-500 dark:text-[#8c8c96] mt-1 leading-relaxed">
