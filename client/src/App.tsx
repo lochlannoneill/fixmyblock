@@ -362,7 +362,7 @@ export default function App() {
           {/* Desktop: floating pill toggle */}
           <button
             onClick={() => setMobileSlide(mobileSlide === "bottom" ? "middle" : "bottom")}
-            className="hidden md:flex absolute z-50 transition-colors items-center gap-1.5 px-3 py-2 rounded-full bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-[#3a3a3a] shadow-lg text-xs font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-[#333] cursor-pointer left-4 top-1/2 -translate-y-1/2"
+            className="hidden md:flex absolute z-50 transition-colors items-center gap-2 px-4 py-2.5 rounded-full bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-[#3a3a3a] shadow-lg text-sm font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-[#333] cursor-pointer left-4 top-1/2 -translate-y-1/2"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
               className={`transition-transform duration-300 ${mobileSlide === "bottom" ? "rotate-0" : "rotate-180"}`}
@@ -398,14 +398,14 @@ export default function App() {
           {!showForm && (
             <button
               onClick={handleStartRequest}
-              className="absolute bottom-14 md:bottom-6 right-4 z-50 w-16 h-16 md:w-auto md:h-auto md:px-6 md:py-4 flex items-center justify-center md:gap-2 rounded-full border-2 border-dashed border-slate-400 dark:border-zinc-500 bg-white/60 dark:bg-[#2a2a2a]/60 backdrop-blur-sm text-slate-600 dark:text-zinc-300 hover:border-blue-500 hover:text-blue-500 shadow-md hover:shadow-lg hover:scale-105 cursor-pointer transition-all duration-150"
+              className="absolute bottom-14 md:bottom-6 right-4 z-50 w-16 h-16 md:w-auto md:h-auto md:px-7 md:py-4.5 flex items-center justify-center md:gap-2.5 rounded-full border-2 border-dashed border-slate-400 dark:border-zinc-500 bg-white/60 dark:bg-[#2a2a2a]/60 backdrop-blur-sm text-slate-600 dark:text-zinc-300 hover:border-blue-500 hover:text-blue-500 shadow-md hover:shadow-lg hover:scale-105 cursor-pointer transition-all duration-150"
               title="New Request"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              <span className="hidden md:inline text-base font-semibold">New Request</span>
+              <span className="hidden md:inline text-lg font-semibold">New Request</span>
             </button>
           )}
           <MapView
