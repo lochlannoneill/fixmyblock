@@ -75,7 +75,7 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
       )}
       {c.status !== "open" && (
         <button
-          className="flex items-center justify-center gap-1.5 w-full mt-3 px-3 py-2.5 rounded-lg text-xs font-medium cursor-pointer transition-colors border"
+          className="flex items-center justify-center gap-1.5 w-full mt-3 px-3 py-2.5 rounded-lg text-xs font-medium cursor-pointer transition-all border hover:brightness-75"
           style={{
             color: c.status === 'resolved' ? '#059669' : c.status === 'under-review' ? '#3b82f6' : '#d97706',
             background: c.status === 'resolved' ? 'rgba(16,185,129,0.08)' : c.status === 'under-review' ? 'rgba(59,130,246,0.08)' : 'rgba(245,158,11,0.08)',

@@ -539,7 +539,7 @@ export default function MapView({
       const actionLogBtnBg = req.status === 'resolved' ? 'rgba(16,185,129,0.08)' : req.status === 'under-review' ? 'rgba(59,130,246,0.08)' : 'rgba(245,158,11,0.08)';
       const actionLogBtnBorder = req.status === 'resolved' ? 'rgba(16,185,129,0.2)' : req.status === 'under-review' ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)';
       const actionLogBtn = req.status !== "open"
-        ? `<button id="popup-resolution-${idPrefix}" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:12px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:500;color:${actionLogBtnColor};background:${actionLogBtnBg};border:1px solid ${actionLogBtnBorder};cursor:pointer;transition:background 150ms">
+        ? `<button id="popup-resolution-${idPrefix}" class="popup-action-log-btn" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:12px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:500;color:${actionLogBtnColor};background:${actionLogBtnBg};border:1px solid ${actionLogBtnBorder};cursor:pointer;transition:filter 150ms">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             View Action Log
           </button>`

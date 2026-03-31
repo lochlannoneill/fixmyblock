@@ -211,6 +211,10 @@
   color: var(--accent);
 }
 
+.popup-action-log-btn:hover {
+  filter: brightness(0.75);
+}
+
 .popup-metric {
   color: var(--text-muted);
 }
