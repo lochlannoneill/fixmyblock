@@ -243,7 +243,7 @@ export default function App() {
         <WelcomeModal onComplete={(p) => setProfile(p)} />
       )}
       <div ref={containerRef} className="flex flex-col-reverse md:flex-row h-full overflow-hidden">
-        <aside className={`sidebar border-t border-slate-200 dark:border-[#2a2a2a] md:border-r md:border-t-0 bg-slate-50 dark:bg-[#1e1e1e] overflow-y-auto z-10 ${
+        <aside className={`sidebar md:border-r md:border-slate-200 md:dark:border-[#2a2a2a] bg-slate-50 dark:bg-[#1e1e1e] overflow-y-auto z-10 ${
           dragMapHeight !== null && !isSnapping ? "" : "transition-all duration-300"
         } ${
           dragMapHeight !== null && window.innerWidth < 768
@@ -377,24 +377,17 @@ export default function App() {
             </svg>
             {mobileSlide === "bottom" ? "Show Requests" : "Hide Requests"}
           </button>
-          {/* Mobile: full-width slide bar */}
+          {/* Mobile: grab handle */}
           <div
             onClick={() => { if (!isDragging.current) setMobileSlide(mobileSlide === "bottom" ? "top" : "bottom"); }}
             ref={slideBarRef}
             onTouchStart={handleSlideBarTouchStart}
             onTouchEnd={handleSlideBarTouchEnd}
-            className="md:hidden absolute bottom-0 left-0 right-0 z-50 flex items-center justify-center py-2.5 bg-white/80 dark:bg-[#1e1e1e]/80 backdrop-blur-sm border-t border-slate-200 dark:border-[#2a2a2a] text-xs font-medium text-slate-400 dark:text-zinc-500 cursor-pointer select-none touch-none"
+            className="md:hidden absolute bottom-0 left-0 right-0 z-50 flex items-center justify-center cursor-pointer select-none touch-none"
           >
-            <span className="inline-flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                className={`transition-transform duration-300 ${mobileSlide === "bottom" ? "rotate-0" : "rotate-180"}`}
-              >
-                <polyline points="18 18 12 12 6 18" />
-                <polyline points="18 14 12 8 6 14" />
-                <polyline points="18 10 12 4 6 10" />
-              </svg>
-              {mobileSlide === "bottom" ? "Slide for requests" : "Slide for map"}
-            </span>
+            <div className="w-full bg-slate-50 dark:bg-[#1e1e1e] rounded-t-[50%] shadow-[0_-4px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_8px_rgba(0,0,0,0.25)] pt-4 pb-5 flex items-center justify-center" style={{ clipPath: "inset(-10px 0 0 0)" }}>
+              <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-zinc-600" />
+            </div>
           </div>
           {showForm && selectingOnMap && !selectedLocation && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-[#121212] text-white py-2.5 px-6 rounded-3xl text-sm font-medium z-50 shadow-lg animate-pulse">
