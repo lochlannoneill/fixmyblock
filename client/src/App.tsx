@@ -156,8 +156,12 @@ export default function App() {
     selectRequest(c);
     if (c) {
       setShowForm(false);
-      setSidebarView("detail");
-      setMobileSlide("middle");
+      if (window.innerWidth >= 768) {
+        setSidebarView("detail");
+        setMobileSlide("middle");
+      } else {
+        setMobileSlide("bottom");
+      }
     } else {
       setSidebarView("list");
       if (window.innerWidth < 768) setMobileSlide("bottom");
