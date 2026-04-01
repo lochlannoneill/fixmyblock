@@ -88,7 +88,7 @@ export default function App() {
       const deltaY = Math.abs(e.touches[0].clientY - touchStartY.current);
       if (deltaY > 10) isDragging.current = true;
       if (!isDragging.current) return;
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault();
       const containerRect = containerRef.current.getBoundingClientRect();
       const fingerY = e.touches[0].clientY;
       const mapH = Math.max(80, Math.min(fingerY - containerRect.top, containerRect.height - 80));
