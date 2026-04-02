@@ -33,9 +33,10 @@ interface LayersProps {
   darkMode: boolean;
   isSignedIn?: boolean;
   onSignInPrompt?: () => void;
+  mobileSlide?: "top" | "middle" | "bottom";
 }
 
-export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedIn, onSignInPrompt }: LayersProps) {
+export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedIn, onSignInPrompt, mobileSlide }: LayersProps) {
   const [expanded, setExpanded] = useState(false);
   const thumbnails = darkMode ? LAYER_THUMBNAILS_DARK : LAYER_THUMBNAILS_LIGHT;
   const azureLocked = !isSignedIn;
@@ -50,7 +51,15 @@ export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedI
   ];
 
   return (
-    <div className="absolute bottom-14 md:bottom-6 left-4 z-50 flex flex-col-reverse md:flex-row items-start md:items-end gap-2">
+    <div
+      id="mobile-layers-btn"
+      className="fixed md:absolute md:bottom-6 left-4 z-50 flex flex-col-reverse md:flex-row items-start md:items-end gap-2 transition-[bottom] duration-300 md:transition-none"
+      style={
+        typeof window !== "undefined" && window.innerWidth < 768
+          ? { bottom: mobileSlide === "bottom" ? "4rem" : mobileSlide === "middle" ? "calc(60vh + 0.5rem)" : "calc(85vh + 0.5rem)" }
+          : undefined
+      }
+    >
       <button
         onClick={() => setExpanded(!expanded)}
         className="group relative flex items-center justify-center w-16 h-16 md:w-24 md:h-24 rounded-xl overflow-hidden border-2 border-white dark:border-[#3a3a3a] shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"

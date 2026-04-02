@@ -27,6 +27,7 @@ interface MapViewProps {
   isAdmin?: boolean;
   onUpdateStatus?: (id: string, status: RequestStatus, note?: string) => void;
   homeAddress?: HomeAddress | null;
+  mobileSlide?: "top" | "middle" | "bottom";
 }
 
 export default function MapView({
@@ -49,6 +50,7 @@ export default function MapView({
   isAdmin,
   onUpdateStatus,
   homeAddress,
+  mobileSlide,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -746,7 +748,7 @@ export default function MapView({
       if (isNewSelection) {
         map.current?.flyTo({
           center: [selectedRequest.longitude, selectedRequest.latitude],
-          zoom: 18,
+          zoom: 17,
           pitch: 50,
         });
       }
@@ -951,7 +953,7 @@ export default function MapView({
           zIndex: 1,
         }}
       />
-      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} isSignedIn={!!currentUserId} onSignInPrompt={onSignInPrompt} />
+      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} isSignedIn={!!currentUserId} onSignInPrompt={onSignInPrompt} mobileSlide={mobileSlide} />
     </div>
   );
 }

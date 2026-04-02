@@ -74,12 +74,12 @@ export default function App() {
   const [userLocation, setUserLocation] = useState<{ lng: number; lat: number } | null>(null);
   const touchStartY = useRef<number | null>(null);
   const isDragging = useRef(false);
-  const [dragMapHeight, setDragMapHeight] = useState<number | null>(null);
-  const [isSnapping, setIsSnapping] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const slideBarRef = useRef<HTMLDivElement>(null);
+  const bottomSheetRef = useRef<HTMLDivElement>(null);
 
   // Attach touchmove as a native listener with { passive: false } so preventDefault works
+  // Uses direct DOM manipulation on the bottom sheet to avoid React re-renders (which cause map stutter)
   useEffect(() => {
     const el = slideBarRef.current;
     if (!el) return;
@@ -88,11 +88,21 @@ export default function App() {
       const deltaY = Math.abs(e.touches[0].clientY - touchStartY.current);
       if (deltaY > 10) isDragging.current = true;
       if (!isDragging.current) return;
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault();
       const containerRect = containerRef.current.getBoundingClientRect();
       const fingerY = e.touches[0].clientY;
-      const mapH = Math.max(80, Math.min(fingerY - containerRect.top, containerRect.height - 80));
-      setDragMapHeight(mapH);
+      const top = Math.max(80, Math.min(fingerY - containerRect.top, containerRect.height - 48));
+      if (bottomSheetRef.current) {
+        bottomSheetRef.current.style.transition = "none";
+        bottomSheetRef.current.style.top = `${top}px`;
+      }
+      // Sync Layers button position
+      const layersEl = document.getElementById("mobile-layers-btn");
+      if (layersEl) {
+        const bottomPx = containerRect.height - top + 8;
+        layersEl.style.transition = "none";
+        layersEl.style.bottom = `${bottomPx}px`;
+      }
     };
     el.addEventListener("touchmove", handler, { passive: false });
     return () => el.removeEventListener("touchmove", handler);
@@ -108,27 +118,40 @@ export default function App() {
     const wasDragging = isDragging.current;
     touchStartY.current = null;
     isDragging.current = false;
-    if (wasDragging && dragMapHeight !== null && containerRef.current) {
+    if (wasDragging && bottomSheetRef.current && containerRef.current) {
       const containerH = containerRef.current.getBoundingClientRect().height;
-      const ratio = dragMapHeight / containerH;
-      // Determine snap target
+      const currentTop = bottomSheetRef.current.getBoundingClientRect().top - containerRef.current.getBoundingClientRect().top;
+      const ratio = currentTop / containerH;
       let target: "top" | "middle" | "bottom";
       if (ratio > 0.7) {
         target = "bottom";
-      } else if (ratio > 0.35) {
+      } else if (ratio > 0.25) {
         target = "middle";
       } else {
         target = "top";
       }
-      // Animate to snap point: compute target height in px
-      const targetH = target === "bottom" ? containerH : target === "top" ? containerH * 0.15 : containerH * 0.4;
-      setIsSnapping(true);
-      setDragMapHeight(targetH);
-      setMobileSlide(target);
-      // After transition ends, clear inline height
+      // Snap with transition
+      const targetTop = target === "bottom" ? `${containerH - 48}px` : target === "top" ? "15vh" : "40vh";
+      bottomSheetRef.current.style.transition = "top 300ms ease";
+      bottomSheetRef.current.style.top = targetTop;
+      // Sync Layers button snap
+      const layersEl = document.getElementById("mobile-layers-btn");
+      if (layersEl) {
+        const targetBottom = target === "bottom" ? "4rem" : target === "middle" ? "calc(60vh + 0.5rem)" : "calc(85vh + 0.5rem)";
+        layersEl.style.transition = "bottom 300ms ease";
+        layersEl.style.bottom = targetBottom;
+      }
+      // After animation, clear inline styles and update React state
       setTimeout(() => {
-        setDragMapHeight(null);
-        setIsSnapping(false);
+        if (bottomSheetRef.current) {
+          bottomSheetRef.current.style.transition = "";
+          bottomSheetRef.current.style.top = "";
+        }
+        if (layersEl) {
+          layersEl.style.transition = "";
+          layersEl.style.bottom = "";
+        }
+        setMobileSlide(target);
       }, 300);
     } else if (!wasDragging) {
       // Simple tap — let onClick handle it
@@ -156,8 +179,12 @@ export default function App() {
     selectRequest(c);
     if (c) {
       setShowForm(false);
-      setSidebarView("detail");
-      setMobileSlide("middle");
+      if (window.innerWidth >= 768) {
+        setSidebarView("detail");
+        setMobileSlide("middle");
+      } else {
+        setMobileSlide("bottom");
+      }
     } else {
       setSidebarView("list");
       if (window.innerWidth < 768) setMobileSlide("bottom");
@@ -238,16 +265,47 @@ export default function App() {
       {user && profile && !profile.firstName && (
         <WelcomeModal onComplete={(p) => setProfile(p)} />
       )}
-      <div ref={containerRef} className="flex flex-col-reverse md:flex-row h-full overflow-hidden">
-        <aside className={`sidebar border-t border-slate-200 dark:border-[#2a2a2a] md:border-r md:border-t-0 bg-slate-50 dark:bg-[#1e1e1e] overflow-y-auto z-10 ${
-          dragMapHeight !== null && !isSnapping ? "" : "transition-all duration-300"
-        } ${
-          dragMapHeight !== null && window.innerWidth < 768
-            ? "w-full flex-1"
-            : mobileSlide === "bottom"
-              ? "hidden md:block md:w-0 md:min-w-0 md:overflow-hidden"
-              : "w-full flex-1 md:w-[440px] md:min-w-[440px] md:flex-none"
-        }`}>
+      <div ref={containerRef} className="relative md:flex md:flex-row h-full overflow-hidden">
+        {/* Mobile: bottom sheet overlay. Desktop: normal flex sidebar via md:contents */}
+        <div
+          ref={bottomSheetRef}
+          className={`absolute left-0 right-0 bottom-0 z-20 flex flex-col md:contents transition-[top] duration-300`}
+          style={
+            window.innerWidth < 768
+              ? { top: mobileSlide === "bottom" ? "calc(100% - 48px)" : mobileSlide === "top" ? "15vh" : "40vh" }
+              : undefined
+          }
+        >
+          {/* Mobile: floating buttons above grab handle */}
+          {!showForm && (
+            <button
+              onClick={handleStartRequest}
+              className="md:hidden absolute -top-20 right-4 z-50 w-16 h-16 flex items-center justify-center rounded-full border-2 border-dashed border-slate-400 dark:border-zinc-500 bg-white/60 dark:bg-[#2a2a2a]/60 backdrop-blur-sm text-slate-600 dark:text-zinc-300 hover:border-blue-500 hover:text-blue-500 shadow-md hover:shadow-lg hover:scale-105 cursor-pointer transition-all duration-150"
+              title="New Request"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </button>
+          )}
+          {/* Mobile: grab handle */}
+          <div
+            onClick={() => { if (!isDragging.current) setMobileSlide(mobileSlide === "bottom" ? "top" : "bottom"); }}
+            ref={slideBarRef}
+            onTouchStart={handleSlideBarTouchStart}
+            onTouchEnd={handleSlideBarTouchEnd}
+            className="md:hidden flex-none flex items-center justify-center cursor-pointer select-none touch-none"
+          >
+            <div className="w-full bg-slate-50 dark:bg-[#1e1e1e] rounded-t-[50%] shadow-[0_-4px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_8px_rgba(0,0,0,0.25)] pt-4 pb-5 flex items-center justify-center" style={{ clipPath: "inset(-10px 0 0 0)" }}>
+              <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-zinc-600" />
+            </div>
+          </div>
+          <aside className={`sidebar flex-1 overflow-y-auto bg-slate-50 dark:bg-[#1e1e1e] transition-all duration-300 md:border-r md:border-slate-200 md:dark:border-[#2a2a2a] ${
+            mobileSlide === "bottom"
+              ? "md:w-0 md:min-w-0 md:overflow-hidden"
+              : "md:w-[440px] md:min-w-[440px] md:flex-none"
+          }`}>
           {sidebarView === "form" ? (
             <RequestForm
               selectedLocation={selectedLocation}
@@ -318,23 +376,9 @@ export default function App() {
               onUpdateStatus={(id, status, note) => updateStatus(id, status, note)}
             />
           )}
-        </aside>
-        <main
-          className={`md:flex-1 md:h-auto md:min-h-0 relative ${
-            dragMapHeight !== null && !isSnapping ? "" : "transition-all duration-300"
-          } ${
-            mobileSlide === "bottom" ? "flex-1" : "flex-none md:flex-1"
-          }`}
-          style={
-            window.innerWidth >= 768
-              ? undefined
-              : dragMapHeight !== null
-                ? { height: dragMapHeight, minHeight: dragMapHeight, flexGrow: 0 }
-                : mobileSlide === "bottom"
-                  ? undefined
-                  : { height: mobileSlide === "top" ? "15vh" : "40vh", minHeight: mobileSlide === "top" ? "15vh" : "40vh" }
-          }
-        >
+          </aside>
+        </div>
+        <main className="absolute inset-0 md:relative md:flex-1 md:h-auto md:min-h-0">
           {/* Desktop: floating pill toggle */}
           <Header
             user={user}
@@ -373,25 +417,6 @@ export default function App() {
             </svg>
             {mobileSlide === "bottom" ? "Show Requests" : "Hide Requests"}
           </button>
-          {/* Mobile: full-width slide bar */}
-          <div
-            onClick={() => { if (!isDragging.current) setMobileSlide(mobileSlide === "bottom" ? "top" : "bottom"); }}
-            ref={slideBarRef}
-            onTouchStart={handleSlideBarTouchStart}
-            onTouchEnd={handleSlideBarTouchEnd}
-            className="md:hidden absolute bottom-0 left-0 right-0 z-50 flex items-center justify-center py-2.5 bg-white/80 dark:bg-[#1e1e1e]/80 backdrop-blur-sm border-t border-slate-200 dark:border-[#2a2a2a] text-xs font-medium text-slate-400 dark:text-zinc-500 cursor-pointer select-none touch-none"
-          >
-            <span className="inline-flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                className={`transition-transform duration-300 ${mobileSlide === "bottom" ? "rotate-0" : "rotate-180"}`}
-              >
-                <polyline points="18 18 12 12 6 18" />
-                <polyline points="18 14 12 8 6 14" />
-                <polyline points="18 10 12 4 6 10" />
-              </svg>
-              {mobileSlide === "bottom" ? "Slide for requests" : "Slide for map"}
-            </span>
-          </div>
           {showForm && selectingOnMap && !selectedLocation && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-[#121212] text-white py-2.5 px-6 rounded-3xl text-sm font-medium z-50 shadow-lg animate-pulse">
               Click anywhere on the map to place your pin
@@ -400,7 +425,7 @@ export default function App() {
           {!showForm && (
             <button
               onClick={handleStartRequest}
-              className="absolute bottom-14 md:bottom-6 right-4 z-50 w-16 h-16 md:w-auto md:h-auto md:px-7 md:py-4.5 flex items-center justify-center md:gap-2.5 rounded-full border-2 border-dashed border-slate-400 dark:border-zinc-500 bg-white/60 dark:bg-[#2a2a2a]/60 backdrop-blur-sm text-slate-600 dark:text-zinc-300 hover:border-blue-500 hover:text-blue-500 shadow-md hover:shadow-lg hover:scale-105 cursor-pointer transition-all duration-150"
+              className="hidden md:flex absolute bottom-6 right-4 z-50 md:w-auto md:h-auto md:px-7 md:py-4.5 items-center justify-center md:gap-2.5 rounded-full border-2 border-dashed border-slate-400 dark:border-zinc-500 bg-white/60 dark:bg-[#2a2a2a]/60 backdrop-blur-sm text-slate-600 dark:text-zinc-300 hover:border-blue-500 hover:text-blue-500 shadow-md hover:shadow-lg hover:scale-105 cursor-pointer transition-all duration-150"
               title="New Request"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -430,6 +455,7 @@ export default function App() {
             isAdmin={profile?.role === "admin" || profile?.role === "moderator"}
             onUpdateStatus={(id, status, note) => updateStatus(id, status, note)}
             homeAddress={profile?.homeAddress}
+            mobileSlide={mobileSlide}
           />
         </main>
       </div>
