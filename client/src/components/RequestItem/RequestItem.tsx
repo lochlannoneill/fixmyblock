@@ -4,7 +4,6 @@ import { faHeart as faHeartSolid, faComment as faCommentSolid, faMapMarkerAlt } 
 import { faHeart as faHeartRegular, faComment as faCommentRegular } from "@fortawesome/free-regular-svg-icons";
 import type { Request, RequestStatus } from "../../types/request";
 import { STATUS_COLORS } from "../../types/request";
-import { ResolutionModal } from "../ResolutionModal";
 
 const STATUS_OPTIONS: { value: RequestStatus; label: string }[] = [
   { value: "open", label: "Open" },
@@ -33,7 +32,6 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
   isAdmin?: boolean;
   onUpdateStatus?: (id: string, status: RequestStatus, note?: string) => void;
 }) {
-  const [showResolution, setShowResolution] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [statusVisible, setStatusVisible] = useState(false);
   const [statusAnimate, setStatusAnimate] = useState(false);
@@ -73,8 +71,6 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
   }, [showStatusDropdown]);
 
   return (
-    <>
-    <ResolutionModal request={showResolution ? c : null} onClose={() => setShowResolution(false)} />
     <div
       className={`py-3.5 px-2 -mx-2 rounded-lg cursor-pointer transition-all duration-150 ${
         selected
@@ -190,22 +186,7 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
           {locationName}
         </div>
       )}
-      {c.status !== "open" && (
-        <button
-          className="flex items-center justify-center gap-1.5 w-full mt-3 px-3 py-2.5 rounded-lg text-xs font-medium cursor-pointer transition-all border hover:brightness-75"
-          style={{
-            color: c.status === 'resolved' ? '#059669' : c.status === 'under-review' ? '#6366f1' : '#d97706',
-            background: c.status === 'resolved' ? 'rgba(16,185,129,0.08)' : c.status === 'under-review' ? 'rgba(99,102,241,0.08)' : 'rgba(245,158,11,0.08)',
-            borderColor: c.status === 'resolved' ? 'rgba(16,185,129,0.2)' : c.status === 'under-review' ? 'rgba(99,102,241,0.2)' : 'rgba(245,158,11,0.2)',
-          }}
-          onClick={(e) => { e.stopPropagation(); setShowResolution(true); }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-          </svg>
-          View Action Log
-        </button>
-      )}
+
       <span className="font-semibold text-sm text-slate-800 dark:text-zinc-200 block mt-3">{c.title}</span>
       <p className="text-[13px] text-slate-500 dark:text-[#8c8c96] mt-1 leading-relaxed">
         {c.description.slice(0, 200)}
@@ -220,6 +201,5 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
         </span>
       </div>
     </div>
-    </>
   );
 }

@@ -116,7 +116,7 @@ async function postRequest(
       // Validate size (10MB)
       if (file.data.length > 10 * 1024 * 1024) continue;
 
-      const url = await uploadImage(file.data, file.contentType, file.filename);
+      const url = await uploadImage(file.data, file.contentType, file.filename, "posts");
       imageUrls.push(url);
     }
 

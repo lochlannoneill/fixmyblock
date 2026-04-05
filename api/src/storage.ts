@@ -24,7 +24,8 @@ function getContainerClient(): ContainerClient {
 export async function uploadImage(
   data: Buffer,
   contentType: string,
-  originalName: string
+  originalName: string,
+  folder: "posts" | "profiles" = "posts"
 ): Promise<string> {
   const client = getContainerClient();
 
@@ -32,7 +33,7 @@ export async function uploadImage(
   await client.createIfNotExists({ access: "blob" });
 
   const ext = originalName.split(".").pop() || "jpg";
-  const blobName = `${uuidv4()}.${ext}`;
+  const blobName = `${folder}/${uuidv4()}.${ext}`;
   const blockBlobClient = client.getBlockBlobClient(blobName);
 
   await blockBlobClient.upload(data, data.length, {
