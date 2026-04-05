@@ -62,6 +62,7 @@ export default function MapView({
   const popupRef = useRef<maplibregl.Popup | null>(null);
   const popupCloseHandlerRef = useRef<(() => void) | null>(null);
   const hoverPopupRef = useRef<maplibregl.Popup | null>(null);
+  const hoverDismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showPopupRef = useRef<((req: Request, hover?: boolean) => void) | null>(null);
   const dropPinRef = useRef<maplibregl.Marker | null>(null);
   const onMapClickRef = useRef(onMapClick);
@@ -336,20 +337,24 @@ export default function MapView({
 
       el.addEventListener("click", (e) => {
         e.stopPropagation();
+        if (hoverDismissTimer.current) { clearTimeout(hoverDismissTimer.current); hoverDismissTimer.current = null; }
         hoverPopupRef.current?.remove();
         hoverPopupRef.current = null;
         onSelectRequest(req);
       });
 
       el.addEventListener("mouseenter", () => {
+        if (hoverDismissTimer.current) { clearTimeout(hoverDismissTimer.current); hoverDismissTimer.current = null; }
         if (popupRef.current && selectedIdRef.current === req.id) return;
         hoverPopupRef.current?.remove();
         showPopupRef.current?.(req, true);
       });
 
       el.addEventListener("mouseleave", () => {
-        hoverPopupRef.current?.remove();
-        hoverPopupRef.current = null;
+        hoverDismissTimer.current = setTimeout(() => {
+          hoverPopupRef.current?.remove();
+          hoverPopupRef.current = null;
+        }, 200);
       });
 
       const marker = new maplibregl.Marker({ element: el })
@@ -631,6 +636,19 @@ export default function MapView({
 
       if (hover) {
         hoverPopupRef.current = popup;
+        const popupEl = popup.getElement();
+        if (popupEl) {
+          popupEl.addEventListener("mouseenter", () => {
+            if (hoverDismissTimer.current) {
+              clearTimeout(hoverDismissTimer.current);
+              hoverDismissTimer.current = null;
+            }
+          });
+          popupEl.addEventListener("mouseleave", () => {
+            hoverPopupRef.current?.remove();
+            hoverPopupRef.current = null;
+          });
+        }
       } else {
         const closeHandler = () => onSelectRequest(null);
         popupCloseHandlerRef.current = closeHandler;
