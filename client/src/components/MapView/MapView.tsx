@@ -565,23 +565,23 @@ export default function MapView({
       const actionLogBtnBg = req.status === 'resolved' ? 'rgba(16,185,129,0.08)' : req.status === 'under-review' ? 'rgba(99,102,241,0.08)' : 'rgba(245,158,11,0.08)';
       const actionLogBtnBorder = req.status === 'resolved' ? 'rgba(16,185,129,0.2)' : req.status === 'under-review' ? 'rgba(99,102,241,0.2)' : 'rgba(245,158,11,0.2)';
       const actionLogBtn = req.status !== "open"
-        ? `<button id="popup-resolution-${idPrefix}" class="popup-action-log-btn" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:12px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:500;color:${actionLogBtnColor};background:${actionLogBtnBg};border:1px solid ${actionLogBtnBorder};cursor:pointer;transition:filter 150ms">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        ? `<button id="popup-resolution-${idPrefix}" class="popup-action-log-btn" style="display:flex;align-items:center;justify-content:center;gap:${isMobile ? '4px' : '6px'};width:100%;margin-top:${isMobile ? '8px' : '12px'};padding:${isMobile ? '5px 8px' : '8px 12px'};border-radius:${isMobile ? '6px' : '8px'};font-size:${isMobile ? '10px' : '12px'};font-weight:500;color:${actionLogBtnColor};background:${actionLogBtnBg};border:1px solid ${actionLogBtnBorder};cursor:pointer;transition:filter 150ms">
+            <svg xmlns="http://www.w3.org/2000/svg" width="${isMobile ? '11' : '14'}" height="${isMobile ? '11' : '14'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             View Action Log
           </button>`
         : "";
 
       const html = `
         <div class="popup-content" style="font-family:system-ui,sans-serif">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:${isMobile ? '8px' : '12px'};margin-bottom:12px">
             <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#ec4899,#a855f7,#f97316);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">${userInitial}</div>
             <div style="display:flex;flex-direction:column;flex:1;min-width:0;line-height:1.2">
               <span class="popup-title" style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${userName}</span>
               <span style="font-size:11px;font-weight:600;color:var(--text-muted)">${timeSince}</span>
             </div>
-            <div style="display:flex;align-items:center;gap:2px;flex-shrink:0">
+            <div style="display:flex;align-items:center;gap:${isMobile ? '0' : '2px'};flex-shrink:0;margin-right:-6px">
             <div style="position:relative">
-              <span id="popup-status-${idPrefix}" class="${isAdmin && onUpdateStatus ? 'popup-status-tag-admin' : ''}" style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:6px 14px;border-radius:9999px;white-space:nowrap;transition:opacity 150ms;${isAdmin && onUpdateStatus ? 'cursor:pointer' : ''}">${statusLabel}${isAdmin && onUpdateStatus ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;margin-left:4px;vertical-align:-1px"><polyline points="6 9 12 15 18 9"/></svg>' : ''}</span>
+              <span id="popup-status-${idPrefix}" class="${isAdmin && onUpdateStatus ? 'popup-status-tag-admin' : ''}" style="background:${statusColor};color:#fff;font-size:${isMobile ? '9px' : '11px'};font-weight:600;padding:${isMobile ? '4px 8px' : '6px 14px'};border-radius:9999px;white-space:nowrap;transition:opacity 150ms;${isAdmin && onUpdateStatus ? 'cursor:pointer' : ''}">${statusLabel}${isAdmin && onUpdateStatus ? `<svg xmlns="http://www.w3.org/2000/svg" width="${isMobile ? '10' : '12'}" height="${isMobile ? '10' : '12'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;margin-left:4px;vertical-align:-1px"><polyline points="6 9 12 15 18 9"/></svg>` : ''}</span>
               ${isAdmin && onUpdateStatus ? `<div id="popup-status-dropdown-${idPrefix}" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;width:140px;background:var(--bg-card);border:1px solid var(--border-input);border-radius:12px;box-shadow:var(--shadow-md);z-index:100;overflow:hidden;padding:4px 0;opacity:0;transform:scale(0.95) translateY(-4px);transition:opacity 150ms ease,transform 150ms ease;transform-origin:top right">
                 <div id="popup-status-options-${idPrefix}">
                 ${(['open', 'under-review', 'in-progress', 'resolved'] as const).map(s => {
@@ -604,8 +604,8 @@ export default function MapView({
               </div>` : ''}
             </div>
             <div style="position:relative">
-              <button id="popup-menu-btn-${idPrefix}" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:none;background:none;cursor:pointer;color:var(--text-muted);transition:background 150ms" class="popup-menu-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+              <button id="popup-menu-btn-${idPrefix}" style="width:${isMobile ? '22px' : '28px'};height:${isMobile ? '22px' : '28px'};display:flex;align-items:center;justify-content:center;border-radius:50%;border:none;background:none;cursor:pointer;color:var(--text-muted);transition:background 150ms" class="popup-menu-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="${isMobile ? '13' : '16'}" height="${isMobile ? '13' : '16'}" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
               </button>
               <div id="popup-menu-dropdown-${idPrefix}" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;width:120px;background:var(--bg-card);border:1px solid var(--border-input);border-radius:12px;box-shadow:var(--shadow-md);z-index:100;overflow:hidden;padding:4px 0;opacity:0;transform:scale(0.95) translateY(-4px);transition:opacity 150ms ease,transform 150ms ease;transform-origin:top right">
                 ${currentUserId && currentUserId === req.userId ? `<button id="popup-menu-delete-${idPrefix}" style="display:block;width:100%;text-align:left;padding:6px 12px;font-size:12px;border:none;background:none;cursor:pointer;color:#ef4444">Delete</button>` : isAdmin ? `<button id="popup-menu-delete-${idPrefix}" style="display:block;width:100%;text-align:left;padding:6px 12px;font-size:12px;border:none;background:none;cursor:pointer;color:#ef4444">Delete</button>` : `<button id="popup-menu-report-${idPrefix}" style="display:block;width:100%;text-align:left;padding:6px 12px;font-size:12px;border:none;background:none;cursor:pointer;color:var(--text-primary)">Report</button>`}
