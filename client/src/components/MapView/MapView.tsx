@@ -76,6 +76,7 @@ export default function MapView({
   const lastDarkModeApplied = useRef(darkMode);
   const activeLayerRef = useRef<MapLayer>("terrain");
   const [mapFading, setMapFading] = useState(false);
+  const [statusCounts, setStatusCounts] = useState<Record<RequestStatus, number>>({ open: 0, "under-review": 0, "in-progress": 0, resolved: 0 });
 
   const add3dBuildings = useCallback(() => {
     if (!map.current) return;
@@ -471,23 +472,37 @@ export default function MapView({
     }
   }, [mapReady, onSelectRequest]);
 
+  // Compute visible status counts
+  const updateStatusCounts = useCallback(() => {
+    if (!map.current) return;
+    const bounds = map.current.getBounds();
+    const counts: Record<RequestStatus, number> = { open: 0, "under-review": 0, "in-progress": 0, resolved: 0 };
+    for (const req of requestsRef.current) {
+      if (bounds.contains([req.longitude, req.latitude])) {
+        counts[req.status]++;
+      }
+    }
+    setStatusCounts(counts);
+  }, []);
+
   // Sync markers when requests change
   useEffect(() => {
     updateMarkers();
-  }, [requests, mapReady, darkMode, updateMarkers]);
+    updateStatusCounts();
+  }, [requests, mapReady, darkMode, updateMarkers, updateStatusCounts]);
 
   // Re-cluster on zoom/move
   useEffect(() => {
     if (!map.current || !mapReady) return;
     const m = map.current;
-    const handler = () => updateMarkers();
+    const handler = () => { updateMarkers(); updateStatusCounts(); };
     m.on("zoomend", handler);
     m.on("moveend", handler);
     return () => {
       m.off("zoomend", handler);
       m.off("moveend", handler);
     };
-  }, [mapReady, updateMarkers]);
+  }, [mapReady, updateMarkers, updateStatusCounts]);
 
   // Show popup for selected request
   const showPopup = useCallback(
@@ -1024,6 +1039,28 @@ export default function MapView({
           zIndex: 1,
         }}
       />
+      {(() => {
+        const total = statusCounts.open + statusCounts["under-review"] + statusCounts["in-progress"] + statusCounts.resolved;
+        if (!total) return null;
+        const items: { key: RequestStatus; label: string }[] = [
+          { key: "open", label: "Open" },
+          { key: "under-review", label: "Under Review" },
+          { key: "in-progress", label: "In Progress" },
+          { key: "resolved", label: "Resolved" },
+        ];
+        return (
+          <div className="status-breakdown">
+            <span className="status-breakdown-total">{total} request{total !== 1 ? 's' : ''} in view</span>
+            {items.map(({ key, label }) => statusCounts[key] > 0 && (
+              <div key={key} className="status-breakdown-row">
+                <span className="status-breakdown-dot" style={{ backgroundColor: STATUS_COLORS[key] }} />
+                <span className="status-breakdown-label">{label}</span>
+                <span className="status-breakdown-count">{statusCounts[key]}</span>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
       <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} isSignedIn={!!currentUserId} onSignInPrompt={onSignInPrompt} mobileSlide={mobileSlide} />
     </div>
   );

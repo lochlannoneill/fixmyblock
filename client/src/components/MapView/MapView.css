@@ -3,6 +3,83 @@
   top: 3.5rem !important; /* clear transparent navbar */
 }
 
+/* ===== Status breakdown overlay ===== */
+.status-breakdown {
+  position: absolute;
+  top: 68px;
+  left: 12px;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 130px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  font-family: system-ui, sans-serif;
+}
+
+.dark .status-breakdown {
+  background: rgba(39, 39, 39, 0.45);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.status-breakdown-total {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.status-breakdown-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.status-breakdown-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-breakdown-label {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.status-breakdown-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+@media (max-width: 639px) {
+  .status-breakdown {
+    top: 58px;
+    left: 8px;
+    padding: 8px 10px;
+    min-width: 110px;
+    border-radius: 10px;
+  }
+  .status-breakdown-total {
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .status-breakdown-label,
+  .status-breakdown-count {
+    font-size: 11px;
+  }
+  .status-breakdown-dot {
+    width: 6px;
+    height: 6px;
+  }
+}
+
 .maplibregl-ctrl-group {
   transition: background-color 200ms ease, border-color 200ms ease !important;
 }
