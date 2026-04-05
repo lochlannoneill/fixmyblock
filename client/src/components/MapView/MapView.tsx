@@ -26,6 +26,7 @@ interface MapViewProps {
   onSignInPrompt?: () => void;
   isAdmin?: boolean;
   onUpdateStatus?: (id: string, status: RequestStatus, note?: string) => void;
+  onDelete?: (id: string) => void;
   homeAddress?: HomeAddress | null;
   mobileSlide?: "top" | "middle" | "bottom";
 }
@@ -49,6 +50,7 @@ export default function MapView({
   onSignInPrompt,
   isAdmin,
   onUpdateStatus,
+  onDelete,
   homeAddress,
   mobileSlide,
 }: MapViewProps) {
@@ -557,6 +559,7 @@ export default function MapView({
               <span class="popup-title" style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${userName}</span>
               <span style="font-size:11px;font-weight:600;color:var(--text-muted)">${timeSince}${!images.length ? ` &middot; ${locationText}` : ''}</span>
             </div>
+            <div style="display:flex;align-items:center;gap:2px;flex-shrink:0">
             <div style="position:relative">
               <span id="popup-status-${idPrefix}" class="${isAdmin && onUpdateStatus ? 'popup-status-tag-admin' : ''}" style="background:${statusColor};color:#fff;font-size:11px;font-weight:600;padding:6px 14px;border-radius:9999px;white-space:nowrap;transition:opacity 150ms;${isAdmin && onUpdateStatus ? 'cursor:pointer' : ''}">${statusLabel}${isAdmin && onUpdateStatus ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;margin-left:4px;vertical-align:-1px"><polyline points="6 9 12 15 18 9"/></svg>' : ''}</span>
               ${isAdmin && onUpdateStatus ? `<div id="popup-status-dropdown-${idPrefix}" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;width:140px;background:var(--bg-card);border:1px solid var(--border-input);border-radius:12px;box-shadow:var(--shadow-md);z-index:100;overflow:hidden;padding:4px 0;opacity:0;transform:scale(0.95) translateY(-4px);transition:opacity 150ms ease,transform 150ms ease;transform-origin:top right">
@@ -579,6 +582,15 @@ export default function MapView({
                   </div>
                 </div>
               </div>` : ''}
+            </div>
+            <div style="position:relative">
+              <button id="popup-menu-btn-${idPrefix}" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:none;background:none;cursor:pointer;color:var(--text-muted);transition:background 150ms" class="popup-menu-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+              </button>
+              <div id="popup-menu-dropdown-${idPrefix}" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;width:120px;background:var(--bg-card);border:1px solid var(--border-input);border-radius:12px;box-shadow:var(--shadow-md);z-index:100;overflow:hidden;padding:4px 0;opacity:0;transform:scale(0.95) translateY(-4px);transition:opacity 150ms ease,transform 150ms ease;transform-origin:top right">
+                ${currentUserId && currentUserId === req.userId ? `<button id="popup-menu-delete-${idPrefix}" style="display:block;width:100%;text-align:left;padding:6px 12px;font-size:12px;border:none;background:none;cursor:pointer;color:#ef4444">Delete</button>` : isAdmin ? `<button id="popup-menu-delete-${idPrefix}" style="display:block;width:100%;text-align:left;padding:6px 12px;font-size:12px;border:none;background:none;cursor:pointer;color:#ef4444">Delete</button>` : `<button id="popup-menu-report-${idPrefix}" style="display:block;width:100%;text-align:left;padding:6px 12px;font-size:12px;border:none;background:none;cursor:pointer;color:var(--text-primary)">Report</button>`}
+              </div>
+            </div>
             </div>
           </div>
           ${thumbs}
@@ -637,6 +649,46 @@ export default function MapView({
           e.stopPropagation();
           onShowResolution?.(req);
         });
+        // 3-dot menu
+        const menuBtn = document.getElementById(`popup-menu-btn-${idPrefix}`);
+        const menuDropdown = document.getElementById(`popup-menu-dropdown-${idPrefix}`);
+        if (menuBtn && menuDropdown) {
+          menuBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const isOpen = menuDropdown.style.display !== "none";
+            if (isOpen) {
+              menuDropdown.style.opacity = "0";
+              menuDropdown.style.transform = "scale(0.95) translateY(-4px)";
+              setTimeout(() => { menuDropdown.style.display = "none"; }, 150);
+            } else {
+              menuDropdown.style.display = "block";
+              requestAnimationFrame(() => requestAnimationFrame(() => {
+                menuDropdown.style.opacity = "1";
+                menuDropdown.style.transform = "scale(1) translateY(0)";
+              }));
+              setTimeout(() => {
+                const closeMenu = (ev: MouseEvent) => {
+                  if (menuDropdown.contains(ev.target as Node) || menuBtn.contains(ev.target as Node)) {
+                    document.addEventListener("click", closeMenu, { once: true });
+                    return;
+                  }
+                  menuDropdown.style.opacity = "0";
+                  menuDropdown.style.transform = "scale(0.95) translateY(-4px)";
+                  setTimeout(() => { menuDropdown.style.display = "none"; }, 150);
+                };
+                document.addEventListener("click", closeMenu, { once: true });
+              }, 0);
+            }
+          });
+          const deleteBtn = document.getElementById(`popup-menu-delete-${idPrefix}`);
+          deleteBtn?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (confirm("Delete this request?")) {
+              onDelete?.(req.id);
+              popup.remove();
+            }
+          });
+        }
         // Admin status dropdown
         if (isAdmin && onUpdateStatus) {
           const statusBadge = document.getElementById(`popup-status-${idPrefix}`);
@@ -735,7 +787,7 @@ export default function MapView({
         }
       }, 0);
     },
-    [onSelectRequest, onLike, currentUserId, onExpandRequest, onShowResolution, isAdmin, onUpdateStatus]
+    [onSelectRequest, onLike, currentUserId, onExpandRequest, onShowResolution, isAdmin, onUpdateStatus, onDelete]
   );
 
   showPopupRef.current = showPopup;

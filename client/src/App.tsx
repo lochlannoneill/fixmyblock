@@ -454,6 +454,7 @@ export default function App() {
             onSignInPrompt={() => setShowAuthModal(true)}
             isAdmin={profile?.role === "admin" || profile?.role === "moderator"}
             onUpdateStatus={(id, status, note) => updateStatus(id, status, note)}
+            onDelete={(id: string) => { remove(id); }}
             homeAddress={profile?.homeAddress}
             mobileSlide={mobileSlide}
           />
