@@ -303,8 +303,8 @@ export default function App() {
           </div>
           <aside className={`sidebar flex-1 overflow-y-auto bg-slate-50 dark:bg-[#1e1e1e] transition-all duration-300 md:border-r md:border-slate-200 md:dark:border-[#2a2a2a] ${
             mobileSlide === "bottom"
-              ? "md:w-0 md:min-w-0 md:overflow-hidden"
-              : "md:w-[440px] md:min-w-[440px] md:flex-none"
+              ? "md:w-0 md:min-w-0 md:max-w-0 md:flex-none md:overflow-hidden md:border-r-0"
+              : "md:w-[440px] md:min-w-[440px] md:max-w-[440px] md:flex-none"
           }`}>
           {sidebarView === "form" ? (
             <RequestForm
@@ -408,14 +408,20 @@ export default function App() {
           {/* Desktop: floating pill toggle */}
           <button
             onClick={() => setMobileSlide(mobileSlide === "bottom" ? "middle" : "bottom")}
-            className="hidden md:flex absolute z-50 transition-colors items-center gap-2 px-4 py-2.5 rounded-full bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-[#3a3a3a] shadow-lg text-sm font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-[#333] cursor-pointer left-4 top-1/2 -translate-y-1/2"
+            className="hidden md:flex absolute z-50 transition-all duration-300 items-center gap-0 overflow-hidden px-3 py-3 rounded-full bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-[#3a3a3a] shadow-lg text-sm font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-[#333] cursor-pointer left-4 top-1/2 -translate-y-1/2"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              className={`transition-transform duration-300 ${mobileSlide === "bottom" ? "rotate-0" : "rotate-180"}`}
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              className="shrink-0 transition-transform duration-300 ease-in-out"
+              style={{ transform: mobileSlide === "bottom" ? "rotate(0deg)" : "rotate(180deg)" }}
             >
               <polyline points="9 18 15 12 9 6" />
             </svg>
-            {mobileSlide === "bottom" ? "Show Requests" : "Hide Requests"}
+            <span
+              className="whitespace-nowrap overflow-hidden transition-all duration-300"
+              style={{ maxWidth: mobileSlide === "bottom" ? 120 : 0, marginLeft: mobileSlide === "bottom" ? 8 : 0, opacity: mobileSlide === "bottom" ? 1 : 0 }}
+            >
+              Show Requests
+            </span>
           </button>
           {showForm && selectingOnMap && !selectedLocation && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-[#121212] text-white py-2.5 px-6 rounded-3xl text-sm font-medium z-50 shadow-lg animate-pulse">
