@@ -175,7 +175,7 @@ async function uploadAvatar(
   if (!existing) return { status: 404, jsonBody: { error: "User not found" } };
 
   const ext = contentType.split("/")[1] === "jpeg" ? "jpg" : contentType.split("/")[1];
-  const url = await uploadImage(bodyBuffer, contentType, `avatar-${auth.userId}.${ext}`);
+  const url = await uploadImage(bodyBuffer, contentType, `avatar-${auth.userId}.${ext}`, "profiles");
 
   existing.profilePictureUrl = url;
   const saved = await upsertUser(existing);
