@@ -557,7 +557,7 @@ export default function MapView({
             <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#ec4899,#a855f7,#f97316);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">${userInitial}</div>
             <div style="display:flex;flex-direction:column;flex:1;min-width:0;line-height:1.2">
               <span class="popup-title" style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${userName}</span>
-              <span style="font-size:11px;font-weight:600;color:var(--text-muted)">${timeSince}${!images.length ? ` &middot; ${locationText}` : ''}</span>
+              <span style="font-size:11px;font-weight:600;color:var(--text-muted)">${timeSince}</span>
             </div>
             <div style="display:flex;align-items:center;gap:2px;flex-shrink:0">
             <div style="position:relative">
@@ -594,6 +594,7 @@ export default function MapView({
             </div>
           </div>
           ${thumbs}
+          ${!images.length ? `<div style="display:flex;align-items:center;gap:4px;margin-top:8px;font-size:12px;color:var(--text-muted)"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 384 512" fill="currentColor"><path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/></svg>${locationText}</div>` : ''}
           ${actionLogBtn}
           <div style="margin-top:12px">
             <span style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block" class="popup-title">${req.title}</span>
