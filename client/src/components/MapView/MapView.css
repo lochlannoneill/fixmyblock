@@ -177,23 +177,24 @@
 
 /* Cluster tooltip */
 .cluster-tooltip .maplibregl-popup-content {
-  background: rgba(255, 255, 255, 0.9) !important;
+  background: rgba(255, 255, 255, 0.5) !important;
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: 10px !important;
   padding: 0 !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
 }
 
 .cluster-tooltip .maplibregl-popup-tip {
-  border-top-color: rgba(255, 255, 255, 0.9) !important;
+  border-top-color: rgba(255, 255, 255, 0.5) !important;
 }
 
 .dark .cluster-tooltip .maplibregl-popup-content {
-  background: rgba(39, 39, 39, 0.9) !important;
+  background: rgba(0, 0, 0, 0.3) !important;
 }
 
 .dark .cluster-tooltip .maplibregl-popup-tip {
-  border-top-color: rgba(39, 39, 39, 0.9) !important;
+  border-top-color: rgba(0, 0, 0, 0.3) !important;
 }
 
 .cluster-marker {
