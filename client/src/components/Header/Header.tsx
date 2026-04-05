@@ -91,12 +91,12 @@ export default function Header({ user, profile, onLocationSelect, onLoginClick, 
   }, [dropdownOpen]);
 
   return (
-    <header className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 h-14 text-slate-800 dark:text-zinc-200 z-[9999] pointer-events-none">
+    <header className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 md:px-4 h-14 md:h-16 text-slate-800 dark:text-zinc-200 z-[9999] pointer-events-none">
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.25), transparent)' }} />
       <div className="relative pointer-events-auto">
-        <h1 className="m-0 flex items-center cursor-pointer rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md shadow-sm hover:bg-white/60 dark:hover:bg-black/40 transition-colors p-2 md:p-2.5" onClick={() => window.location.reload()}>
+        <h1 className="m-0 flex items-center cursor-pointer rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md shadow-sm hover:bg-white/60 dark:hover:bg-black/40 transition-colors p-2 md:p-3" onClick={() => window.location.reload()}>
           <span className="inline-flex items-center">
-            <svg className="w-7 h-7 md:w-8 md:h-8" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg className="w-7 h-7 md:w-9 md:h-9" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M32 4L2 30h10v28h40V30h10L32 4z" fill="#3b82f6" stroke="currentColor" strokeWidth="2"/>
               <rect x="22" y="38" width="10" height="20" rx="1" fill="var(--bg-card)" stroke="currentColor" strokeWidth="1.5"/>
               <rect x="38" y="32" width="8" height="8" rx="1" fill="var(--bg-card)" stroke="currentColor" strokeWidth="1.5"/>
@@ -108,8 +108,8 @@ export default function Header({ user, profile, onLocationSelect, onLoginClick, 
       <div className="relative flex items-center gap-2 pointer-events-auto">
         {/* Search: always expanded on desktop, expandable on mobile */}
         <div ref={searchContainerRef} className={`relative flex items-center rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md shadow-sm transition-all duration-300 overflow-visible ${
-          searchExpanded ? "w-48 sm:w-56" : "w-10 md:w-56"
-        } h-10 md:h-11`}>
+          searchExpanded ? "w-48 sm:w-56" : "w-10 md:w-64"
+        } h-10 md:h-12`}>
           <button
             onClick={() => {
               if (!searchExpanded) {
@@ -120,7 +120,7 @@ export default function Header({ user, profile, onLocationSelect, onLoginClick, 
             className="flex-shrink-0 w-10 h-10 flex items-center justify-center cursor-pointer md:pointer-events-none"
             aria-label="Search"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600 dark:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600 dark:text-white md:w-[18px] md:h-[18px]">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
@@ -177,16 +177,16 @@ export default function Header({ user, profile, onLocationSelect, onLoginClick, 
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 md:px-3.5 md:py-2 rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md shadow-sm hover:bg-white/60 dark:hover:bg-black/40 cursor-pointer transition-colors text-slate-700 dark:text-white"
+              className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2.5 rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md shadow-sm hover:bg-white/60 dark:hover:bg-black/40 cursor-pointer transition-colors text-slate-700 dark:text-white"
             >
-              <div className="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white text-xs font-bold overflow-hidden" style={{background:'linear-gradient(135deg,#ec4899,#a855f7,#f97316)'}}>
+              <div className="w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold overflow-hidden" style={{background:'linear-gradient(135deg,#ec4899,#a855f7,#f97316)'}}>
                 {profile?.profilePictureUrl ? (
                   <img src={profile.profilePictureUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
                   (headerName?.[0] ?? "U").toUpperCase()
                 )}
               </div>
-              <span className="hidden sm:inline text-sm font-medium truncate max-w-30">
+              <span className="hidden sm:inline text-sm md:text-[15px] font-medium truncate max-w-30">
                 {headerName}
               </span>
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}>
@@ -254,10 +254,10 @@ export default function Header({ user, profile, onLocationSelect, onLoginClick, 
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 md:px-3.5 md:py-2 rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md shadow-sm hover:bg-white/60 dark:hover:bg-black/40 cursor-pointer transition-colors text-slate-700 dark:text-white"
+              className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2.5 rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md shadow-sm hover:bg-white/60 dark:hover:bg-black/40 cursor-pointer transition-colors text-slate-700 dark:text-white"
               aria-label="Menu"
             >
-              <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white/60 dark:bg-white/10 flex items-center justify-center">
+              <div className="w-7 h-7 md:w-9 md:h-9 rounded-full bg-white/60 dark:bg-white/10 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600 dark:text-white">
                   <circle cx="12" cy="8" r="4" />
                   <path d="M20 21a8 8 0 0 0-16 0" />
