@@ -82,6 +82,7 @@ export default function MapView({
   const [trafficOn, setTrafficOn] = useState(false);
   const [weatherOn, setWeatherOn] = useState(false);
   const [infraredOn, setInfraredOn] = useState(false);
+  const [incidentsOn, setIncidentsOn] = useState(false);
   const trafficOnRef = useRef(false);
   const weatherOnRef = useRef(false);
   const infraredOnRef = useRef(false);
@@ -193,6 +194,116 @@ export default function MapView({
       syncOverlay("azure-infrared", "microsoft.weather.infrared.main", true, INFRARED_PAINT);
     }
   }, [syncOverlay]);
+
+  // Traffic incidents (GeoJSON layer from Azure Maps Traffic Incident Detail API)
+  const INCIDENT_ICONS: Record<number, string> = {
+    0: "❓", 1: "🚗", 2: "🌫️", 3: "⚠️", 4: "🌧️", 5: "🧊", 6: "🚦",
+    7: "🚧", 8: "⛔", 9: "🔧", 10: "💨", 11: "🌊", 12: "↩️", 13: "📍", 14: "🚙",
+  };
+  const INCIDENT_COLORS: Record<number, string> = {
+    0: "#888", 1: "#ef4444", 2: "#a3a3a3", 3: "#f59e0b", 4: "#3b82f6", 5: "#67e8f9",
+    6: "#f97316", 7: "#eab308", 8: "#dc2626", 9: "#a855f7", 10: "#64748b",
+    11: "#2563eb", 12: "#22c55e", 13: "#888", 14: "#f59e0b",
+  };
+  const incidentAbort = useRef<AbortController | null>(null);
+
+  const fetchIncidents = useCallback(async () => {
+    if (!map.current || !incidentsOn || activeLayerRef.current !== "azure") return;
+    const bounds = map.current.getBounds();
+    const zoom = Math.round(map.current.getZoom());
+    const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
+
+    incidentAbort.current?.abort();
+    const ctrl = new AbortController();
+    incidentAbort.current = ctrl;
+
+    try {
+      const res = await fetch(`/api/map/traffic-incidents?bbox=${encodeURIComponent(bbox)}&zoom=${zoom}`, { signal: ctrl.signal });
+      if (!res.ok) return;
+      const data = await res.json();
+      const pois = data?.tm?.poi ?? [];
+
+      const geojson: GeoJSON.FeatureCollection = {
+        type: "FeatureCollection",
+        features: pois.filter((p: { p?: { x: number; y: number } }) => p.p).map((p: { id?: string; p: { x: number; y: number }; ic?: number; d?: string; c?: string; f?: string; t?: string; dl?: number; r?: string; ty?: number }) => ({
+          type: "Feature" as const,
+          geometry: { type: "Point" as const, coordinates: [p.p.x, p.p.y] },
+          properties: {
+            id: p.id ?? "",
+            icon: INCIDENT_ICONS[p.ic ?? 0] || "❓",
+            color: INCIDENT_COLORS[p.ic ?? 0] || "#888",
+            description: p.d || "Traffic incident",
+            cause: p.c || "",
+            from: p.f || "",
+            to: p.t || "",
+            delay: p.dl ?? 0,
+            road: p.r || "",
+            severity: p.ty ?? 0,
+            ic: p.ic ?? 0,
+          },
+        })),
+      };
+
+      if (!map.current) return;
+      const src = map.current.getSource("traffic-incidents") as maplibregl.GeoJSONSource | undefined;
+      if (src) {
+        src.setData(geojson);
+      } else {
+        map.current.addSource("traffic-incidents", { type: "geojson", data: geojson });
+        map.current.addLayer({
+          id: "traffic-incidents-circles",
+          type: "circle",
+          source: "traffic-incidents",
+          paint: {
+            "circle-radius": 7,
+            "circle-color": ["get", "color"],
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#fff",
+            "circle-opacity": 0.9,
+          },
+        });
+        // Click handler for popup
+        map.current.on("click", "traffic-incidents-circles", (e) => {
+          const f = e.features?.[0];
+          if (!f || f.geometry.type !== "Point") return;
+          const props = f.properties;
+          const coords = f.geometry.coordinates as [number, number];
+          const icon = props.icon || "⚠️";
+          const desc = props.description || "Incident";
+          const cause = props.cause ? `<div style="font-size:11px;color:#888;margin-top:2px">${props.cause}</div>` : "";
+          const road = props.road ? `<div style="font-size:11px;margin-top:2px"><b>Road:</b> ${props.road}</div>` : "";
+          const fromTo = props.from && props.to ? `<div style="font-size:11px;margin-top:2px">${props.from} → ${props.to}</div>` : "";
+          const delay = props.delay > 0 ? `<div style="font-size:11px;margin-top:2px"><b>Delay:</b> ${Math.round(props.delay / 60)} min</div>` : "";
+          new maplibregl.Popup({ offset: 12, maxWidth: "220px" })
+            .setLngLat(coords)
+            .setHTML(`<div style="font-size:13px;font-weight:600">${icon} ${desc}</div>${cause}${road}${fromTo}${delay}`)
+            .addTo(map.current!);
+        });
+        map.current.on("mouseenter", "traffic-incidents-circles", () => { if (map.current) map.current.getCanvas().style.cursor = "pointer"; });
+        map.current.on("mouseleave", "traffic-incidents-circles", () => { if (map.current) map.current.getCanvas().style.cursor = ""; });
+      }
+    } catch (e) {
+      if ((e as Error).name !== "AbortError") console.warn("Incident fetch failed:", e);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incidentsOn]);
+
+  // Fetch incidents on toggle, and refetch on map move
+  useEffect(() => {
+    if (!mapReady || activeLayer !== "azure") return;
+    if (incidentsOn) {
+      fetchIncidents();
+      const handler = () => fetchIncidents();
+      map.current?.on("moveend", handler);
+      return () => { map.current?.off("moveend", handler); incidentAbort.current?.abort(); };
+    } else {
+      // Remove layer + source
+      try {
+        if (map.current?.getLayer("traffic-incidents-circles")) map.current.removeLayer("traffic-incidents-circles");
+        if (map.current?.getSource("traffic-incidents")) map.current.removeSource("traffic-incidents");
+      } catch { /* ignore */ }
+    }
+  }, [incidentsOn, mapReady, activeLayer, fetchIncidents]);
 
   // Keep refs in sync so the map click handler always has latest values
   useEffect(() => { onMapClickRef.current = onMapClick; }, [onMapClick]);
@@ -1131,6 +1242,7 @@ export default function MapView({
       setTrafficOn(false);
       setWeatherOn(false);
       setInfraredOn(false);
+      setIncidentsOn(false);
     }
 
     map.current.setStyle(newStyle as string);
@@ -1190,7 +1302,7 @@ export default function MapView({
           </div>
         );
       })()}
-      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} isSignedIn={!!currentUserId} onSignInPrompt={onSignInPrompt} mobileSlide={mobileSlide} sidebarOpen={mobileSlide !== "bottom"} trafficOn={trafficOn} weatherOn={weatherOn} infraredOn={infraredOn} onToggleTraffic={() => setTrafficOn(v => !v)} onToggleWeather={() => setWeatherOn(v => !v)} onToggleInfrared={() => setInfraredOn(v => !v)} />
+      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} isSignedIn={!!currentUserId} onSignInPrompt={onSignInPrompt} mobileSlide={mobileSlide} sidebarOpen={mobileSlide !== "bottom"} trafficOn={trafficOn} weatherOn={weatherOn} infraredOn={infraredOn} incidentsOn={incidentsOn} onToggleTraffic={() => setTrafficOn(v => !v)} onToggleWeather={() => setWeatherOn(v => !v)} onToggleInfrared={() => setInfraredOn(v => !v)} onToggleIncidents={() => setIncidentsOn(v => !v)} />
     </div>
   );
 }
