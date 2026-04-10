@@ -59,6 +59,8 @@ export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedI
   const satelliteBtnRef = useRef<HTMLDivElement>(null);
   const terrainBtnRef = useRef<HTMLDivElement>(null);
   const descriptiveBtnRef = useRef<HTMLDivElement>(null);
+  const trafficBtnRef = useRef<HTMLButtonElement>(null);
+  const weatherBtnRef = useRef<HTMLButtonElement>(null);
   const thumbnails = darkMode ? LAYER_THUMBNAILS_DARK : LAYER_THUMBNAILS_LIGHT;
   const azureLocked = !isSignedIn;
 
@@ -177,15 +179,18 @@ export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedI
                       alt={layer.label}
                       className="w-16 h-16 rounded-lg object-cover"
                     />
-                    {(layer.id === "terrain" || layer.id === "satellite" || layer.id === "topo") && (
+                    {(layer.id === "terrain" || layer.id === "satellite" || layer.id === "topo") && (() => {
+                      const isOpen = layer.id === "terrain" ? terrainExpanded : layer.id === "satellite" ? satelliteExpanded : descriptiveExpanded;
+                      return (
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className={`w-5 h-5 rounded-full bg-white/40 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center transition-transform duration-200 ${
-                          (layer.id === "terrain" ? terrainExpanded : layer.id === "satellite" ? satelliteExpanded : descriptiveExpanded) ? "rotate-180" : ""
+                          isOpen ? "-rotate-90 md:rotate-180" : ""
                         }`}>
                           <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="black" className="dark:stroke-white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
                       </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 )}
                 <span className={`text-[11px] font-medium pb-1 ${
@@ -235,6 +240,7 @@ export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedI
                 <img src="/api/map/tile?tilesetId=microsoft.imagery&z=13&x=4093&y=2723" alt="Azure" className="w-8 h-8 rounded object-cover" />
               )}
               <span>Azure</span>
+              <span className="ml-auto text-[8px] font-bold uppercase tracking-wide bg-blue-500/90 text-white px-1 py-0.5 rounded">Pro</span>
             </button>
           </div>
         );
@@ -274,6 +280,7 @@ export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedI
                 <img src="/api/map/tile?tilesetId=microsoft.base.road&z=13&x=4093&y=2723" alt="Azure Maps" className="w-8 h-8 rounded object-cover" />
               )}
               <span>Azure</span>
+              <span className="ml-auto text-[8px] font-bold uppercase tracking-wide bg-blue-500/90 text-white px-1 py-0.5 rounded">Pro</span>
             </button>
           </div>
         );
@@ -307,9 +314,10 @@ export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedI
         );
       })()}
       {isAzure && (
-        <div className="flex flex-col gap-1.5 self-center">
+        <div className="flex flex-col md:flex-row gap-1.5 self-center">
           <div className="relative">
             <button
+              ref={trafficBtnRef}
               onClick={() => setTrafficExpanded(v => !v)}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold shadow-md backdrop-blur-md transition-all duration-200 cursor-pointer border w-full ${
                 trafficOn || incidentsOn
@@ -319,10 +327,20 @@ export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedI
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
               Traffic
-              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`ml-auto transition-transform duration-200 ${trafficExpanded ? "rotate-180" : ""}`}><polyline points="6 9 12 15 18 9"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`ml-auto transition-transform duration-200 ${trafficExpanded ? "-rotate-90 md:rotate-180" : ""}`}><polyline points="6 9 12 15 18 9"/></svg>
             </button>
-            {trafficExpanded && (
-              <div className="mt-1 flex flex-col gap-1 bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-lg border border-slate-200 dark:border-zinc-600 p-1.5 shadow-md">
+          </div>
+          {trafficExpanded && (() => {
+            const rect = trafficBtnRef.current?.getBoundingClientRect();
+            if (!rect) return null;
+            const isMobile = window.innerWidth < 768;
+            return (
+              <div
+                className={`fixed flex flex-col gap-1 bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-lg border border-slate-200 dark:border-zinc-600 p-1.5 shadow-md z-[60] min-w-[100px] ${isMobile ? 'animate-[dropright_150ms_ease-out]' : 'animate-[dropup_150ms_ease-out]'}`}
+                style={isMobile
+                  ? { top: rect.top, left: rect.right + 4 }
+                  : { bottom: window.innerHeight - rect.top + 4, left: rect.left + rect.width / 2, transform: "translateX(-50%)" }}
+              >
                 <button
                   onClick={onToggleTraffic}
                   className="flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-zinc-700/50"
@@ -342,10 +360,11 @@ export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedI
                   <span className="text-slate-700 dark:text-zinc-200">Incidents</span>
                 </button>
               </div>
-            )}
-          </div>
+            );
+          })()}
           <div className="relative">
             <button
+              ref={weatherBtnRef}
               onClick={() => setWeatherExpanded(v => !v)}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold shadow-md backdrop-blur-md transition-all duration-200 cursor-pointer border w-full ${
                 weatherOn || infraredOn
@@ -355,10 +374,20 @@ export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedI
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/><path d="m9.2 22 3-7H8l4-7"/></svg>
               Weather
-              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`ml-auto transition-transform duration-200 ${weatherExpanded ? "rotate-180" : ""}`}><polyline points="6 9 12 15 18 9"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`ml-auto transition-transform duration-200 ${weatherExpanded ? "-rotate-90 md:rotate-180" : ""}`}><polyline points="6 9 12 15 18 9"/></svg>
             </button>
-            {weatherExpanded && (
-              <div className="mt-1 flex flex-col gap-1 bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-lg border border-slate-200 dark:border-zinc-600 p-1.5 shadow-md">
+          </div>
+          {weatherExpanded && (() => {
+            const rect = weatherBtnRef.current?.getBoundingClientRect();
+            if (!rect) return null;
+            const isMobile = window.innerWidth < 768;
+            return (
+              <div
+                className={`fixed flex flex-col gap-1 bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-lg border border-slate-200 dark:border-zinc-600 p-1.5 shadow-md z-[60] min-w-[100px] ${isMobile ? 'animate-[dropright_150ms_ease-out]' : 'animate-[dropup_150ms_ease-out]'}`}
+                style={isMobile
+                  ? { top: rect.top, left: rect.right + 4 }
+                  : { bottom: window.innerHeight - rect.top + 4, left: rect.left + rect.width / 2, transform: "translateX(-50%)" }}
+              >
                 <button
                   onClick={onToggleWeather}
                   className="flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-zinc-700/50"
@@ -378,8 +407,8 @@ export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedI
                   <span className="text-slate-700 dark:text-zinc-200">Infrared</span>
                 </button>
               </div>
-            )}
-          </div>
+            );
+          })()}
         </div>
       )}
     </div>
