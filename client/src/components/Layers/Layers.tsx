@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
-export type MapLayer = "default" | "satellite" | "terrain" | "flat" | "topo" | "transport" | "azure";
+export type MapLayer = "default" | "satellite" | "satellite-azure" | "terrain" | "flat" | "topo" | "transport" | "azure";
 
 interface LayerOption {
   id: MapLayer;
@@ -9,22 +9,26 @@ interface LayerOption {
   locked?: boolean;
 }
 
-const LAYER_THUMBNAILS_LIGHT: Record<Exclude<MapLayer, "azure">, string> = {
+const LAYER_THUMBNAILS_LIGHT: Record<MapLayer, string> = {
   default: "https://a.basemaps.cartocdn.com/light_all/13/4093/2723.png",
   satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/2723/4093",
+  "satellite-azure": "/api/map/tile?tilesetId=microsoft.imagery&z=13&x=4093&y=2723",
   terrain: "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/4093/2723.png",
   flat: "https://a.basemaps.cartocdn.com/light_all/13/4093/2723.png",
   topo: "https://a.tile.opentopomap.org/13/4093/2723.png",
   transport: "https://a.tile.openstreetmap.org/13/4093/2723.png",
+  azure: "/api/map/tile?tilesetId=microsoft.base.road&z=13&x=4093&y=2723",
 };
 
-const LAYER_THUMBNAILS_DARK: Record<Exclude<MapLayer, "azure">, string> = {
-  default: "https://a.basemaps.cartocdn.com/dark_all/13/4093/2723.png",
+const LAYER_THUMBNAILS_DARK: Record<MapLayer, string> = {
+  default: "https://a.basemaps.cartocdn.com/light_all/13/4093/2723.png",
   satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/2723/4093",
-  terrain: "https://a.basemaps.cartocdn.com/dark_all/13/4093/2723.png",
-  flat: "https://a.basemaps.cartocdn.com/dark_all/13/4093/2723.png",
+  "satellite-azure": "/api/map/tile?tilesetId=microsoft.imagery&z=13&x=4093&y=2723",
+  terrain: "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/4093/2723.png",
+  flat: "https://a.basemaps.cartocdn.com/light_all/13/4093/2723.png",
   topo: "https://a.tile.opentopomap.org/13/4093/2723.png",
   transport: "https://a.tile.openstreetmap.org/13/4093/2723.png",
+  azure: "/api/map/tile?tilesetId=microsoft.base.road&z=13&x=4093&y=2723",
 };
 
 interface LayersProps {
@@ -47,18 +51,38 @@ interface LayersProps {
 
 export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedIn, onSignInPrompt, mobileSlide, sidebarOpen, trafficOn, weatherOn, infraredOn, incidentsOn, onToggleTraffic, onToggleWeather, onToggleInfrared, onToggleIncidents }: LayersProps) {
   const [expanded, setExpanded] = useState(false);
+  const [satelliteExpanded, setSatelliteExpanded] = useState(false);
+  const [terrainExpanded, setTerrainExpanded] = useState(false);
+  const [descriptiveExpanded, setDescriptiveExpanded] = useState(false);
   const [trafficExpanded, setTrafficExpanded] = useState(false);
   const [weatherExpanded, setWeatherExpanded] = useState(false);
+  const satelliteBtnRef = useRef<HTMLDivElement>(null);
+  const terrainBtnRef = useRef<HTMLDivElement>(null);
+  const descriptiveBtnRef = useRef<HTMLDivElement>(null);
   const thumbnails = darkMode ? LAYER_THUMBNAILS_DARK : LAYER_THUMBNAILS_LIGHT;
   const azureLocked = !isSignedIn;
+
+  const isAzure = activeLayer === "azure" || activeLayer === "satellite-azure";
+  const isSatellite = activeLayer === "satellite" || activeLayer === "satellite-azure";
+  const isTerrain = activeLayer === "terrain" || activeLayer === "azure";
+  const isDescriptive = activeLayer === "topo" || activeLayer === "transport";
+
+  const LAYER_NAMES: Record<MapLayer, string> = {
+    default: "Minimal",
+    satellite: "ESRI",
+    "satellite-azure": "Azure",
+    terrain: "Carto",
+    flat: "Flat",
+    topo: "Topo",
+    transport: "Transport",
+    azure: "Azure",
+  };
 
   const LAYERS: LayerOption[] = [
     { id: "terrain", label: "Terrain", thumbnail: thumbnails.terrain },
     { id: "satellite", label: "Satellite", thumbnail: thumbnails.satellite },
-    { id: "topo", label: "Topo", thumbnail: thumbnails.topo },
-    { id: "transport", label: "Transport", thumbnail: thumbnails.transport },
+    { id: "topo", label: "Descriptive", thumbnail: thumbnails.topo },
     { id: "default", label: "Minimal", thumbnail: thumbnails.default },
-    { id: "azure", label: "Azure Maps", thumbnail: azureLocked ? "" : "/api/map/tile?tilesetId=microsoft.base.road&z=13&x=4093&y=2723", locked: azureLocked },
   ];
 
   return (
@@ -77,7 +101,7 @@ export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedI
         title="Map layers"
       >
         <img
-          src={activeLayer !== "azure" ? thumbnails[activeLayer] : thumbnails.terrain}
+          src={thumbnails[activeLayer]}
           alt="Layers"
           className="absolute inset-0 w-full h-full object-cover transition-all duration-200 group-hover:brightness-110"
         />
@@ -89,7 +113,7 @@ export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedI
             <polyline points="2 12 12 17 22 12" />
           </svg>
           <span className="text-[11px] font-semibold text-white" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.7)" }}>
-            Layers
+            {LAYER_NAMES[activeLayer]}
           </span>
         </div>
       </button>
@@ -102,48 +126,187 @@ export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedI
       >
         <div className="flex flex-col-reverse md:flex-row gap-2 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-lg border border-slate-200 dark:border-[#3a3a3a] p-2 max-h-[60vh] md:max-h-none overflow-y-auto md:overflow-y-visible">
           {LAYERS.map((layer) => (
-            <button
-              key={layer.id}
-              onClick={() => {
-                if (layer.locked) { onSignInPrompt?.(); return; }
-                onLayerChange(layer.id);
-                setExpanded(false);
-              }}
-              className={`flex flex-col items-center gap-1.5 rounded-lg transition-all ${
-                layer.locked
-                  ? "opacity-50 cursor-not-allowed"
-                  : activeLayer === layer.id
-                    ? "cursor-pointer"
-                    : "cursor-pointer hover:ring-2 hover:ring-slate-300 dark:hover:ring-[#555] ring-offset-1 dark:ring-offset-[#2a2a2a]"
-              }`}
-              title={layer.locked ? "Sign in to unlock" : layer.label}
-            >
-              {layer.locked ? (
-                <div className="w-16 h-16 rounded-lg bg-slate-200 dark:bg-zinc-700 flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 dark:text-zinc-500">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                </div>
-              ) : (
-                <img
-                  src={layer.thumbnail}
-                  alt={layer.label}
-                  className="w-16 h-16 rounded-lg object-cover"
-                />
-              )}
-              <span className={`text-[11px] font-medium pb-1 ${
-                activeLayer === layer.id
-                  ? "text-blue-500"
-                  : "text-slate-600 dark:text-zinc-400"
-              }`}>
-                {layer.label}
-              </span>
-            </button>
+            <div key={layer.id} className="relative" ref={layer.id === "satellite" ? satelliteBtnRef : layer.id === "terrain" ? terrainBtnRef : layer.id === "topo" ? descriptiveBtnRef : undefined}>
+              <button
+                onClick={() => {
+                  if (layer.locked) { onSignInPrompt?.(); return; }
+                  if (layer.id === "satellite") {
+                    setSatelliteExpanded(v => !v);
+                    setTerrainExpanded(false);
+                    setDescriptiveExpanded(false);
+                    return;
+                  }
+                  if (layer.id === "terrain") {
+                    setTerrainExpanded(v => !v);
+                    setSatelliteExpanded(false);
+                    setDescriptiveExpanded(false);
+                    return;
+                  }
+                  if (layer.id === "topo") {
+                    setDescriptiveExpanded(v => !v);
+                    setSatelliteExpanded(false);
+                    setTerrainExpanded(false);
+                    return;
+                  }
+                  onLayerChange(layer.id);
+                  setExpanded(false);
+                  setSatelliteExpanded(false);
+                  setTerrainExpanded(false);
+                  setDescriptiveExpanded(false);
+                }}
+                className={`flex flex-col items-center gap-1.5 rounded-lg transition-all ${
+                  layer.locked
+                    ? "opacity-50 cursor-not-allowed"
+                    : (layer.id === "satellite" ? isSatellite : layer.id === "terrain" ? isTerrain : layer.id === "topo" ? isDescriptive : activeLayer === layer.id)
+                      ? "cursor-pointer"
+                      : "cursor-pointer hover:ring-2 hover:ring-slate-300 dark:hover:ring-[#555] ring-offset-1 dark:ring-offset-[#2a2a2a]"
+                }`}
+                title={layer.locked ? "Sign in to unlock" : layer.id === "satellite" ? "Choose satellite provider" : layer.id === "terrain" ? "Choose terrain provider" : layer.id === "topo" ? "Choose descriptive style" : layer.label}
+              >
+                {layer.locked ? (
+                  <div className="w-16 h-16 rounded-lg bg-slate-200 dark:bg-zinc-700 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 dark:text-zinc-500">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <img
+                      src={layer.thumbnail}
+                      alt={layer.label}
+                      className="w-16 h-16 rounded-lg object-cover"
+                    />
+                    {(layer.id === "terrain" || layer.id === "satellite" || layer.id === "topo") && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className={`w-5 h-5 rounded-full bg-white/40 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center transition-transform duration-200 ${
+                          (layer.id === "terrain" ? terrainExpanded : layer.id === "satellite" ? satelliteExpanded : descriptiveExpanded) ? "rotate-180" : ""
+                        }`}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="black" className="dark:stroke-white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <span className={`text-[11px] font-medium pb-1 ${
+                  (layer.id === "satellite" ? isSatellite : layer.id === "terrain" ? isTerrain : layer.id === "topo" ? isDescriptive : activeLayer === layer.id)
+                    ? "text-blue-500"
+                    : "text-slate-600 dark:text-zinc-400"
+                }`}>
+                  {layer.label}
+                </span>
+              </button>
+            </div>
           ))}
         </div>
       </div>
-      {activeLayer === "azure" && (
+      {satelliteExpanded && expanded && (() => {
+        const rect = satelliteBtnRef.current?.getBoundingClientRect();
+        if (!rect) return null;
+        const isMobile = window.innerWidth < 768;
+        return (
+          <div
+            className={`fixed flex flex-col gap-1 bg-white/95 dark:bg-[#2a2a2a]/95 backdrop-blur-md rounded-lg border border-slate-200 dark:border-zinc-600 p-1.5 shadow-lg z-[60] min-w-[120px] ${isMobile ? 'animate-[dropright_150ms_ease-out]' : 'animate-[dropup_150ms_ease-out]'}`}
+            style={isMobile
+              ? { top: rect.top, left: rect.right + 4 }
+              : { bottom: window.innerHeight - rect.top + 4, left: rect.left + rect.width / 2, transform: "translateX(-50%)" }}
+          >
+            <button
+              onClick={() => { onLayerChange("satellite"); setExpanded(false); setSatelliteExpanded(false); }}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded text-[11px] font-medium cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-zinc-700/50 ${activeLayer === "satellite" ? "text-blue-500" : "text-slate-700 dark:text-zinc-200"}`}
+            >
+              <img src={thumbnails.satellite} alt="ESRI" className="w-8 h-8 rounded object-cover" />
+              <span>ESRI</span>
+            </button>
+            <button
+              onClick={() => {
+                if (azureLocked) { onSignInPrompt?.(); return; }
+                onLayerChange("satellite-azure");
+                setExpanded(false);
+                setSatelliteExpanded(false);
+              }}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded text-[11px] font-medium cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-zinc-700/50 ${activeLayer === "satellite-azure" ? "text-blue-500" : azureLocked ? "opacity-50" : "text-slate-700 dark:text-zinc-200"}`}
+            >
+              {azureLocked ? (
+                <div className="w-8 h-8 rounded bg-slate-200 dark:bg-zinc-700 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 dark:text-zinc-500"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                </div>
+              ) : (
+                <img src="/api/map/tile?tilesetId=microsoft.imagery&z=13&x=4093&y=2723" alt="Azure" className="w-8 h-8 rounded object-cover" />
+              )}
+              <span>Azure</span>
+            </button>
+          </div>
+        );
+      })()}
+      {terrainExpanded && expanded && (() => {
+        const rect = terrainBtnRef.current?.getBoundingClientRect();
+        if (!rect) return null;
+        const isMobile = window.innerWidth < 768;
+        return (
+          <div
+            className={`fixed flex flex-col gap-1 bg-white/95 dark:bg-[#2a2a2a]/95 backdrop-blur-md rounded-lg border border-slate-200 dark:border-zinc-600 p-1.5 shadow-lg z-[60] min-w-[120px] ${isMobile ? 'animate-[dropright_150ms_ease-out]' : 'animate-[dropup_150ms_ease-out]'}`}
+            style={isMobile
+              ? { top: rect.top, left: rect.right + 4 }
+              : { bottom: window.innerHeight - rect.top + 4, left: rect.left + rect.width / 2, transform: "translateX(-50%)" }}
+          >
+            <button
+              onClick={() => { onLayerChange("terrain"); setExpanded(false); setTerrainExpanded(false); }}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded text-[11px] font-medium cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-zinc-700/50 ${activeLayer === "terrain" ? "text-blue-500" : "text-slate-700 dark:text-zinc-200"}`}
+            >
+              <img src={thumbnails.terrain} alt="Carto" className="w-8 h-8 rounded object-cover" />
+              <span>Carto</span>
+            </button>
+            <button
+              onClick={() => {
+                if (azureLocked) { onSignInPrompt?.(); return; }
+                onLayerChange("azure");
+                setExpanded(false);
+                setTerrainExpanded(false);
+              }}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded text-[11px] font-medium cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-zinc-700/50 ${activeLayer === "azure" ? "text-blue-500" : azureLocked ? "opacity-50" : "text-slate-700 dark:text-zinc-200"}`}
+            >
+              {azureLocked ? (
+                <div className="w-8 h-8 rounded bg-slate-200 dark:bg-zinc-700 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 dark:text-zinc-500"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                </div>
+              ) : (
+                <img src="/api/map/tile?tilesetId=microsoft.base.road&z=13&x=4093&y=2723" alt="Azure Maps" className="w-8 h-8 rounded object-cover" />
+              )}
+              <span>Azure</span>
+            </button>
+          </div>
+        );
+      })()}
+      {descriptiveExpanded && expanded && (() => {
+        const rect = descriptiveBtnRef.current?.getBoundingClientRect();
+        if (!rect) return null;
+        const isMobile = window.innerWidth < 768;
+        return (
+          <div
+            className={`fixed flex flex-col gap-1 bg-white/95 dark:bg-[#2a2a2a]/95 backdrop-blur-md rounded-lg border border-slate-200 dark:border-zinc-600 p-1.5 shadow-lg z-[60] min-w-[120px] ${isMobile ? 'animate-[dropright_150ms_ease-out]' : 'animate-[dropup_150ms_ease-out]'}`}
+            style={isMobile
+              ? { top: rect.top, left: rect.right + 4 }
+              : { bottom: window.innerHeight - rect.top + 4, left: rect.left + rect.width / 2, transform: "translateX(-50%)" }}
+          >
+            <button
+              onClick={() => { onLayerChange("topo"); setExpanded(false); setDescriptiveExpanded(false); }}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded text-[11px] font-medium cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-zinc-700/50 ${activeLayer === "topo" ? "text-blue-500" : "text-slate-700 dark:text-zinc-200"}`}
+            >
+              <img src={thumbnails.topo} alt="Topo" className="w-8 h-8 rounded object-cover" />
+              <span>Topo</span>
+            </button>
+            <button
+              onClick={() => { onLayerChange("transport"); setExpanded(false); setDescriptiveExpanded(false); }}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded text-[11px] font-medium cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-zinc-700/50 ${activeLayer === "transport" ? "text-blue-500" : "text-slate-700 dark:text-zinc-200"}`}
+            >
+              <img src={thumbnails.transport} alt="Transport" className="w-8 h-8 rounded object-cover" />
+              <span>Transport</span>
+            </button>
+          </div>
+        );
+      })()}
+      {isAzure && (
         <div className="flex flex-col gap-1.5 self-center">
           <div className="relative">
             <button

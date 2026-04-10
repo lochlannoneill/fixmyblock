@@ -163,26 +163,26 @@ export default function MapView({
   }, []);
 
   useEffect(() => {
-    if (activeLayer !== "azure") return;
+    if (activeLayer !== "azure" && activeLayer !== "satellite-azure") return;
     const tilesetId = darkMode ? "microsoft.traffic.relative.dark" : "microsoft.traffic.relative.main";
     syncOverlay("azure-traffic", tilesetId, trafficOn);
   }, [trafficOn, activeLayer, darkMode, syncOverlay]);
 
   useEffect(() => {
-    if (activeLayer !== "azure") return;
+    if (activeLayer !== "azure" && activeLayer !== "satellite-azure") return;
     syncOverlay("azure-weather", "microsoft.weather.radar.main", weatherOn);
   }, [weatherOn, activeLayer, syncOverlay]);
 
   const INFRARED_PAINT = { "raster-opacity": 1, "raster-contrast": 0.3, "raster-brightness-min": 0.1 };
 
   useEffect(() => {
-    if (activeLayer !== "azure") return;
+    if (activeLayer !== "azure" && activeLayer !== "satellite-azure") return;
     syncOverlay("azure-infrared", "microsoft.weather.infrared.main", infraredOn, INFRARED_PAINT);
   }, [infraredOn, activeLayer, syncOverlay]);
 
   // Restore overlays after a style change (style.load destroys all sources/layers)
   const restoreAzureOverlays = useCallback(() => {
-    if (activeLayerRef.current !== "azure") return;
+    if (activeLayerRef.current !== "azure" && activeLayerRef.current !== "satellite-azure") return;
     const darkNow = lastDarkModeApplied.current;
     if (trafficOnRef.current) {
       syncOverlay("azure-traffic", darkNow ? "microsoft.traffic.relative.dark" : "microsoft.traffic.relative.main", true);
@@ -208,7 +208,7 @@ export default function MapView({
   const incidentAbort = useRef<AbortController | null>(null);
 
   const fetchIncidents = useCallback(async () => {
-    if (!map.current || !incidentsOn || activeLayerRef.current !== "azure") return;
+    if (!map.current || !incidentsOn || (activeLayerRef.current !== "azure" && activeLayerRef.current !== "satellite-azure")) return;
     const bounds = map.current.getBounds();
     const zoom = Math.round(map.current.getZoom());
     const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
@@ -290,7 +290,7 @@ export default function MapView({
 
   // Fetch incidents on toggle, and refetch on map move
   useEffect(() => {
-    if (!mapReady || activeLayer !== "azure") return;
+    if (!mapReady || (activeLayer !== "azure" && activeLayer !== "satellite-azure")) return;
     if (incidentsOn) {
       fetchIncidents();
       const handler = () => fetchIncidents();
@@ -394,7 +394,8 @@ export default function MapView({
     lastDarkModeApplied.current = darkMode;
 
     // Handle Azure Maps dark mode toggle
-    if (activeLayer === "azure") {
+    if (activeLayer === "azure" || activeLayer === "satellite-azure") {
+      if (activeLayer === "satellite-azure") return; // satellite imagery is the same in light/dark
       const tilesetId = darkMode ? "microsoft.base.darkgrey" : "microsoft.base.road";
       const azureStyle = {
         version: 8 as const,
@@ -1226,6 +1227,21 @@ export default function MapView({
           { id: "azure-maps-layer", type: "raster", source: "azure-maps", minzoom: 0, maxzoom: 22 },
         ],
       },
+      "satellite-azure": {
+        version: 8,
+        sources: {
+          "azure-maps": {
+            type: "raster",
+            tiles: [
+              `/api/map/tile?tilesetId=microsoft.imagery&z={z}&x={x}&y={y}`,
+            ],
+            tileSize: 256,
+          },
+        },
+        layers: [
+          { id: "azure-maps-layer", type: "raster", source: "azure-maps", minzoom: 0, maxzoom: 22 },
+        ],
+      },
     };
 
     const newStyle = styles[layer];
@@ -1238,7 +1254,8 @@ export default function MapView({
     }
 
     // Remove overlay layers — setStyle destroys them, but clear state when leaving Azure
-    if (layer !== "azure") {
+    const isNewAzure = layer === "azure" || layer === "satellite-azure";
+    if (!isNewAzure) {
       setTrafficOn(false);
       setWeatherOn(false);
       setInfraredOn(false);

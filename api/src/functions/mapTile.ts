@@ -25,6 +25,7 @@ async function mapTile(
     "microsoft.traffic.relative.dark",
     "microsoft.weather.radar.main",
     "microsoft.weather.infrared.main",
+    "microsoft.imagery",
   ];
   if (!allowedTilesets.includes(tilesetId)) {
     return { status: 400, jsonBody: { error: "Invalid tilesetId" } };
