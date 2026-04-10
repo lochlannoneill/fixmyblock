@@ -85,7 +85,11 @@ export default function RequestItem({ request: c, onSelect, selected, currentUse
           {c.userProfilePictureUrl ? <img src={c.userProfilePictureUrl} alt="" className="w-full h-full object-cover" /> : ((c.userName || "A")[0] ?? "A").toUpperCase()}
         </div>
         <div className="flex flex-col flex-1 min-w-0 leading-tight">
-          <span className="text-[13px] font-semibold text-slate-700 dark:text-zinc-300 truncate">{c.userName || "Anonymous"}</span>
+          <span className="text-[13px] font-semibold text-slate-700 dark:text-zinc-300 truncate flex items-center gap-1">
+            {c.userName || "Anonymous"}
+            {c.userRole === "admin" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#eab308" stroke="#eab308" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M2 4l3 12h14l3-12-5 4-5-6-5 6-3-4z"/><path d="M5 16h14v3H5z"/></svg>}
+            {c.userRole === "moderator" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
+          </span>
           <span className="text-[11px] font-semibold text-slate-400 dark:text-zinc-500">{timeSince}</span>
         </div>
         <div className="relative shrink-0" ref={statusRef}>

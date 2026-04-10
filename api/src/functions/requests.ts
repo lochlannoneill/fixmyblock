@@ -44,12 +44,14 @@ async function enrichWithUserProfiles(requests: RequestDoc[]) {
       ...r,
       userName: authorProfile?.displayName || r.userName || "Anonymous",
       userProfilePictureUrl: authorProfile?.profilePictureUrl,
+      userRole: authorProfile?.role,
       comments: (r.comments || []).map((c) => {
         const commentProfile = profileMap.get(c.userId);
         return {
           ...c,
           userName: commentProfile?.displayName || c.userName || "Anonymous",
           userProfilePictureUrl: commentProfile?.profilePictureUrl,
+          userRole: commentProfile?.role,
         };
       }),
     };

@@ -71,7 +71,11 @@ export default function CommentItem({ comment, replies, currentUserId, commentMe
           </button>
         </div>
         <div className="flex-1 min-w-0">
-          <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{comment.userName || "Anonymous"}</span>
+          <span className="font-medium text-slate-700 dark:text-zinc-300 truncate flex items-center gap-1">
+            {comment.userName || "Anonymous"}
+            {comment.userRole === "admin" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#eab308" stroke="#eab308" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M2 4l3 12h14l3-12-5 4-5-6-5 6-3-4z"/><path d="M5 16h14v3H5z"/></svg>}
+            {comment.userRole === "moderator" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
+          </span>
           <p className="text-slate-600 dark:text-zinc-400 mt-0.5">{comment.text}</p>
           <div className="flex items-center gap-2 mt-1.5">
             <span className="text-[10px] text-slate-400 dark:text-zinc-500">{getTimeSince(comment.createdAt)}</span>
@@ -121,7 +125,11 @@ export default function CommentItem({ comment, replies, currentUserId, commentMe
                     </button>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{reply.userName || "Anonymous"}</span>
+                    <span className="font-medium text-slate-700 dark:text-zinc-300 truncate flex items-center gap-1">
+                      {reply.userName || "Anonymous"}
+                      {reply.userRole === "admin" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#eab308" stroke="#eab308" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M2 4l3 12h14l3-12-5 4-5-6-5 6-3-4z"/><path d="M5 16h14v3H5z"/></svg>}
+                      {reply.userRole === "moderator" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
+                    </span>
                     <p className="text-slate-600 dark:text-zinc-400 mt-0.5">{formatCommentText(reply.text)}</p>
                     <div className="flex items-center gap-2 mt-1.5">
                       <span className="text-[10px] text-slate-400 dark:text-zinc-500">{getTimeSince(reply.createdAt)}</span>

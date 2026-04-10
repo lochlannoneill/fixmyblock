@@ -289,6 +289,7 @@ export async function getUserById(id: string): Promise<UserDoc | null> {
 export interface UserProfileSummary {
   displayName: string;
   profilePictureUrl?: string;
+  role?: string;
 }
 
 export async function getUserProfileSummaries(userIds: string[]): Promise<Map<string, UserProfileSummary>> {
@@ -310,14 +311,15 @@ export async function getUserProfileSummaries(userIds: string[]): Promise<Map<st
   if (uncached.length > 0) {
     const params = uncached.map((_, i) => `@id${i}`).join(",");
     const query = {
-      query: `SELECT c.id, c.displayName, c.profilePictureUrl FROM c WHERE c.id IN (${params})`,
+      query: `SELECT c.id, c.displayName, c.profilePictureUrl, c.role FROM c WHERE c.id IN (${params})`,
       parameters: uncached.map((id, i) => ({ name: `@id${i}`, value: id })),
     };
-    const { resources } = await getUsersContainer().items.query<{ id: string; displayName?: string; profilePictureUrl?: string }>(query).fetchAll();
+    const { resources } = await getUsersContainer().items.query<{ id: string; displayName?: string; profilePictureUrl?: string; role?: string }>(query).fetchAll();
     for (const r of resources) {
       const summary: UserProfileSummary = {
         displayName: r.displayName || "Anonymous",
         profilePictureUrl: r.profilePictureUrl,
+        role: r.role,
       };
       userProfileCache.set(r.id, summary);
       result.set(r.id, summary);

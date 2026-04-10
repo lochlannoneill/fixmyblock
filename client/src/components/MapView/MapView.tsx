@@ -787,6 +787,7 @@ export default function MapView({
       const userName = (req.userName || "Anonymous").split(" ")[0];
       const userInitial = (userName[0] ?? "A").toUpperCase();
       const userPicUrl = (req as any).userProfilePictureUrl as string | undefined;
+      const userRole = (req as any).userRole as string | undefined;
       const avatarContent = userPicUrl
         ? `<img src="${userPicUrl.replace(/"/g, "&quot;")}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`
         : userInitial;
@@ -806,7 +807,7 @@ export default function MapView({
           <div style="display:flex;align-items:center;gap:${isMobile ? '8px' : '12px'};margin-bottom:12px">
             <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#ec4899,#a855f7,#f97316);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0;overflow:hidden">${avatarContent}</div>
             <div style="display:flex;flex-direction:column;flex:1;min-width:0;line-height:1.2">
-              <span class="popup-title" style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${userName}</span>
+              <span class="popup-title" style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:3px">${userName}${userRole === "admin" ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#eab308" stroke="#eab308" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4l3 12h14l3-12-5 4-5-6-5 6-3-4z"/><path d="M5 16h14v3H5z"/></svg>' : userRole === "moderator" ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' : ''}</span>
               <span style="font-size:11px;font-weight:600;color:var(--text-muted)">${timeSince}</span>
             </div>
             <div style="display:flex;align-items:center;gap:${isMobile ? '0' : '2px'};flex-shrink:0;margin-right:-6px">
