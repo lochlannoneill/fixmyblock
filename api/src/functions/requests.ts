@@ -22,6 +22,12 @@ import {
 import { uploadImage } from "../storage.js";
 import { parseMultipart } from "../multipart.js";
 
+// ── Server-side posts cache (invalidated on mutations) ──
+let postsCache: { data: unknown[]; expiresAt: number } | null = null;
+const POSTS_CACHE_TTL = 15_000; // 15 seconds
+
+function invalidatePostsCache() { postsCache = null; }
+
 /** Resolve current userName and profilePictureUrl from user profiles for all requests and comments. */
 async function enrichWithUserProfiles(requests: RequestDoc[]) {
   const userIds: string[] = [];
@@ -56,9 +62,21 @@ async function listRequests(
   _ctx: InvocationContext
 ): Promise<HttpResponseInit> {
   try {
+    if (postsCache && Date.now() < postsCache.expiresAt) {
+      return {
+        status: 200,
+        jsonBody: postsCache.data,
+        headers: { "Cache-Control": "public, max-age=10, stale-while-revalidate=30" },
+      };
+    }
     const requests = await getAllRequests();
     const enriched = await enrichWithUserProfiles(requests);
-    return { status: 200, jsonBody: enriched };
+    postsCache = { data: enriched, expiresAt: Date.now() + POSTS_CACHE_TTL };
+    return {
+      status: 200,
+      jsonBody: enriched,
+      headers: { "Cache-Control": "public, max-age=10, stale-while-revalidate=30" },
+    };
   } catch (err) {
     return { status: 500, jsonBody: { error: "Failed to fetch requests" } };
   }
@@ -76,7 +94,11 @@ async function getRequest(
   if (!request) return { status: 404, jsonBody: { error: "Not found" } };
 
   const [enriched] = await enrichWithUserProfiles([request]);
-  return { status: 200, jsonBody: enriched };
+  return {
+    status: 200,
+    jsonBody: enriched,
+    headers: { "Cache-Control": "private, max-age=5" },
+  };
 }
 
 // POST /api/posts
@@ -163,6 +185,7 @@ async function postRequest(
     };
 
     const created = await createRequestDoc(doc);
+    invalidatePostsCache();
     return { status: 201, jsonBody: created };
   } catch (err) {
     ctx.log("Error creating request:", err);
@@ -193,6 +216,7 @@ async function like(
   const updated = await toggleLike(id, userId);
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
+  invalidatePostsCache();
   return { status: 200, jsonBody: updated };
 }
 
@@ -239,6 +263,7 @@ async function postComment(
   const updated = await addCommentDoc(id, comment);
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
+  invalidatePostsCache();
   return { status: 201, jsonBody: updated };
 }
 
@@ -253,6 +278,7 @@ async function removeRequest(
   const deleted = await deleteRequestDoc(id);
   if (!deleted) return { status: 404, jsonBody: { error: "Not found" } };
 
+  invalidatePostsCache();
   return { status: 204 };
 }
 
@@ -279,6 +305,7 @@ async function saveRequest(
   const updated = await toggleSave(id, userId);
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
+  invalidatePostsCache();
   return { status: 200, jsonBody: updated };
 }
 
@@ -356,6 +383,7 @@ async function likeComment(
   const updated = await toggleCommentLike(id, commentId, userId);
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
+  invalidatePostsCache();
   return { status: 200, jsonBody: updated };
 }
 
@@ -413,6 +441,7 @@ async function patchStatus(
   const updated = await updateRequestStatus(id, newStatus, userId, userName, body.note);
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
+  invalidatePostsCache();
   return { status: 200, jsonBody: updated };
 }
 

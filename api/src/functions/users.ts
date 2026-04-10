@@ -58,6 +58,11 @@ async function upsertMe(
 
   const existing = await getUserById(auth.userId);
 
+  // If user already exists and nothing meaningful changed, return without writing
+  if (existing && existing.identityProvider === auth.identityProvider) {
+    return { status: 200, jsonBody: existing };
+  }
+
   const doc: UserDoc = existing
     ? {
         ...existing,
@@ -243,7 +248,11 @@ async function listUsers(
   }
 
   const users = await getAllUsers();
-  return { status: 200, jsonBody: users };
+  return {
+    status: 200,
+    jsonBody: users,
+    headers: { "Cache-Control": "private, max-age=30" },
+  };
 }
 
 // PATCH /api/users/{id}/role — admin only: change a user's role

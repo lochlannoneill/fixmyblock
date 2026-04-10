@@ -41,7 +41,7 @@ async function mapTile(
     body: new Uint8Array(buffer),
     headers: {
       "Content-Type": response.headers.get("Content-Type") || "image/png",
-      "Cache-Control": "public, max-age=86400",
+      "Cache-Control": "public, max-age=604800, immutable",
     },
   };
 }

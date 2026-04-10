@@ -5,6 +5,31 @@ let database: Database;
 let container: Container;
 let usersContainer: Container;
 
+// ── TTL Cache utility ──
+interface CacheEntry<T> { data: T; expiresAt: number; }
+
+class TtlCache<T> {
+  private store = new Map<string, CacheEntry<T>>();
+  constructor(private ttlMs: number) {}
+  get(key: string): T | undefined {
+    const entry = this.store.get(key);
+    if (!entry) return undefined;
+    if (Date.now() > entry.expiresAt) { this.store.delete(key); return undefined; }
+    return entry.data;
+  }
+  set(key: string, data: T): void {
+    this.store.set(key, { data, expiresAt: Date.now() + this.ttlMs });
+  }
+  invalidate(key: string): void { this.store.delete(key); }
+  clear(): void { this.store.clear(); }
+}
+
+// Caches (module-level, persist across invocations on same Azure Functions instance)
+const userProfileCache = new TtlCache<UserProfileSummary>(5 * 60 * 1000);   // 5 min
+const userDocCache = new TtlCache<UserDoc>(60 * 1000);                       // 60s
+const allUsersCache = new TtlCache<UserDoc[]>(60 * 1000);                    // 60s
+const ALL_USERS_KEY = "__all__";
+
 function getClient(): CosmosClient {
   if (!client) {
     const connectionString = process.env.COSMOS_CONNECTION_STRING;
@@ -250,8 +275,11 @@ export interface UserDoc {
 }
 
 export async function getUserById(id: string): Promise<UserDoc | null> {
+  const cached = userDocCache.get(id);
+  if (cached) return cached;
   try {
     const { resource } = await getUsersContainer().item(id, id).read<UserDoc>();
+    if (resource) userDocCache.set(id, resource);
     return resource ?? null;
   } catch {
     return null;
@@ -264,26 +292,51 @@ export interface UserProfileSummary {
 }
 
 export async function getUserProfileSummaries(userIds: string[]): Promise<Map<string, UserProfileSummary>> {
-  const map = new Map<string, UserProfileSummary>();
-  if (userIds.length === 0) return map;
+  const result = new Map<string, UserProfileSummary>();
+  if (userIds.length === 0) return result;
+
   const unique = [...new Set(userIds)];
-  const params = unique.map((_, i) => `@id${i}`).join(",");
-  const query = {
-    query: `SELECT c.id, c.displayName, c.profilePictureUrl FROM c WHERE c.id IN (${params})`,
-    parameters: unique.map((id, i) => ({ name: `@id${i}`, value: id })),
-  };
-  const { resources } = await getUsersContainer().items.query<{ id: string; displayName?: string; profilePictureUrl?: string }>(query).fetchAll();
-  for (const r of resources) {
-    map.set(r.id, {
-      displayName: r.displayName || "Anonymous",
-      profilePictureUrl: r.profilePictureUrl,
-    });
+  const uncached: string[] = [];
+
+  for (const id of unique) {
+    const cached = userProfileCache.get(id);
+    if (cached) {
+      result.set(id, cached);
+    } else {
+      uncached.push(id);
+    }
   }
-  return map;
+
+  if (uncached.length > 0) {
+    const params = uncached.map((_, i) => `@id${i}`).join(",");
+    const query = {
+      query: `SELECT c.id, c.displayName, c.profilePictureUrl FROM c WHERE c.id IN (${params})`,
+      parameters: uncached.map((id, i) => ({ name: `@id${i}`, value: id })),
+    };
+    const { resources } = await getUsersContainer().items.query<{ id: string; displayName?: string; profilePictureUrl?: string }>(query).fetchAll();
+    for (const r of resources) {
+      const summary: UserProfileSummary = {
+        displayName: r.displayName || "Anonymous",
+        profilePictureUrl: r.profilePictureUrl,
+      };
+      userProfileCache.set(r.id, summary);
+      result.set(r.id, summary);
+    }
+  }
+
+  return result;
+}
+
+/** Invalidate all user-related caches for a given user (call after profile/avatar changes). */
+export function invalidateUserCaches(userId: string): void {
+  userProfileCache.invalidate(userId);
+  userDocCache.invalidate(userId);
+  allUsersCache.clear();
 }
 
 export async function upsertUser(doc: UserDoc): Promise<UserDoc> {
   const { resource } = await getUsersContainer().items.upsert<UserDoc>(doc);
+  invalidateUserCaches(doc.id);
   return resource!;
 }
 
@@ -295,13 +348,17 @@ export async function updateUserSettings(id: string, settings: UserSettings): Pr
   const { resource } = await getUsersContainer()
     .item(id, id)
     .replace<UserDoc>(existing);
+  invalidateUserCaches(id);
   return resource ?? null;
 }
 
 export async function getAllUsers(): Promise<UserDoc[]> {
+  const cached = allUsersCache.get(ALL_USERS_KEY);
+  if (cached) return cached;
   const { resources } = await getUsersContainer()
     .items.query<UserDoc>("SELECT * FROM c ORDER BY c.createdAt DESC")
     .fetchAll();
+  allUsersCache.set(ALL_USERS_KEY, resources);
   return resources;
 }
 
@@ -313,6 +370,7 @@ export async function updateUserRole(id: string, role: UserRole): Promise<UserDo
   const { resource } = await getUsersContainer()
     .item(id, id)
     .replace<UserDoc>(existing);
+  invalidateUserCaches(id);
   return resource ?? null;
 }
 

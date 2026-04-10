@@ -10,12 +10,32 @@ export interface AuthUser {
 }
 
 const DEV_STORAGE_KEY = "fixmyblock_dev_user";
+const PROFILE_CACHE_KEY = "fixmyblock_profile_cache";
 const isMockDev = import.meta.env.DEV && !window.location.port.startsWith("4280");
+
+function getCachedProfile(): UserProfile | null {
+  try {
+    const raw = sessionStorage.getItem(PROFILE_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function setCachedProfile(profile: UserProfile | null) {
+  try {
+    if (profile) sessionStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
+    else sessionStorage.removeItem(PROFILE_CACHE_KEY);
+  } catch { /* ignore */ }
+}
 
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfileState] = useState<UserProfile | null>(getCachedProfile);
   const [loading, setLoading] = useState(true);
+
+  const setProfile = useCallback((p: UserProfile | null) => {
+    setProfileState(p);
+    setCachedProfile(p);
+  }, []);
 
   useEffect(() => {
     if (isMockDev) {
@@ -23,9 +43,10 @@ export function useAuth() {
       if (stored) {
         const parsed = JSON.parse(stored) as AuthUser;
         setUser(parsed);
-        upsertMe()
+        // Fetch first (read-only, cheap), upsert only if fetch fails (new user)
+        fetchMe()
           .then(setProfile)
-          .catch(() => fetchMe().then(setProfile).catch(() => { /* no profile yet */ }))
+          .catch(() => upsertMe().then(setProfile).catch(() => { /* no profile yet */ }))
           .finally(() => setLoading(false));
       } else {
         setLoading(false);
@@ -39,10 +60,11 @@ export function useAuth() {
         setUser(principal);
         if (principal) {
           try {
-            const p = await upsertMe();
+            const p = await fetchMe();
             setProfile(p);
           } catch {
-            try { setProfile(await fetchMe()); } catch { /* ignore */ }
+            // User doesn't exist yet — upsert to create
+            try { setProfile(await upsertMe()); } catch { /* ignore */ }
           }
         }
       })
@@ -61,7 +83,7 @@ export function useAuth() {
       };
       localStorage.setItem(DEV_STORAGE_KEY, JSON.stringify(mockUser));
       setUser(mockUser);
-      upsertMe().then(setProfile).catch(() => { /* ignore */ });
+      fetchMe().then(setProfile).catch(() => upsertMe().then(setProfile).catch(() => { /* ignore */ }));
       return;
     }
     const redirect = encodeURIComponent(window.location.pathname);
@@ -75,8 +97,9 @@ export function useAuth() {
       setProfile(null);
       return;
     }
+    setCachedProfile(null);
     window.location.href = "/.auth/logout?post_logout_redirect_uri=/";
-  }, []);
+  }, [setProfile]);
 
   return { user, profile, loading, login, logout, setProfile };
 }

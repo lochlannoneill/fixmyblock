@@ -7,12 +7,29 @@ export function useRequests() {
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
 
-  useEffect(() => {
+  const refresh = useCallback(() => {
     fetchRequests()
       .then(setRequests)
-      .catch(() => console.warn("API not connected. Running in demo mode."))
-      .finally(() => setLoading(false));
+      .catch(() => console.warn("API not connected. Running in demo mode."));
   }, []);
+
+  useEffect(() => {
+    refresh();
+    setLoading(false);
+  }, [refresh]);
+
+  // Refetch when the tab regains focus (stale-while-revalidate pattern)
+  useEffect(() => {
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [refresh]);
+
+  // Periodic background refresh every 30s
+  useEffect(() => {
+    const interval = setInterval(refresh, 30_000);
+    return () => clearInterval(interval);
+  }, [refresh]);
 
   const selectRequest = useCallback((c: Request | null) => {
     setSelectedRequest(c);

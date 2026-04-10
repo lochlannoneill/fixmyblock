@@ -36,8 +36,13 @@ export async function uploadImage(
   const blobName = `${folder}/${uuidv4()}.${ext}`;
   const blockBlobClient = client.getBlockBlobClient(blobName);
 
+  const isProfile = folder === "profiles";
+  const cacheControl = isProfile
+    ? "public, max-age=3600"
+    : "public, max-age=31536000, immutable";
+
   await blockBlobClient.upload(data, data.length, {
-    blobHTTPHeaders: { blobContentType: contentType },
+    blobHTTPHeaders: { blobContentType: contentType, blobCacheControl: cacheControl },
   });
 
   return blockBlobClient.url;
