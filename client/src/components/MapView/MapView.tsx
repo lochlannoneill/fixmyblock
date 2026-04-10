@@ -506,9 +506,34 @@ export default function MapView({
     const handler = () => { updateMarkers(); updateStatusCounts(); };
     m.on("zoomend", handler);
     m.on("moveend", handler);
+
+    // Lightweight: update visible IDs + status counts continuously during zoom/pan (throttled)
+    let rafId: number | null = null;
+    const liveHandler = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        if (!map.current) return;
+        const bounds = map.current.getBounds();
+        const visibleIds = new Set<string>();
+        const counts: Record<RequestStatus, number> = { open: 0, "under-review": 0, "in-progress": 0, resolved: 0 };
+        for (const req of requestsRef.current) {
+          if (bounds.contains([req.longitude, req.latitude])) {
+            visibleIds.add(req.id);
+            counts[req.status as RequestStatus]++;
+          }
+        }
+        setStatusCounts(counts);
+        onVisibleRequestIdsRef.current?.(visibleIds);
+      });
+    };
+    m.on("move", liveHandler);
+
     return () => {
       m.off("zoomend", handler);
       m.off("moveend", handler);
+      m.off("move", liveHandler);
+      if (rafId !== null) cancelAnimationFrame(rafId);
     };
   }, [mapReady, updateMarkers, updateStatusCounts]);
 
