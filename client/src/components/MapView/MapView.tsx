@@ -29,6 +29,7 @@ interface MapViewProps {
   onDelete?: (id: string) => void;
   homeAddress?: HomeAddress | null;
   mobileSlide?: "top" | "middle" | "bottom";
+  onVisibleRequestIds?: (ids: Set<string>) => void;
 }
 
 export default function MapView({
@@ -53,6 +54,7 @@ export default function MapView({
   onDelete,
   homeAddress,
   mobileSlide,
+  onVisibleRequestIds,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -472,17 +474,23 @@ export default function MapView({
     }
   }, [mapReady, onSelectRequest]);
 
+  const onVisibleRequestIdsRef = useRef(onVisibleRequestIds);
+  onVisibleRequestIdsRef.current = onVisibleRequestIds;
+
   // Compute visible status counts
   const updateStatusCounts = useCallback(() => {
     if (!map.current) return;
     const bounds = map.current.getBounds();
     const counts: Record<RequestStatus, number> = { open: 0, "under-review": 0, "in-progress": 0, resolved: 0 };
+    const visibleIds = new Set<string>();
     for (const req of requestsRef.current) {
       if (bounds.contains([req.longitude, req.latitude])) {
         counts[req.status]++;
+        visibleIds.add(req.id);
       }
     }
     setStatusCounts(counts);
+    onVisibleRequestIdsRef.current?.(visibleIds);
   }, []);
 
   // Sync markers when requests change

@@ -72,6 +72,7 @@ export default function App() {
 
   const userLocationRef = useRef<{ lng: number; lat: number } | null>(null);
   const [userLocation, setUserLocation] = useState<{ lng: number; lat: number } | null>(null);
+  const [visibleRequestIds, setVisibleRequestIds] = useState<Set<string> | null>(null);
   const touchStartY = useRef<number | null>(null);
   const isDragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -368,6 +369,7 @@ export default function App() {
               loading={loading}
               currentUserId={user?.userId}
               userLocation={userLocation}
+              visibleRequestIds={visibleRequestIds}
               onNewRequest={handleStartRequest}
               showingForm={showForm}
               onSelectRequest={handleSelectRequest}
@@ -463,6 +465,7 @@ export default function App() {
             onDelete={(id: string) => { remove(id); }}
             homeAddress={profile?.homeAddress}
             mobileSlide={mobileSlide}
+            onVisibleRequestIds={setVisibleRequestIds}
           />
         </main>
       </div>

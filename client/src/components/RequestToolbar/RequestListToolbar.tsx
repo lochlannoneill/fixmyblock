@@ -6,6 +6,7 @@ import { CATEGORY_LABELS } from "../../types/request";
 import RequestList from "../RequestList";
 
 type SortBy = "newest" | "oldest" | "likes" | "comments" | "nearest";
+type Scope = "in-view" | "all";
 type OpenDropdown = "category" | "status" | "sort" | null;
 
 const STATUS_LABELS: Record<RequestStatus, string> = { open: "Open", "under-review": "Under Review", "in-progress": "In Progress", resolved: "Resolved" };
@@ -31,6 +32,7 @@ interface RequestListToolbarProps {
   selectedId: string | null;
   isAdmin?: boolean;
   onUpdateStatus?: (id: string, status: RequestStatus, note?: string) => void;
+  visibleRequestIds?: Set<string> | null;
 }
 
 export default function RequestListToolbar({
@@ -42,7 +44,9 @@ export default function RequestListToolbar({
   selectedId,
   isAdmin,
   onUpdateStatus,
+  visibleRequestIds,
 }: RequestListToolbarProps) {  const [activeTab, setActiveTab] = useState<"active" | "resolved">("active");  const [searchQuery, setSearchQuery] = useState("");
+  const [scope, setScope] = useState<Scope>("in-view");
   const [filterCategory, setFilterCategory] = useState<RequestCategory | "">("");
   const [filterStatus, setFilterStatus] = useState<RequestStatus | "">("");
   const [sortBy, setSortBy] = useState<SortBy>("nearest");
@@ -76,6 +80,7 @@ export default function RequestListToolbar({
 
   const filteredSorted = useMemo(() => {
     const filtered = requests.filter((c) => {
+      if (scope === "in-view" && visibleRequestIds && !visibleRequestIds.has(c.id)) return false;
       if (filterCategory && c.category !== filterCategory) return false;
       if (filterStatus && c.status !== filterStatus) return false;
       if (searchQuery) {
@@ -102,7 +107,7 @@ export default function RequestListToolbar({
       }
       return (b.likers || []).length - (a.likers || []).length;
     });
-  }, [requests, filterCategory, filterStatus, sortBy, searchQuery, userLocation]);
+  }, [requests, filterCategory, filterStatus, sortBy, searchQuery, userLocation, visibleRequestIds, scope]);
 
   const activeRequests = useMemo(() => filteredSorted.filter((r) => r.status !== "resolved"), [filteredSorted]);
   const resolvedRequests = useMemo(() => filteredSorted.filter((r) => r.status === "resolved"), [filteredSorted]);
@@ -165,6 +170,21 @@ export default function RequestListToolbar({
             </button>
           )}
         </div>
+      </div>
+      <div className="flex gap-1 px-3 pt-2">
+        {(["in-view", "all"] as Scope[]).map((s) => (
+          <button
+            key={s}
+            onClick={() => setScope(s)}
+            className={`flex-1 text-[12px] font-medium py-1.5 rounded-md cursor-pointer transition-colors ${
+              scope === s
+                ? "bg-blue-500 text-white shadow-sm"
+                : "bg-white dark:bg-[#2a2a2a] text-slate-500 dark:text-[#8c8c96] border border-gray-300 dark:border-zinc-700 hover:text-blue-500 hover:border-blue-500"
+            }`}
+          >
+            {s === "in-view" ? "In View" : "All"}
+          </button>
+        ))}
       </div>
       <div className="flex flex-col px-3 py-2">
         <div className="flex gap-1.5 justify-between">
