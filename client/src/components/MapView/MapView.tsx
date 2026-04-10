@@ -82,17 +82,31 @@ export default function MapView({
 
   const add3dBuildings = useCallback(() => {
     if (!map.current) return;
-    if (activeLayerRef.current !== "terrain") return;
+    const layer = activeLayerRef.current;
+    if (layer !== "terrain" && layer !== "azure") return;
     if (map.current.getLayer("3d-buildings")) return; // already added
-    const layers = map.current.getStyle().layers;
-    const sources = map.current.getStyle().sources;
-    if (!layers || !(sources["openmaptiles"] || sources["carto"])) return;
-    const sourceId = sources["openmaptiles"] ? "openmaptiles" : "carto";
-    for (const l of layers) {
-      if ((l as Record<string, unknown>)["source-layer"] === "building" && (l.type === "fill" || l.type === "line")) {
-        map.current.setLayoutProperty(l.id, "visibility", "none");
+    const style = map.current.getStyle();
+    const layers = style.layers;
+    const sources = style.sources;
+    if (!layers) return;
+
+    // For raster-only styles (azure), inject an OpenMapTiles vector source for building geometry
+    let sourceId = sources["openmaptiles"] ? "openmaptiles" : sources["carto"] ? "carto" : null;
+    if (!sourceId) {
+      map.current.addSource("openmaptiles", {
+        type: "vector",
+        url: "https://tiles.stadiamaps.com/data/openmaptiles.json",
+      });
+      sourceId = "openmaptiles";
+    } else {
+      // Hide flat building layers from vector styles so 3D replaces them
+      for (const l of layers) {
+        if ((l as Record<string, unknown>)["source-layer"] === "building" && (l.type === "fill" || l.type === "line")) {
+          map.current.setLayoutProperty(l.id, "visibility", "none");
+        }
       }
     }
+
     const labelLayer = layers.find(
       (l) => l.type === "symbol" && l.layout && "text-field" in l.layout
     );
@@ -221,6 +235,7 @@ export default function MapView({
         ],
       };
       map.current.setStyle(azureStyle);
+      map.current.once("style.load", add3dBuildings);
       return;
     }
 
