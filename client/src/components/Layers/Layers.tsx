@@ -35,9 +35,13 @@ interface LayersProps {
   onSignInPrompt?: () => void;
   mobileSlide?: "top" | "middle" | "bottom";
   sidebarOpen?: boolean;
+  trafficOn?: boolean;
+  weatherOn?: boolean;
+  onToggleTraffic?: () => void;
+  onToggleWeather?: () => void;
 }
 
-export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedIn, onSignInPrompt, mobileSlide, sidebarOpen }: LayersProps) {
+export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedIn, onSignInPrompt, mobileSlide, sidebarOpen, trafficOn, weatherOn, onToggleTraffic, onToggleWeather }: LayersProps) {
   const [expanded, setExpanded] = useState(false);
   const thumbnails = darkMode ? LAYER_THUMBNAILS_DARK : LAYER_THUMBNAILS_LIGHT;
   const azureLocked = !isSignedIn;
@@ -133,6 +137,32 @@ export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedI
           ))}
         </div>
       </div>
+      {activeLayer === "azure" && (
+        <div className="flex flex-col gap-1.5 self-center">
+          <button
+            onClick={onToggleTraffic}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold shadow-md backdrop-blur-md transition-all duration-200 cursor-pointer border ${
+              trafficOn
+                ? "bg-blue-500/90 text-white border-blue-400"
+                : "bg-white/70 dark:bg-black/40 text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-zinc-600 hover:bg-white/90 dark:hover:bg-black/60"
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            Traffic
+          </button>
+          <button
+            onClick={onToggleWeather}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold shadow-md backdrop-blur-md transition-all duration-200 cursor-pointer border ${
+              weatherOn
+                ? "bg-blue-500/90 text-white border-blue-400"
+                : "bg-white/70 dark:bg-black/40 text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-zinc-600 hover:bg-white/90 dark:hover:bg-black/60"
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/><path d="m9.2 22 3-7H8l4-7"/></svg>
+            Weather
+          </button>
+        </div>
+      )}
     </div>
   );
 }

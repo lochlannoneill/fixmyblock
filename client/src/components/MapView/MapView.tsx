@@ -79,6 +79,12 @@ export default function MapView({
   const activeLayerRef = useRef<MapLayer>("terrain");
   const [mapFading, setMapFading] = useState(false);
   const [statusCounts, setStatusCounts] = useState<Record<RequestStatus, number>>({ open: 0, "under-review": 0, "in-progress": 0, resolved: 0 });
+  const [trafficOn, setTrafficOn] = useState(false);
+  const [weatherOn, setWeatherOn] = useState(false);
+  const trafficOnRef = useRef(false);
+  const weatherOnRef = useRef(false);
+  useEffect(() => { trafficOnRef.current = trafficOn; }, [trafficOn]);
+  useEffect(() => { weatherOnRef.current = weatherOn; }, [weatherOn]);
 
   const add3dBuildings = useCallback(() => {
     if (!map.current) return;
@@ -127,6 +133,50 @@ export default function MapView({
       labelLayer?.id
     );
   }, []);
+
+  // Manage Azure Maps overlay layers (traffic / weather)
+  const syncOverlay = useCallback((id: string, tilesetId: string, on: boolean) => {
+    if (!map.current || !map.current.isStyleLoaded()) return;
+    const sourceId = `${id}-source`;
+    if (on) {
+      if (!map.current.getSource(sourceId)) {
+        map.current.addSource(sourceId, {
+          type: "raster",
+          tiles: [`/api/map/tile?tilesetId=${tilesetId}&z={z}&x={x}&y={y}`],
+          tileSize: 256,
+        });
+      }
+      if (!map.current.getLayer(id)) {
+        map.current.addLayer({ id, type: "raster", source: sourceId, paint: { "raster-opacity": 0.7 } });
+      }
+    } else {
+      if (map.current.getLayer(id)) map.current.removeLayer(id);
+      if (map.current.getSource(sourceId)) map.current.removeSource(sourceId);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeLayer !== "azure") return;
+    const tilesetId = darkMode ? "microsoft.traffic.relative.dark" : "microsoft.traffic.relative.main";
+    syncOverlay("azure-traffic", tilesetId, trafficOn);
+  }, [trafficOn, activeLayer, darkMode, syncOverlay]);
+
+  useEffect(() => {
+    if (activeLayer !== "azure") return;
+    syncOverlay("azure-weather", "microsoft.weather.radar.main", weatherOn);
+  }, [weatherOn, activeLayer, syncOverlay]);
+
+  // Restore overlays after a style change (style.load destroys all sources/layers)
+  const restoreAzureOverlays = useCallback(() => {
+    if (activeLayerRef.current !== "azure") return;
+    const darkNow = lastDarkModeApplied.current;
+    if (trafficOnRef.current) {
+      syncOverlay("azure-traffic", darkNow ? "microsoft.traffic.relative.dark" : "microsoft.traffic.relative.main", true);
+    }
+    if (weatherOnRef.current) {
+      syncOverlay("azure-weather", "microsoft.weather.radar.main", true);
+    }
+  }, [syncOverlay]);
 
   // Keep refs in sync so the map click handler always has latest values
   useEffect(() => { onMapClickRef.current = onMapClick; }, [onMapClick]);
@@ -235,7 +285,7 @@ export default function MapView({
         ],
       };
       map.current.setStyle(azureStyle);
-      map.current.once("style.load", add3dBuildings);
+      map.current.once("style.load", () => { add3dBuildings(); restoreAzureOverlays(); });
       return;
     }
 
@@ -253,7 +303,7 @@ export default function MapView({
       add3dBuildings();
       setTimeout(() => setMapFading(false), 50);
     });
-  }, [darkMode, mapReady, activeLayer, add3dBuildings]);
+  }, [darkMode, mapReady, activeLayer, add3dBuildings, restoreAzureOverlays]);
 
   // Sync markers with requests (with clustering)
   const updateMarkers = useCallback(() => {
@@ -1060,10 +1110,20 @@ export default function MapView({
       map.current.removeLayer("3d-buildings");
     }
 
+    // Remove overlay layers — setStyle destroys them, but clear state when leaving Azure
+    if (layer !== "azure") {
+      setTrafficOn(false);
+      setWeatherOn(false);
+    }
+
     map.current.setStyle(newStyle as string);
 
-    // Always listen for style.load, and also try immediately (for same-style cases)
-    map.current.once("style.load", add3dBuildings);
+    // After style loads, restore 3D buildings and Azure overlays
+    const onStyleLoad = () => {
+      add3dBuildings();
+      restoreAzureOverlays();
+    };
+    map.current.once("style.load", onStyleLoad);
     // Defer to let MapLibre process the setStyle — if style didn't change, style.load won't fire
     setTimeout(add3dBuildings, 100);
 
@@ -1072,7 +1132,7 @@ export default function MapView({
     } else if (map.current.getPitch() === 0) {
       map.current.easeTo({ pitch: 45, bearing: -17.6, duration: 500 });
     }
-  }, [darkMode]);
+  }, [darkMode, restoreAzureOverlays]);
 
   return (
     <div style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}>
@@ -1113,7 +1173,7 @@ export default function MapView({
           </div>
         );
       })()}
-      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} isSignedIn={!!currentUserId} onSignInPrompt={onSignInPrompt} mobileSlide={mobileSlide} sidebarOpen={mobileSlide !== "bottom"} />
+      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} isSignedIn={!!currentUserId} onSignInPrompt={onSignInPrompt} mobileSlide={mobileSlide} sidebarOpen={mobileSlide !== "bottom"} trafficOn={trafficOn} weatherOn={weatherOn} onToggleTraffic={() => setTrafficOn(v => !v)} onToggleWeather={() => setWeatherOn(v => !v)} />
     </div>
   );
 }
