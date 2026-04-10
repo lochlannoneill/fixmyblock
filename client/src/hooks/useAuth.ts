@@ -93,8 +93,7 @@ export function useAuth() {
   const logout = useCallback(() => {
     if (isMockDev) {
       localStorage.removeItem(DEV_STORAGE_KEY);
-      setUser(null);
-      setProfile(null);
+      window.location.reload();
       return;
     }
     setCachedProfile(null);
