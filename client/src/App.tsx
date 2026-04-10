@@ -302,10 +302,10 @@ export default function App() {
               <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-zinc-600" />
             </div>
           </div>
-          <aside className={`sidebar flex-1 overflow-y-auto bg-slate-50 dark:bg-[#1e1e1e] transition-all duration-300 md:border-r md:border-slate-200 md:dark:border-[#2a2a2a] ${
+          <aside className={`sidebar flex-1 overflow-y-auto bg-slate-50 dark:bg-[#1e1e1e] md:absolute md:left-0 md:top-0 md:bottom-0 md:z-30 md:border-r md:border-slate-200 md:dark:border-[#2a2a2a] md:w-[440px] md:transition-transform md:duration-300 md:ease-in-out ${
             mobileSlide === "bottom"
-              ? "md:w-0 md:min-w-0 md:max-w-0 md:flex-none md:overflow-hidden md:border-r-0"
-              : "md:w-[440px] md:min-w-[440px] md:max-w-[440px] md:flex-none"
+              ? "md:-translate-x-full"
+              : "md:translate-x-0"
           }`}>
           {sidebarView === "form" ? (
             <RequestForm
@@ -385,6 +385,7 @@ export default function App() {
           <Header
             user={user}
             profile={profile}
+            sidebarOpen={mobileSlide !== "bottom"}
             onLocationSelect={(lng, lat) => setFlyToTarget({ lng, lat })}
             onLoginClick={() => setShowAuthModal(true)}
             onLogout={logout}
@@ -410,7 +411,8 @@ export default function App() {
           {/* Desktop: floating pill toggle */}
           <button
             onClick={() => setMobileSlide(mobileSlide === "bottom" ? "middle" : "bottom")}
-            className="hidden md:flex absolute z-50 transition-all duration-300 items-center gap-0 overflow-hidden px-3 py-3 rounded-full bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-[#3a3a3a] shadow-lg text-sm font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-[#333] cursor-pointer left-4 top-1/2 -translate-y-1/2"
+            className="hidden md:flex absolute z-50 transition-all duration-300 items-center gap-0 overflow-hidden px-3 py-3 rounded-full bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-[#3a3a3a] shadow-lg text-sm font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-[#333] cursor-pointer top-1/2 -translate-y-1/2"
+            style={{ left: mobileSlide === "bottom" ? 16 : 456 }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
               className="shrink-0 transition-transform duration-300 ease-in-out"

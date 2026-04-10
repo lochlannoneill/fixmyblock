@@ -1086,7 +1086,7 @@ export default function MapView({
           { key: "resolved", label: "Resolved" },
         ];
         return (
-          <div className="status-breakdown">
+          <div className={`status-breakdown ${mobileSlide !== "bottom" ? 'sidebar-open' : ''}`}>
             <span className="status-breakdown-total">{total} request{total !== 1 ? 's' : ''} in view</span>
             {items.map(({ key, label }) => statusCounts[key] > 0 && (
               <div key={key} className="status-breakdown-row">
@@ -1098,7 +1098,7 @@ export default function MapView({
           </div>
         );
       })()}
-      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} isSignedIn={!!currentUserId} onSignInPrompt={onSignInPrompt} mobileSlide={mobileSlide} />
+      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} isSignedIn={!!currentUserId} onSignInPrompt={onSignInPrompt} mobileSlide={mobileSlide} sidebarOpen={mobileSlide !== "bottom"} />
     </div>
   );
 }

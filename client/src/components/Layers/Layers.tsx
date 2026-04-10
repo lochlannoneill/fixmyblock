@@ -34,9 +34,10 @@ interface LayersProps {
   isSignedIn?: boolean;
   onSignInPrompt?: () => void;
   mobileSlide?: "top" | "middle" | "bottom";
+  sidebarOpen?: boolean;
 }
 
-export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedIn, onSignInPrompt, mobileSlide }: LayersProps) {
+export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedIn, onSignInPrompt, mobileSlide, sidebarOpen }: LayersProps) {
   const [expanded, setExpanded] = useState(false);
   const thumbnails = darkMode ? LAYER_THUMBNAILS_DARK : LAYER_THUMBNAILS_LIGHT;
   const azureLocked = !isSignedIn;
@@ -53,7 +54,7 @@ export default function Layers({ activeLayer, onLayerChange, darkMode, isSignedI
   return (
     <div
       id="mobile-layers-btn"
-      className="fixed md:absolute md:bottom-6 left-4 z-50 flex flex-col-reverse md:flex-row items-start md:items-end gap-2 transition-[bottom] duration-300 md:transition-none"
+      className={`fixed md:absolute md:bottom-6 left-4 z-50 flex flex-col-reverse md:flex-row items-start md:items-end gap-2 transition-[bottom] duration-300 md:transition-[left] md:duration-300 md:ease-in-out ${sidebarOpen ? 'md:left-[456px]' : ''}`}
       style={
         typeof window !== "undefined" && window.innerWidth < 768
           ? { bottom: mobileSlide === "bottom" ? "4rem" : mobileSlide === "middle" ? "calc(60vh + 0.5rem)" : "calc(85vh + 0.5rem)" }
