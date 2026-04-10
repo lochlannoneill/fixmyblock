@@ -25,12 +25,6 @@ export function useRequests() {
     return () => window.removeEventListener("focus", onFocus);
   }, [refresh]);
 
-  // Periodic background refresh every 30s
-  useEffect(() => {
-    const interval = setInterval(refresh, 30_000);
-    return () => clearInterval(interval);
-  }, [refresh]);
-
   const selectRequest = useCallback((c: Request | null) => {
     setSelectedRequest(c);
   }, []);
