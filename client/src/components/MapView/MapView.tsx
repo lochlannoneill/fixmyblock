@@ -81,10 +81,13 @@ export default function MapView({
   const [statusCounts, setStatusCounts] = useState<Record<RequestStatus, number>>({ open: 0, "under-review": 0, "in-progress": 0, resolved: 0 });
   const [trafficOn, setTrafficOn] = useState(false);
   const [weatherOn, setWeatherOn] = useState(false);
+  const [infraredOn, setInfraredOn] = useState(false);
   const trafficOnRef = useRef(false);
   const weatherOnRef = useRef(false);
+  const infraredOnRef = useRef(false);
   useEffect(() => { trafficOnRef.current = trafficOn; }, [trafficOn]);
   useEffect(() => { weatherOnRef.current = weatherOn; }, [weatherOn]);
+  useEffect(() => { infraredOnRef.current = infraredOn; }, [infraredOn]);
 
   const add3dBuildings = useCallback(() => {
     if (!map.current) return;
@@ -134,25 +137,28 @@ export default function MapView({
     );
   }, []);
 
-  // Manage Azure Maps overlay layers (traffic / weather)
-  const syncOverlay = useCallback((id: string, tilesetId: string, on: boolean) => {
-    if (!map.current || !map.current.isStyleLoaded()) return;
+  // Manage Azure Maps overlay layers (traffic / weather / infrared)
+  const syncOverlay = useCallback((id: string, tilesetId: string, on: boolean, paint?: Record<string, unknown>) => {
+    if (!map.current) return;
+    const layerPaint = paint ?? { "raster-opacity": 0.7 };
     const sourceId = `${id}-source`;
-    if (on) {
-      if (!map.current.getSource(sourceId)) {
-        map.current.addSource(sourceId, {
-          type: "raster",
-          tiles: [`/api/map/tile?tilesetId=${tilesetId}&z={z}&x={x}&y={y}`],
-          tileSize: 256,
-        });
+    try {
+      if (on) {
+        if (!map.current.getSource(sourceId)) {
+          map.current.addSource(sourceId, {
+            type: "raster",
+            tiles: [`/api/map/tile?tilesetId=${tilesetId}&z={z}&x={x}&y={y}`],
+            tileSize: 256,
+          });
+        }
+        if (!map.current.getLayer(id)) {
+          map.current.addLayer({ id, type: "raster", source: sourceId, paint: layerPaint });
+        }
+      } else {
+        if (map.current.getLayer(id)) map.current.removeLayer(id);
+        if (map.current.getSource(sourceId)) map.current.removeSource(sourceId);
       }
-      if (!map.current.getLayer(id)) {
-        map.current.addLayer({ id, type: "raster", source: sourceId, paint: { "raster-opacity": 0.7 } });
-      }
-    } else {
-      if (map.current.getLayer(id)) map.current.removeLayer(id);
-      if (map.current.getSource(sourceId)) map.current.removeSource(sourceId);
-    }
+    } catch { /* style not ready — restoreAzureOverlays handles it on style.load */ }
   }, []);
 
   useEffect(() => {
@@ -166,6 +172,13 @@ export default function MapView({
     syncOverlay("azure-weather", "microsoft.weather.radar.main", weatherOn);
   }, [weatherOn, activeLayer, syncOverlay]);
 
+  const INFRARED_PAINT = { "raster-opacity": 1, "raster-contrast": 0.3, "raster-brightness-min": 0.1 };
+
+  useEffect(() => {
+    if (activeLayer !== "azure") return;
+    syncOverlay("azure-infrared", "microsoft.weather.infrared.main", infraredOn, INFRARED_PAINT);
+  }, [infraredOn, activeLayer, syncOverlay]);
+
   // Restore overlays after a style change (style.load destroys all sources/layers)
   const restoreAzureOverlays = useCallback(() => {
     if (activeLayerRef.current !== "azure") return;
@@ -175,6 +188,9 @@ export default function MapView({
     }
     if (weatherOnRef.current) {
       syncOverlay("azure-weather", "microsoft.weather.radar.main", true);
+    }
+    if (infraredOnRef.current) {
+      syncOverlay("azure-infrared", "microsoft.weather.infrared.main", true, INFRARED_PAINT);
     }
   }, [syncOverlay]);
 
@@ -1114,6 +1130,7 @@ export default function MapView({
     if (layer !== "azure") {
       setTrafficOn(false);
       setWeatherOn(false);
+      setInfraredOn(false);
     }
 
     map.current.setStyle(newStyle as string);
@@ -1173,7 +1190,7 @@ export default function MapView({
           </div>
         );
       })()}
-      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} isSignedIn={!!currentUserId} onSignInPrompt={onSignInPrompt} mobileSlide={mobileSlide} sidebarOpen={mobileSlide !== "bottom"} trafficOn={trafficOn} weatherOn={weatherOn} onToggleTraffic={() => setTrafficOn(v => !v)} onToggleWeather={() => setWeatherOn(v => !v)} />
+      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} isSignedIn={!!currentUserId} onSignInPrompt={onSignInPrompt} mobileSlide={mobileSlide} sidebarOpen={mobileSlide !== "bottom"} trafficOn={trafficOn} weatherOn={weatherOn} infraredOn={infraredOn} onToggleTraffic={() => setTrafficOn(v => !v)} onToggleWeather={() => setWeatherOn(v => !v)} onToggleInfrared={() => setInfraredOn(v => !v)} />
     </div>
   );
 }
