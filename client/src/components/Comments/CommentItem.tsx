@@ -43,8 +43,8 @@ export default function CommentItem({ comment, replies, currentUserId, commentMe
   return (
     <div>
       <div className="relative flex gap-2.5 py-2.5 text-xs">
-        <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-[#3a3a3a] text-slate-500 dark:text-zinc-400 flex items-center justify-center text-[10px] font-semibold shrink-0 mt-0.5">
-          {((comment.userName || "U")[0] ?? "U").toUpperCase()}
+        <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-[#3a3a3a] text-slate-500 dark:text-zinc-400 flex items-center justify-center text-[10px] font-semibold shrink-0 mt-0.5 overflow-hidden">
+          {comment.userProfilePictureUrl ? <img src={comment.userProfilePictureUrl} alt="" className="w-full h-full object-cover" /> : ((comment.userName || "U")[0] ?? "U").toUpperCase()}
         </div>
         <div className="absolute right-1 top-1">
           <CommentMenu
@@ -93,8 +93,8 @@ export default function CommentItem({ comment, replies, currentUserId, commentMe
               const hasLikedReply = currentUserId && (reply.likers || []).includes(currentUserId);
               return (
                 <div key={reply.id} className="relative flex gap-2.5 py-2.5 text-xs">
-                  <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-[#3a3a3a] text-slate-500 dark:text-zinc-400 flex items-center justify-center text-[9px] font-semibold shrink-0 mt-0.5">
-                    {((reply.userName || "U")[0] ?? "U").toUpperCase()}
+                  <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-[#3a3a3a] text-slate-500 dark:text-zinc-400 flex items-center justify-center text-[9px] font-semibold shrink-0 mt-0.5 overflow-hidden">
+                    {reply.userProfilePictureUrl ? <img src={reply.userProfilePictureUrl} alt="" className="w-full h-full object-cover" /> : ((reply.userName || "U")[0] ?? "U").toUpperCase()}
                   </div>
                   <div className="absolute right-1 top-1">
                     <CommentMenu

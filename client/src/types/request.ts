@@ -10,6 +10,7 @@ export interface Comment {
   id: string;
   userId: string;
   userName: string;
+  userProfilePictureUrl?: string;
   text: string;
   createdAt: string;
   likers: string[];
@@ -33,6 +34,7 @@ export interface Request {
   savedBy: string[];
   userId: string;
   userName?: string;
+  userProfilePictureUrl?: string;
   comments: Comment[];
   statusHistory: StatusChange[];
 }

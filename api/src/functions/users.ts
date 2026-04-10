@@ -10,7 +10,7 @@ import {
   updateUserSettings,
   updateUserRole,
   getAllUsers,
-  backfillUserName,
+
   UserDoc,
   UserSettings,
   UserRole,
@@ -140,9 +140,6 @@ async function patchProfile(
   existing.displayName = `${firstName} ${lastName}`;
 
   const saved = await upsertUser(existing);
-
-  // Backfill the new display name on all existing posts and comments by this user
-  backfillUserName(auth.userId, saved.displayName).catch(() => {});
 
   return { status: 200, jsonBody: saved };
 }

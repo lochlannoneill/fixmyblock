@@ -258,6 +258,30 @@ export async function getUserById(id: string): Promise<UserDoc | null> {
   }
 }
 
+export interface UserProfileSummary {
+  displayName: string;
+  profilePictureUrl?: string;
+}
+
+export async function getUserProfileSummaries(userIds: string[]): Promise<Map<string, UserProfileSummary>> {
+  const map = new Map<string, UserProfileSummary>();
+  if (userIds.length === 0) return map;
+  const unique = [...new Set(userIds)];
+  const params = unique.map((_, i) => `@id${i}`).join(",");
+  const query = {
+    query: `SELECT c.id, c.displayName, c.profilePictureUrl FROM c WHERE c.id IN (${params})`,
+    parameters: unique.map((id, i) => ({ name: `@id${i}`, value: id })),
+  };
+  const { resources } = await getUsersContainer().items.query<{ id: string; displayName?: string; profilePictureUrl?: string }>(query).fetchAll();
+  for (const r of resources) {
+    map.set(r.id, {
+      displayName: r.displayName || "Anonymous",
+      profilePictureUrl: r.profilePictureUrl,
+    });
+  }
+  return map;
+}
+
 export async function upsertUser(doc: UserDoc): Promise<UserDoc> {
   const { resource } = await getUsersContainer().items.upsert<UserDoc>(doc);
   return resource!;
@@ -292,28 +316,3 @@ export async function updateUserRole(id: string, role: UserRole): Promise<UserDo
   return resource ?? null;
 }
 
-/** Update userName on all posts authored by this user, and on all their comments across all posts. */
-export async function backfillUserName(userId: string, newName: string): Promise<void> {
-  const allPosts = await getAllRequests();
-  for (const post of allPosts) {
-    let changed = false;
-
-    // Update post author name
-    if (post.userId === userId && post.userName !== newName) {
-      post.userName = newName;
-      changed = true;
-    }
-
-    // Update comment author names
-    for (const comment of post.comments || []) {
-      if (comment.userId === userId && comment.userName !== newName) {
-        comment.userName = newName;
-        changed = true;
-      }
-    }
-
-    if (changed) {
-      await getContainer().item(post.id, post.id).replace<RequestDoc>(post);
-    }
-  }
-}

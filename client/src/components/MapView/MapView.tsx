@@ -568,6 +568,10 @@ export default function MapView({
 
       const userName = (req.userName || "Anonymous").split(" ")[0];
       const userInitial = (userName[0] ?? "A").toUpperCase();
+      const userPicUrl = (req as any).userProfilePictureUrl as string | undefined;
+      const avatarContent = userPicUrl
+        ? `<img src="${userPicUrl.replace(/"/g, "&quot;")}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`
+        : userInitial;
 
       const actionLogBtnColor = req.status === 'resolved' ? '#059669' : req.status === 'under-review' ? '#6366f1' : '#d97706';
       const actionLogBtnBg = req.status === 'resolved' ? 'rgba(16,185,129,0.08)' : req.status === 'under-review' ? 'rgba(99,102,241,0.08)' : 'rgba(245,158,11,0.08)';
@@ -582,7 +586,7 @@ export default function MapView({
       const html = `
         <div class="popup-content" style="font-family:system-ui,sans-serif">
           <div style="display:flex;align-items:center;gap:${isMobile ? '8px' : '12px'};margin-bottom:12px">
-            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#ec4899,#a855f7,#f97316);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">${userInitial}</div>
+            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#ec4899,#a855f7,#f97316);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0;overflow:hidden">${avatarContent}</div>
             <div style="display:flex;flex-direction:column;flex:1;min-width:0;line-height:1.2">
               <span class="popup-title" style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${userName}</span>
               <span style="font-size:11px;font-weight:600;color:var(--text-muted)">${timeSince}</span>

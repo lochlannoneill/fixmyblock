@@ -17,9 +17,38 @@ import {
   updateRequestStatus,
   RequestDoc,
   getUserById,
+  getUserProfileSummaries,
 } from "../cosmos.js";
 import { uploadImage } from "../storage.js";
 import { parseMultipart } from "../multipart.js";
+
+/** Resolve current userName and profilePictureUrl from user profiles for all requests and comments. */
+async function enrichWithUserProfiles(requests: RequestDoc[]) {
+  const userIds: string[] = [];
+  for (const r of requests) {
+    if (r.userId) userIds.push(r.userId);
+    for (const c of r.comments || []) {
+      if (c.userId) userIds.push(c.userId);
+    }
+  }
+  const profileMap = await getUserProfileSummaries(userIds);
+  return requests.map((r) => {
+    const authorProfile = profileMap.get(r.userId);
+    return {
+      ...r,
+      userName: authorProfile?.displayName || r.userName || "Anonymous",
+      userProfilePictureUrl: authorProfile?.profilePictureUrl,
+      comments: (r.comments || []).map((c) => {
+        const commentProfile = profileMap.get(c.userId);
+        return {
+          ...c,
+          userName: commentProfile?.displayName || c.userName || "Anonymous",
+          userProfilePictureUrl: commentProfile?.profilePictureUrl,
+        };
+      }),
+    };
+  });
+}
 
 // GET /api/posts
 async function listRequests(
@@ -28,7 +57,8 @@ async function listRequests(
 ): Promise<HttpResponseInit> {
   try {
     const requests = await getAllRequests();
-    return { status: 200, jsonBody: requests };
+    const enriched = await enrichWithUserProfiles(requests);
+    return { status: 200, jsonBody: enriched };
   } catch (err) {
     return { status: 500, jsonBody: { error: "Failed to fetch requests" } };
   }
@@ -45,7 +75,8 @@ async function getRequest(
   const request = await getRequestById(id);
   if (!request) return { status: 404, jsonBody: { error: "Not found" } };
 
-  return { status: 200, jsonBody: request };
+  const [enriched] = await enrichWithUserProfiles([request]);
+  return { status: 200, jsonBody: enriched };
 }
 
 // POST /api/posts
@@ -77,26 +108,14 @@ async function postRequest(
 
     // Extract reporter identity from SWA auth header
     let visitorUserId = "";
-    let visitorUserName = "Anonymous";
     const principal = req.headers.get("x-ms-client-principal");
     if (principal) {
       try {
         const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
         visitorUserId = decoded.userId || "";
-        visitorUserName = decoded.userDetails || "Anonymous";
       } catch {
         // ignore decode errors
       }
-    }
-
-    // Use display name from user profile if available
-    if (visitorUserId) {
-      try {
-        const userProfile = await getUserById(visitorUserId);
-        if (userProfile?.firstName) {
-          visitorUserName = userProfile.displayName;
-        }
-      } catch { /* fall back to auth header name */ }
     }
 
     if (!title || !description || isNaN(latitude) || isNaN(longitude)) {
@@ -138,9 +157,9 @@ async function postRequest(
       likers: [],
       savedBy: [],
       userId: visitorUserId,
-      userName: visitorUserName,
+      userName: "",
       comments: [],
-      statusHistory: [{ status: "open", changedAt: now, changedBy: visitorUserId, changedByName: visitorUserName }],
+      statusHistory: [{ status: "open", changedAt: now, changedBy: visitorUserId }],
     };
 
     const created = await createRequestDoc(doc);
@@ -189,23 +208,13 @@ async function postComment(
   if (!principal) return { status: 401, jsonBody: { error: "Not authenticated" } };
 
   let userId: string;
-  let userName: string;
   try {
     const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
     userId = decoded.userId;
-    userName = decoded.userDetails || "Anonymous";
   } catch {
     return { status: 401, jsonBody: { error: "Invalid auth token" } };
   }
   if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
-
-  // Use display name from user profile if available
-  try {
-    const userProfile = await getUserById(userId);
-    if (userProfile?.firstName) {
-      userName = userProfile.displayName;
-    }
-  } catch { /* fall back to auth header name */ }
 
   let body: { text?: string; parentId?: string };
   try {
@@ -220,7 +229,7 @@ async function postComment(
   const comment = {
     id: uuidv4(),
     userId,
-    userName,
+    userName: "",
     text,
     createdAt: new Date().toISOString(),
     likers: [] as string[],
