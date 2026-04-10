@@ -11,6 +11,28 @@ interface RequestListProps {
   isAdmin?: boolean;
   onUpdateStatus?: (id: string, status: RequestStatus, note?: string) => void;
 }
+
+/** Track which IDs have been seen so new arrivals can animate in. */
+function useAnimatedIds(requests: Request[]) {
+  const prevIds = useRef(new Set<string>());
+  const [newIds, setNewIds] = useState(new Set<string>());
+
+  useEffect(() => {
+    const currentIds = new Set(requests.map((r) => r.id));
+    const entering = new Set<string>();
+    for (const id of currentIds) {
+      if (!prevIds.current.has(id)) entering.add(id);
+    }
+    prevIds.current = currentIds;
+    if (entering.size > 0) {
+      setNewIds(entering);
+      const timer = setTimeout(() => setNewIds(new Set()), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [requests]);
+
+  return newIds;
+}
 function SkeletonCard() {
   return (
     <div className="bg-white dark:bg-[#272727] rounded-xl p-3.5 mb-2.5 border-2 border-transparent animate-pulse">
@@ -40,6 +62,7 @@ export default function RequestList({
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const newIds = useAnimatedIds(requests);
 
   // Reset visible count when the list changes (new filter/sort)
   useEffect(() => {
@@ -111,8 +134,13 @@ export default function RequestList({
         </button>
       )}
       {requests.slice(0, visibleCount).map((c, index) => {
+        const isNew = newIds.has(c.id);
         return (
-        <div key={c.id}>
+        <div
+          key={c.id}
+          className="transition-all duration-200 ease-out"
+          style={isNew ? { opacity: 0, transform: "translateY(-8px)", animation: "fadeSlideIn 200ms ease-out forwards" } : undefined}
+        >
           {index > 0 && <hr className="border-slate-200 dark:border-[#2a2a2a] my-2 mx-auto w-4/5" />}
           <RequestItem
             request={c}
