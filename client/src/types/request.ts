@@ -12,6 +12,7 @@ export interface Comment {
   userName: string;
   userProfilePictureUrl?: string;
   userRole?: UserRole;
+  userVerified?: boolean;
   text: string;
   createdAt: string;
   likers: string[];
@@ -37,6 +38,7 @@ export interface Request {
   userName?: string;
   userProfilePictureUrl?: string;
   userRole?: UserRole;
+  userVerified?: boolean;
   comments: Comment[];
   statusHistory: StatusChange[];
 }

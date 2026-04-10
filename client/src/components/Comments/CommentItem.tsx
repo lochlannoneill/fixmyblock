@@ -75,6 +75,7 @@ export default function CommentItem({ comment, replies, currentUserId, commentMe
             {comment.userName || "Anonymous"}
             {comment.userRole === "admin" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#eab308" stroke="#eab308" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M2 4l3 12h14l3-12-5 4-5-6-5 6-3-4z"/><path d="M5 16h14v3H5z"/></svg>}
             {comment.userRole === "moderator" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
+            {comment.userVerified && comment.userRole !== "admin" && comment.userRole !== "moderator" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#3b82f6" stroke="none"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
           </span>
           <p className="text-slate-600 dark:text-zinc-400 mt-0.5">{comment.text}</p>
           <div className="flex items-center gap-2 mt-1.5">
@@ -129,6 +130,7 @@ export default function CommentItem({ comment, replies, currentUserId, commentMe
                       {reply.userName || "Anonymous"}
                       {reply.userRole === "admin" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#eab308" stroke="#eab308" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M2 4l3 12h14l3-12-5 4-5-6-5 6-3-4z"/><path d="M5 16h14v3H5z"/></svg>}
                       {reply.userRole === "moderator" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
+                      {reply.userVerified && reply.userRole !== "admin" && reply.userRole !== "moderator" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#3b82f6" stroke="none"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                     </span>
                     <p className="text-slate-600 dark:text-zinc-400 mt-0.5">{formatCommentText(reply.text)}</p>
                     <div className="flex items-center gap-2 mt-1.5">

@@ -45,6 +45,7 @@ async function enrichWithUserProfiles(requests: RequestDoc[]) {
       userName: authorProfile?.displayName || r.userName || "Anonymous",
       userProfilePictureUrl: authorProfile?.profilePictureUrl,
       userRole: authorProfile?.role,
+      userVerified: authorProfile?.verified,
       comments: (r.comments || []).map((c) => {
         const commentProfile = profileMap.get(c.userId);
         return {
@@ -52,6 +53,7 @@ async function enrichWithUserProfiles(requests: RequestDoc[]) {
           userName: commentProfile?.displayName || c.userName || "Anonymous",
           userProfilePictureUrl: commentProfile?.profilePictureUrl,
           userRole: commentProfile?.role,
+          userVerified: commentProfile?.verified,
         };
       }),
     };
