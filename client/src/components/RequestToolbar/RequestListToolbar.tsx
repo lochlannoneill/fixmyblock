@@ -9,7 +9,7 @@ type SortBy = "newest" | "oldest" | "likes" | "comments" | "nearest";
 type OpenDropdown = "category" | "status" | "sort" | null;
 
 const STATUS_LABELS: Record<RequestStatus, string> = { open: "Open", "under-review": "Under Review", "in-progress": "In Progress", resolved: "Resolved" };
-const SORT_LABELS: Record<SortBy, string> = { newest: "Most Recent", oldest: "Oldest", likes: "Most Liked", comments: "Most Comments", nearest: "Nearest" };
+const SORT_LABELS: Record<SortBy, string> = { nearest: "Near Me", newest: "Most Recent", oldest: "Oldest", likes: "Most Liked", comments: "Most Comments" };
 
 function distanceBetween(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const toRad = (d: number) => (d * Math.PI) / 180;
@@ -45,7 +45,7 @@ export default function RequestListToolbar({
 }: RequestListToolbarProps) {  const [activeTab, setActiveTab] = useState<"active" | "resolved">("active");  const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<RequestCategory | "">("");
   const [filterStatus, setFilterStatus] = useState<RequestStatus | "">("");
-  const [sortBy, setSortBy] = useState<SortBy>("newest");
+  const [sortBy, setSortBy] = useState<SortBy>("nearest");
   const [openDropdown, setOpenDropdown] = useState<OpenDropdown>(null);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [dropdownAnimate, setDropdownAnimate] = useState(false);
@@ -211,7 +211,7 @@ export default function RequestListToolbar({
             </button>
             {dropdownVisible && openDropdown === "sort" && (
               <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-[#272727] border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden origin-top-right" style={popoverStyle}>
-                {(["newest", "oldest", "likes", "comments", "nearest"] as SortBy[]).map((value) => (
+                {(["nearest", "newest", "oldest", "likes", "comments"] as SortBy[]).map((value) => (
                   <button key={value} onClick={() => { setSortBy(value); setOpenDropdown(null); }} className={optionClass(sortBy === value)}>
                     {SORT_LABELS[value]}
                   </button>
