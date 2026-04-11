@@ -308,6 +308,24 @@ export default function RequestDetail({
             </div>
           </div>
 
+          {/* Action log button */}
+          {request.status !== "open" && (
+            <button
+              className="flex items-center justify-center gap-1.5 w-full mt-3 px-3 py-2.5 rounded-lg text-xs font-medium cursor-pointer transition-all border hover:brightness-75"
+              style={{
+                color: request.status === 'resolved' ? '#059669' : request.status === 'under-review' ? '#6366f1' : '#d97706',
+                background: request.status === 'resolved' ? 'rgba(16,185,129,0.08)' : request.status === 'under-review' ? 'rgba(99,102,241,0.08)' : 'rgba(245,158,11,0.08)',
+                borderColor: request.status === 'resolved' ? 'rgba(16,185,129,0.2)' : request.status === 'under-review' ? 'rgba(99,102,241,0.2)' : 'rgba(245,158,11,0.2)',
+              }}
+              onClick={() => setShowResolution(true)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+              View Action Log
+            </button>
+          )}
+
           {/* Images */}
           {(request.imageUrls || []).length > 0 ? (
             <div className="mt-3 flex flex-col gap-2">
@@ -355,24 +373,6 @@ export default function RequestDetail({
               Apple Maps
             </a>
           </div>
-
-          {/* Action log button */}
-          {request.status !== "open" && (
-            <button
-              className="flex items-center justify-center gap-1.5 w-full mt-3 px-3 py-2.5 rounded-lg text-xs font-medium cursor-pointer transition-all border hover:brightness-75"
-              style={{
-                color: request.status === 'resolved' ? '#059669' : request.status === 'under-review' ? '#6366f1' : '#d97706',
-                background: request.status === 'resolved' ? 'rgba(16,185,129,0.08)' : request.status === 'under-review' ? 'rgba(99,102,241,0.08)' : 'rgba(245,158,11,0.08)',
-                borderColor: request.status === 'resolved' ? 'rgba(16,185,129,0.2)' : request.status === 'under-review' ? 'rgba(99,102,241,0.2)' : 'rgba(245,158,11,0.2)',
-              }}
-              onClick={() => setShowResolution(true)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-              </svg>
-              View Action Log
-            </button>
-          )}
 
           {/* Title */}
           <h2 className="text-base font-semibold text-slate-800 dark:text-zinc-200 mt-3">{request.title}</h2>
