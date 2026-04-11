@@ -14,12 +14,52 @@ import {
   toggleCommentLike,
   addComment as addCommentDoc,
   deleteRequest as deleteRequestDoc,
+  deleteComment as deleteCommentDoc,
   updateRequestStatus,
   RequestDoc,
   getUserById,
+  getUserProfileSummaries,
 } from "../cosmos.js";
 import { uploadImage } from "../storage.js";
 import { parseMultipart } from "../multipart.js";
+
+// ── Server-side posts cache (invalidated on mutations) ──
+let postsCache: { data: unknown[]; expiresAt: number } | null = null;
+const POSTS_CACHE_TTL = 15_000; // 15 seconds
+
+function invalidatePostsCache() { postsCache = null; }
+
+/** Resolve current userName and profilePictureUrl from user profiles for all requests and comments. */
+async function enrichWithUserProfiles(requests: RequestDoc[]) {
+  const userIds: string[] = [];
+  for (const r of requests) {
+    if (r.userId) userIds.push(r.userId);
+    for (const c of r.comments || []) {
+      if (c.userId) userIds.push(c.userId);
+    }
+  }
+  const profileMap = await getUserProfileSummaries(userIds);
+  return requests.map((r) => {
+    const authorProfile = profileMap.get(r.userId);
+    return {
+      ...r,
+      userName: authorProfile?.displayName || r.userName || "Anonymous",
+      userProfilePictureUrl: authorProfile?.profilePictureUrl,
+      userRole: authorProfile?.role,
+      userVerified: authorProfile?.verified,
+      comments: (r.comments || []).map((c) => {
+        const commentProfile = profileMap.get(c.userId);
+        return {
+          ...c,
+          userName: commentProfile?.displayName || c.userName || "Anonymous",
+          userProfilePictureUrl: commentProfile?.profilePictureUrl,
+          userRole: commentProfile?.role,
+          userVerified: commentProfile?.verified,
+        };
+      }),
+    };
+  });
+}
 
 // GET /api/posts
 async function listRequests(
@@ -27,8 +67,21 @@ async function listRequests(
   _ctx: InvocationContext
 ): Promise<HttpResponseInit> {
   try {
+    if (postsCache && Date.now() < postsCache.expiresAt) {
+      return {
+        status: 200,
+        jsonBody: postsCache.data,
+        headers: { "Cache-Control": "public, max-age=10, stale-while-revalidate=30" },
+      };
+    }
     const requests = await getAllRequests();
-    return { status: 200, jsonBody: requests };
+    const enriched = await enrichWithUserProfiles(requests);
+    postsCache = { data: enriched, expiresAt: Date.now() + POSTS_CACHE_TTL };
+    return {
+      status: 200,
+      jsonBody: enriched,
+      headers: { "Cache-Control": "public, max-age=10, stale-while-revalidate=30" },
+    };
   } catch (err) {
     return { status: 500, jsonBody: { error: "Failed to fetch requests" } };
   }
@@ -45,7 +98,12 @@ async function getRequest(
   const request = await getRequestById(id);
   if (!request) return { status: 404, jsonBody: { error: "Not found" } };
 
-  return { status: 200, jsonBody: request };
+  const [enriched] = await enrichWithUserProfiles([request]);
+  return {
+    status: 200,
+    jsonBody: enriched,
+    headers: { "Cache-Control": "private, max-age=5" },
+  };
 }
 
 // POST /api/posts
@@ -77,26 +135,14 @@ async function postRequest(
 
     // Extract reporter identity from SWA auth header
     let visitorUserId = "";
-    let visitorUserName = "Anonymous";
     const principal = req.headers.get("x-ms-client-principal");
     if (principal) {
       try {
         const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
         visitorUserId = decoded.userId || "";
-        visitorUserName = decoded.userDetails || "Anonymous";
       } catch {
         // ignore decode errors
       }
-    }
-
-    // Use display name from user profile if available
-    if (visitorUserId) {
-      try {
-        const userProfile = await getUserById(visitorUserId);
-        if (userProfile?.firstName) {
-          visitorUserName = userProfile.displayName;
-        }
-      } catch { /* fall back to auth header name */ }
     }
 
     if (!title || !description || isNaN(latitude) || isNaN(longitude)) {
@@ -138,12 +184,13 @@ async function postRequest(
       likers: [],
       savedBy: [],
       userId: visitorUserId,
-      userName: visitorUserName,
+      userName: "",
       comments: [],
-      statusHistory: [{ status: "open", changedAt: now, changedBy: visitorUserId, changedByName: visitorUserName }],
+      statusHistory: [{ status: "open", changedAt: now, changedBy: visitorUserId }],
     };
 
     const created = await createRequestDoc(doc);
+    invalidatePostsCache();
     return { status: 201, jsonBody: created };
   } catch (err) {
     ctx.log("Error creating request:", err);
@@ -174,7 +221,9 @@ async function like(
   const updated = await toggleLike(id, userId);
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
-  return { status: 200, jsonBody: updated };
+  invalidatePostsCache();
+  const [enriched] = await enrichWithUserProfiles([updated]);
+  return { status: 200, jsonBody: enriched };
 }
 
 // POST /api/posts/{id}/comments
@@ -189,23 +238,13 @@ async function postComment(
   if (!principal) return { status: 401, jsonBody: { error: "Not authenticated" } };
 
   let userId: string;
-  let userName: string;
   try {
     const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
     userId = decoded.userId;
-    userName = decoded.userDetails || "Anonymous";
   } catch {
     return { status: 401, jsonBody: { error: "Invalid auth token" } };
   }
   if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
-
-  // Use display name from user profile if available
-  try {
-    const userProfile = await getUserById(userId);
-    if (userProfile?.firstName) {
-      userName = userProfile.displayName;
-    }
-  } catch { /* fall back to auth header name */ }
 
   let body: { text?: string; parentId?: string };
   try {
@@ -220,7 +259,7 @@ async function postComment(
   const comment = {
     id: uuidv4(),
     userId,
-    userName,
+    userName: "",
     text,
     createdAt: new Date().toISOString(),
     likers: [] as string[],
@@ -230,7 +269,9 @@ async function postComment(
   const updated = await addCommentDoc(id, comment);
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
-  return { status: 201, jsonBody: updated };
+  invalidatePostsCache();
+  const [enriched] = await enrichWithUserProfiles([updated]);
+  return { status: 201, jsonBody: enriched };
 }
 
 // DELETE /api/posts/{id}
@@ -241,9 +282,32 @@ async function removeRequest(
   const id = req.params.id;
   if (!id) return { status: 400, jsonBody: { error: "Missing id" } };
 
+  const principal = req.headers.get("x-ms-client-principal");
+  if (!principal) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  let userId: string;
+  try {
+    const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
+    userId = decoded.userId;
+  } catch {
+    return { status: 401, jsonBody: { error: "Invalid auth token" } };
+  }
+  if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
+
+  // Check ownership or admin/mod role
+  const post = await getRequestById(id);
+  if (!post) return { status: 404, jsonBody: { error: "Not found" } };
+
+  const userProfile = await getUserById(userId);
+  const isAdminOrMod = userProfile?.role === "admin" || userProfile?.role === "moderator";
+  if (post.userId !== userId && !isAdminOrMod) {
+    return { status: 403, jsonBody: { error: "Not authorized" } };
+  }
+
   const deleted = await deleteRequestDoc(id);
   if (!deleted) return { status: 404, jsonBody: { error: "Not found" } };
 
+  invalidatePostsCache();
   return { status: 204 };
 }
 
@@ -270,7 +334,9 @@ async function saveRequest(
   const updated = await toggleSave(id, userId);
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
-  return { status: 200, jsonBody: updated };
+  invalidatePostsCache();
+  const [enriched] = await enrichWithUserProfiles([updated]);
+  return { status: 200, jsonBody: enriched };
 }
 
 // Register routes
@@ -347,7 +413,9 @@ async function likeComment(
   const updated = await toggleCommentLike(id, commentId, userId);
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
-  return { status: 200, jsonBody: updated };
+  invalidatePostsCache();
+  const [enriched] = await enrichWithUserProfiles([updated]);
+  return { status: 200, jsonBody: enriched };
 }
 
 app.http("likeComment", {
@@ -404,7 +472,9 @@ async function patchStatus(
   const updated = await updateRequestStatus(id, newStatus, userId, userName, body.note);
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
-  return { status: 200, jsonBody: updated };
+  invalidatePostsCache();
+  const [enriched] = await enrichWithUserProfiles([updated]);
+  return { status: 200, jsonBody: enriched };
 }
 
 app.http("patchStatus", {
@@ -412,4 +482,53 @@ app.http("patchStatus", {
   authLevel: "anonymous",
   route: "posts/{id}/status",
   handler: patchStatus,
+});
+
+// DELETE /api/posts/{id}/comments/{commentId}
+async function removeComment(
+  req: HttpRequest,
+  _ctx: InvocationContext
+): Promise<HttpResponseInit> {
+  const id = req.params.id;
+  const commentId = req.params.commentId;
+  if (!id || !commentId) return { status: 400, jsonBody: { error: "Missing id" } };
+
+  const principal = req.headers.get("x-ms-client-principal");
+  if (!principal) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  let userId: string;
+  try {
+    const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
+    userId = decoded.userId;
+  } catch {
+    return { status: 401, jsonBody: { error: "Invalid auth token" } };
+  }
+  if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
+
+  // Check ownership or admin/mod role
+  const post = await getRequestById(id);
+  if (!post) return { status: 404, jsonBody: { error: "Not found" } };
+
+  const comment = post.comments.find((c) => c.id === commentId);
+  if (!comment) return { status: 404, jsonBody: { error: "Comment not found" } };
+
+  const userProfile = await getUserById(userId);
+  const isAdminOrMod = userProfile?.role === "admin" || userProfile?.role === "moderator";
+  if (comment.userId !== userId && !isAdminOrMod) {
+    return { status: 403, jsonBody: { error: "Not authorized" } };
+  }
+
+  const updated = await deleteCommentDoc(id, commentId);
+  if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
+
+  invalidatePostsCache();
+  const [enriched] = await enrichWithUserProfiles([updated]);
+  return { status: 200, jsonBody: enriched };
+}
+
+app.http("deleteComment", {
+  methods: ["DELETE"],
+  authLevel: "anonymous",
+  route: "posts/{id}/comments/{commentId}",
+  handler: removeComment,
 });

@@ -29,6 +29,7 @@ interface MapViewProps {
   onDelete?: (id: string) => void;
   homeAddress?: HomeAddress | null;
   mobileSlide?: "top" | "middle" | "bottom";
+  onVisibleRequestIds?: (ids: Set<string>) => void;
 }
 
 export default function MapView({
@@ -53,6 +54,7 @@ export default function MapView({
   onDelete,
   homeAddress,
   mobileSlide,
+  onVisibleRequestIds,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -77,20 +79,44 @@ export default function MapView({
   const activeLayerRef = useRef<MapLayer>("terrain");
   const [mapFading, setMapFading] = useState(false);
   const [statusCounts, setStatusCounts] = useState<Record<RequestStatus, number>>({ open: 0, "under-review": 0, "in-progress": 0, resolved: 0 });
+  const [trafficOn, setTrafficOn] = useState(false);
+  const [weatherOn, setWeatherOn] = useState(false);
+  const [infraredOn, setInfraredOn] = useState(false);
+  const [incidentsOn, setIncidentsOn] = useState(false);
+  const trafficOnRef = useRef(false);
+  const weatherOnRef = useRef(false);
+  const infraredOnRef = useRef(false);
+  useEffect(() => { trafficOnRef.current = trafficOn; }, [trafficOn]);
+  useEffect(() => { weatherOnRef.current = weatherOn; }, [weatherOn]);
+  useEffect(() => { infraredOnRef.current = infraredOn; }, [infraredOn]);
 
   const add3dBuildings = useCallback(() => {
     if (!map.current) return;
-    if (activeLayerRef.current !== "terrain") return;
+    const layer = activeLayerRef.current;
+    if (layer !== "terrain" && layer !== "azure") return;
     if (map.current.getLayer("3d-buildings")) return; // already added
-    const layers = map.current.getStyle().layers;
-    const sources = map.current.getStyle().sources;
-    if (!layers || !(sources["openmaptiles"] || sources["carto"])) return;
-    const sourceId = sources["openmaptiles"] ? "openmaptiles" : "carto";
-    for (const l of layers) {
-      if ((l as Record<string, unknown>)["source-layer"] === "building" && (l.type === "fill" || l.type === "line")) {
-        map.current.setLayoutProperty(l.id, "visibility", "none");
+    const style = map.current.getStyle();
+    const layers = style.layers;
+    const sources = style.sources;
+    if (!layers) return;
+
+    // For raster-only styles (azure), inject an OpenMapTiles vector source for building geometry
+    let sourceId = sources["openmaptiles"] ? "openmaptiles" : sources["carto"] ? "carto" : null;
+    if (!sourceId) {
+      map.current.addSource("openmaptiles", {
+        type: "vector",
+        url: "https://tiles.stadiamaps.com/data/openmaptiles.json",
+      });
+      sourceId = "openmaptiles";
+    } else {
+      // Hide flat building layers from vector styles so 3D replaces them
+      for (const l of layers) {
+        if ((l as Record<string, unknown>)["source-layer"] === "building" && (l.type === "fill" || l.type === "line")) {
+          map.current.setLayoutProperty(l.id, "visibility", "none");
+        }
       }
     }
+
     const labelLayer = layers.find(
       (l) => l.type === "symbol" && l.layout && "text-field" in l.layout
     );
@@ -111,6 +137,173 @@ export default function MapView({
       labelLayer?.id
     );
   }, []);
+
+  // Manage Azure Maps overlay layers (traffic / weather / infrared)
+  const syncOverlay = useCallback((id: string, tilesetId: string, on: boolean, paint?: Record<string, unknown>) => {
+    if (!map.current) return;
+    const layerPaint = paint ?? { "raster-opacity": 0.7 };
+    const sourceId = `${id}-source`;
+    try {
+      if (on) {
+        if (!map.current.getSource(sourceId)) {
+          map.current.addSource(sourceId, {
+            type: "raster",
+            tiles: [`/api/map/tile?tilesetId=${tilesetId}&z={z}&x={x}&y={y}`],
+            tileSize: 256,
+          });
+        }
+        if (!map.current.getLayer(id)) {
+          map.current.addLayer({ id, type: "raster", source: sourceId, paint: layerPaint });
+        }
+      } else {
+        if (map.current.getLayer(id)) map.current.removeLayer(id);
+        if (map.current.getSource(sourceId)) map.current.removeSource(sourceId);
+      }
+    } catch { /* style not ready — restoreAzureOverlays handles it on style.load */ }
+  }, []);
+
+  useEffect(() => {
+    if (activeLayer !== "azure" && activeLayer !== "satellite-azure") return;
+    const tilesetId = darkMode ? "microsoft.traffic.relative.dark" : "microsoft.traffic.relative.main";
+    syncOverlay("azure-traffic", tilesetId, trafficOn);
+  }, [trafficOn, activeLayer, darkMode, syncOverlay]);
+
+  useEffect(() => {
+    if (activeLayer !== "azure" && activeLayer !== "satellite-azure") return;
+    syncOverlay("azure-weather", "microsoft.weather.radar.main", weatherOn);
+  }, [weatherOn, activeLayer, syncOverlay]);
+
+  const INFRARED_PAINT = { "raster-opacity": 1, "raster-contrast": 0.3, "raster-brightness-min": 0.1 };
+
+  useEffect(() => {
+    if (activeLayer !== "azure" && activeLayer !== "satellite-azure") return;
+    syncOverlay("azure-infrared", "microsoft.weather.infrared.main", infraredOn, INFRARED_PAINT);
+  }, [infraredOn, activeLayer, syncOverlay]);
+
+  // Restore overlays after a style change (style.load destroys all sources/layers)
+  const restoreAzureOverlays = useCallback(() => {
+    if (activeLayerRef.current !== "azure" && activeLayerRef.current !== "satellite-azure") return;
+    const darkNow = lastDarkModeApplied.current;
+    if (trafficOnRef.current) {
+      syncOverlay("azure-traffic", darkNow ? "microsoft.traffic.relative.dark" : "microsoft.traffic.relative.main", true);
+    }
+    if (weatherOnRef.current) {
+      syncOverlay("azure-weather", "microsoft.weather.radar.main", true);
+    }
+    if (infraredOnRef.current) {
+      syncOverlay("azure-infrared", "microsoft.weather.infrared.main", true, INFRARED_PAINT);
+    }
+  }, [syncOverlay]);
+
+  // Traffic incidents (GeoJSON layer from Azure Maps Traffic Incident Detail API)
+  const INCIDENT_ICONS: Record<number, string> = {
+    0: "❓", 1: "🚗", 2: "🌫️", 3: "⚠️", 4: "🌧️", 5: "🧊", 6: "🚦",
+    7: "🚧", 8: "⛔", 9: "🔧", 10: "💨", 11: "🌊", 12: "↩️", 13: "📍", 14: "🚙",
+  };
+  const INCIDENT_COLORS: Record<number, string> = {
+    0: "#888", 1: "#ef4444", 2: "#a3a3a3", 3: "#f59e0b", 4: "#3b82f6", 5: "#67e8f9",
+    6: "#f97316", 7: "#eab308", 8: "#dc2626", 9: "#a855f7", 10: "#64748b",
+    11: "#2563eb", 12: "#22c55e", 13: "#888", 14: "#f59e0b",
+  };
+  const incidentAbort = useRef<AbortController | null>(null);
+
+  const fetchIncidents = useCallback(async () => {
+    if (!map.current || !incidentsOn || (activeLayerRef.current !== "azure" && activeLayerRef.current !== "satellite-azure")) return;
+    const bounds = map.current.getBounds();
+    const zoom = Math.round(map.current.getZoom());
+    const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
+
+    incidentAbort.current?.abort();
+    const ctrl = new AbortController();
+    incidentAbort.current = ctrl;
+
+    try {
+      const res = await fetch(`/api/map/traffic-incidents?bbox=${encodeURIComponent(bbox)}&zoom=${zoom}`, { signal: ctrl.signal });
+      if (!res.ok) return;
+      const data = await res.json();
+      const pois = data?.tm?.poi ?? [];
+
+      const geojson: GeoJSON.FeatureCollection = {
+        type: "FeatureCollection",
+        features: pois.filter((p: { p?: { x: number; y: number } }) => p.p).map((p: { id?: string; p: { x: number; y: number }; ic?: number; d?: string; c?: string; f?: string; t?: string; dl?: number; r?: string; ty?: number }) => ({
+          type: "Feature" as const,
+          geometry: { type: "Point" as const, coordinates: [p.p.x, p.p.y] },
+          properties: {
+            id: p.id ?? "",
+            icon: INCIDENT_ICONS[p.ic ?? 0] || "❓",
+            color: INCIDENT_COLORS[p.ic ?? 0] || "#888",
+            description: p.d || "Traffic incident",
+            cause: p.c || "",
+            from: p.f || "",
+            to: p.t || "",
+            delay: p.dl ?? 0,
+            road: p.r || "",
+            severity: p.ty ?? 0,
+            ic: p.ic ?? 0,
+          },
+        })),
+      };
+
+      if (!map.current) return;
+      const src = map.current.getSource("traffic-incidents") as maplibregl.GeoJSONSource | undefined;
+      if (src) {
+        src.setData(geojson);
+      } else {
+        map.current.addSource("traffic-incidents", { type: "geojson", data: geojson });
+        map.current.addLayer({
+          id: "traffic-incidents-circles",
+          type: "circle",
+          source: "traffic-incidents",
+          paint: {
+            "circle-radius": 7,
+            "circle-color": ["get", "color"],
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#fff",
+            "circle-opacity": 0.9,
+          },
+        });
+        // Click handler for popup
+        map.current.on("click", "traffic-incidents-circles", (e) => {
+          const f = e.features?.[0];
+          if (!f || f.geometry.type !== "Point") return;
+          const props = f.properties;
+          const coords = f.geometry.coordinates as [number, number];
+          const icon = props.icon || "⚠️";
+          const desc = props.description || "Incident";
+          const cause = props.cause ? `<div style="font-size:11px;color:#888;margin-top:2px">${props.cause}</div>` : "";
+          const road = props.road ? `<div style="font-size:11px;margin-top:2px"><b>Road:</b> ${props.road}</div>` : "";
+          const fromTo = props.from && props.to ? `<div style="font-size:11px;margin-top:2px">${props.from} → ${props.to}</div>` : "";
+          const delay = props.delay > 0 ? `<div style="font-size:11px;margin-top:2px"><b>Delay:</b> ${Math.round(props.delay / 60)} min</div>` : "";
+          new maplibregl.Popup({ offset: 12, maxWidth: "220px" })
+            .setLngLat(coords)
+            .setHTML(`<div style="font-size:13px;font-weight:600">${icon} ${desc}</div>${cause}${road}${fromTo}${delay}`)
+            .addTo(map.current!);
+        });
+        map.current.on("mouseenter", "traffic-incidents-circles", () => { if (map.current) map.current.getCanvas().style.cursor = "pointer"; });
+        map.current.on("mouseleave", "traffic-incidents-circles", () => { if (map.current) map.current.getCanvas().style.cursor = ""; });
+      }
+    } catch (e) {
+      if ((e as Error).name !== "AbortError") console.warn("Incident fetch failed:", e);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incidentsOn]);
+
+  // Fetch incidents on toggle, and refetch on map move
+  useEffect(() => {
+    if (!mapReady || (activeLayer !== "azure" && activeLayer !== "satellite-azure")) return;
+    if (incidentsOn) {
+      fetchIncidents();
+      const handler = () => fetchIncidents();
+      map.current?.on("moveend", handler);
+      return () => { map.current?.off("moveend", handler); incidentAbort.current?.abort(); };
+    } else {
+      // Remove layer + source
+      try {
+        if (map.current?.getLayer("traffic-incidents-circles")) map.current.removeLayer("traffic-incidents-circles");
+        if (map.current?.getSource("traffic-incidents")) map.current.removeSource("traffic-incidents");
+      } catch { /* ignore */ }
+    }
+  }, [incidentsOn, mapReady, activeLayer, fetchIncidents]);
 
   // Keep refs in sync so the map click handler always has latest values
   useEffect(() => { onMapClickRef.current = onMapClick; }, [onMapClick]);
@@ -201,7 +394,8 @@ export default function MapView({
     lastDarkModeApplied.current = darkMode;
 
     // Handle Azure Maps dark mode toggle
-    if (activeLayer === "azure") {
+    if (activeLayer === "azure" || activeLayer === "satellite-azure") {
+      if (activeLayer === "satellite-azure") return; // satellite imagery is the same in light/dark
       const tilesetId = darkMode ? "microsoft.base.darkgrey" : "microsoft.base.road";
       const azureStyle = {
         version: 8 as const,
@@ -219,6 +413,7 @@ export default function MapView({
         ],
       };
       map.current.setStyle(azureStyle);
+      map.current.once("style.load", () => { add3dBuildings(); restoreAzureOverlays(); });
       return;
     }
 
@@ -236,7 +431,7 @@ export default function MapView({
       add3dBuildings();
       setTimeout(() => setMapFading(false), 50);
     });
-  }, [darkMode, mapReady, activeLayer, add3dBuildings]);
+  }, [darkMode, mapReady, activeLayer, add3dBuildings, restoreAzureOverlays]);
 
   // Sync markers with requests (with clustering)
   const updateMarkers = useCallback(() => {
@@ -472,17 +667,23 @@ export default function MapView({
     }
   }, [mapReady, onSelectRequest]);
 
+  const onVisibleRequestIdsRef = useRef(onVisibleRequestIds);
+  onVisibleRequestIdsRef.current = onVisibleRequestIds;
+
   // Compute visible status counts
   const updateStatusCounts = useCallback(() => {
     if (!map.current) return;
     const bounds = map.current.getBounds();
     const counts: Record<RequestStatus, number> = { open: 0, "under-review": 0, "in-progress": 0, resolved: 0 };
+    const visibleIds = new Set<string>();
     for (const req of requestsRef.current) {
       if (bounds.contains([req.longitude, req.latitude])) {
         counts[req.status]++;
+        visibleIds.add(req.id);
       }
     }
     setStatusCounts(counts);
+    onVisibleRequestIdsRef.current?.(visibleIds);
   }, []);
 
   // Sync markers when requests change
@@ -498,9 +699,34 @@ export default function MapView({
     const handler = () => { updateMarkers(); updateStatusCounts(); };
     m.on("zoomend", handler);
     m.on("moveend", handler);
+
+    // Lightweight: update visible IDs + status counts continuously during zoom/pan (throttled)
+    let rafId: number | null = null;
+    const liveHandler = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        if (!map.current) return;
+        const bounds = map.current.getBounds();
+        const visibleIds = new Set<string>();
+        const counts: Record<RequestStatus, number> = { open: 0, "under-review": 0, "in-progress": 0, resolved: 0 };
+        for (const req of requestsRef.current) {
+          if (bounds.contains([req.longitude, req.latitude])) {
+            visibleIds.add(req.id);
+            counts[req.status as RequestStatus]++;
+          }
+        }
+        setStatusCounts(counts);
+        onVisibleRequestIdsRef.current?.(visibleIds);
+      });
+    };
+    m.on("move", liveHandler);
+
     return () => {
       m.off("zoomend", handler);
       m.off("moveend", handler);
+      m.off("move", liveHandler);
+      if (rafId !== null) cancelAnimationFrame(rafId);
     };
   }, [mapReady, updateMarkers, updateStatusCounts]);
 
@@ -560,6 +786,12 @@ export default function MapView({
 
       const userName = (req.userName || "Anonymous").split(" ")[0];
       const userInitial = (userName[0] ?? "A").toUpperCase();
+      const userPicUrl = (req as any).userProfilePictureUrl as string | undefined;
+      const userRole = (req as any).userRole as string | undefined;
+      const userVerified = (req as any).userVerified as boolean | undefined;
+      const avatarContent = userPicUrl
+        ? `<img src="${userPicUrl.replace(/"/g, "&quot;")}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`
+        : userInitial;
 
       const actionLogBtnColor = req.status === 'resolved' ? '#059669' : req.status === 'under-review' ? '#6366f1' : '#d97706';
       const actionLogBtnBg = req.status === 'resolved' ? 'rgba(16,185,129,0.08)' : req.status === 'under-review' ? 'rgba(99,102,241,0.08)' : 'rgba(245,158,11,0.08)';
@@ -574,9 +806,9 @@ export default function MapView({
       const html = `
         <div class="popup-content" style="font-family:system-ui,sans-serif">
           <div style="display:flex;align-items:center;gap:${isMobile ? '8px' : '12px'};margin-bottom:12px">
-            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#ec4899,#a855f7,#f97316);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">${userInitial}</div>
+            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#ec4899,#a855f7,#f97316);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0;overflow:hidden">${avatarContent}</div>
             <div style="display:flex;flex-direction:column;flex:1;min-width:0;line-height:1.2">
-              <span class="popup-title" style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${userName}</span>
+              <span class="popup-title" style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:3px">${userName}${userRole === "admin" ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#eab308" stroke="#eab308" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4l3 12h14l3-12-5 4-5-6-5 6-3-4z"/><path d="M5 16h14v3H5z"/></svg>' : userRole === "moderator" ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' : userVerified ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#3b82f6" stroke="none"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}</span>
               <span style="font-size:11px;font-weight:600;color:var(--text-muted)">${timeSince}</span>
             </div>
             <div style="display:flex;align-items:center;gap:${isMobile ? '0' : '2px'};flex-shrink:0;margin-right:-6px">
@@ -613,9 +845,9 @@ export default function MapView({
             </div>
             </div>
           </div>
+          ${actionLogBtn}
           ${thumbs}
           ${!images.length ? `<div style="display:flex;align-items:center;gap:4px;margin-top:8px;font-size:12px;color:var(--text-muted)"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 384 512" fill="currentColor"><path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/></svg>${locationText}</div>` : ''}
-          ${actionLogBtn}
           <div style="margin-top:12px">
             <span style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block" class="popup-title">${req.title}</span>
           </div>
@@ -997,6 +1229,21 @@ export default function MapView({
           { id: "azure-maps-layer", type: "raster", source: "azure-maps", minzoom: 0, maxzoom: 22 },
         ],
       },
+      "satellite-azure": {
+        version: 8,
+        sources: {
+          "azure-maps": {
+            type: "raster",
+            tiles: [
+              `/api/map/tile?tilesetId=microsoft.imagery&z={z}&x={x}&y={y}`,
+            ],
+            tileSize: 256,
+          },
+        },
+        layers: [
+          { id: "azure-maps-layer", type: "raster", source: "azure-maps", minzoom: 0, maxzoom: 22 },
+        ],
+      },
     };
 
     const newStyle = styles[layer];
@@ -1008,10 +1255,23 @@ export default function MapView({
       map.current.removeLayer("3d-buildings");
     }
 
+    // Remove overlay layers — setStyle destroys them, but clear state when leaving Azure
+    const isNewAzure = layer === "azure" || layer === "satellite-azure";
+    if (!isNewAzure) {
+      setTrafficOn(false);
+      setWeatherOn(false);
+      setInfraredOn(false);
+      setIncidentsOn(false);
+    }
+
     map.current.setStyle(newStyle as string);
 
-    // Always listen for style.load, and also try immediately (for same-style cases)
-    map.current.once("style.load", add3dBuildings);
+    // After style loads, restore 3D buildings and Azure overlays
+    const onStyleLoad = () => {
+      add3dBuildings();
+      restoreAzureOverlays();
+    };
+    map.current.once("style.load", onStyleLoad);
     // Defer to let MapLibre process the setStyle — if style didn't change, style.load won't fire
     setTimeout(add3dBuildings, 100);
 
@@ -1020,7 +1280,7 @@ export default function MapView({
     } else if (map.current.getPitch() === 0) {
       map.current.easeTo({ pitch: 45, bearing: -17.6, duration: 500 });
     }
-  }, [darkMode]);
+  }, [darkMode, restoreAzureOverlays]);
 
   return (
     <div style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}>
@@ -1049,7 +1309,7 @@ export default function MapView({
           { key: "resolved", label: "Resolved" },
         ];
         return (
-          <div className="status-breakdown">
+          <div className={`status-breakdown ${mobileSlide !== "bottom" ? 'sidebar-open' : ''}`}>
             <span className="status-breakdown-total">{total} request{total !== 1 ? 's' : ''} in view</span>
             {items.map(({ key, label }) => statusCounts[key] > 0 && (
               <div key={key} className="status-breakdown-row">
@@ -1061,7 +1321,7 @@ export default function MapView({
           </div>
         );
       })()}
-      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} isSignedIn={!!currentUserId} onSignInPrompt={onSignInPrompt} mobileSlide={mobileSlide} />
+      <Layers activeLayer={activeLayer} onLayerChange={handleLayerChange} darkMode={darkMode} isSignedIn={!!currentUserId} onSignInPrompt={onSignInPrompt} mobileSlide={mobileSlide} sidebarOpen={mobileSlide !== "bottom"} trafficOn={trafficOn} weatherOn={weatherOn} infraredOn={infraredOn} incidentsOn={incidentsOn} onToggleTraffic={() => setTrafficOn(v => !v)} onToggleWeather={() => setWeatherOn(v => !v)} onToggleInfrared={() => setInfraredOn(v => !v)} onToggleIncidents={() => setIncidentsOn(v => !v)} />
     </div>
   );
 }

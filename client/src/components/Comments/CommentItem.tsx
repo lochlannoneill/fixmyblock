@@ -8,10 +8,12 @@ interface CommentItemProps {
   comment: Comment;
   replies: Comment[];
   currentUserId?: string;
+  isAdmin?: boolean;
   commentMenuId: string | null;
   onToggleMenu: (id: string | null) => void;
   onLike: (commentId: string) => void;
   onReply: (parentId: string, text: string) => void;
+  onDelete: (commentId: string) => void;
 }
 
 function getTimeSince(dateStr: string): string {
@@ -33,45 +35,40 @@ function formatCommentText(text: string) {
   );
 }
 
-export default function CommentItem({ comment, replies, currentUserId, commentMenuId, onToggleMenu, onLike, onReply }: CommentItemProps) {
+export default function CommentItem({ comment, replies, currentUserId, isAdmin, commentMenuId, onToggleMenu, onLike, onReply, onDelete }: CommentItemProps) {
   const [replyingTo, setReplyingTo] = useState(false);
   const [replyText, setReplyText] = useState("");
+  const lastTapRef = useRef<{ id: string; time: number }>({ id: "", time: 0 });
+
+  const handleDoubleTap = (id: string) => {
+    const now = Date.now();
+    if (lastTapRef.current.id === id && now - lastTapRef.current.time < 300) {
+      const allComments = [comment, ...replies];
+      const target = allComments.find(c => c.id === id);
+      const alreadyLiked = currentUserId && (target?.likers || []).includes(currentUserId);
+      if (!alreadyLiked) onLike(id);
+      lastTapRef.current = { id: "", time: 0 };
+    } else {
+      lastTapRef.current = { id, time: now };
+    }
+  };
 
   const commentLikes = (comment.likers || []).length;
   const hasLikedComment = currentUserId && (comment.likers || []).includes(currentUserId);
 
   return (
     <div>
-      <div className="relative flex gap-2.5 py-2.5 text-xs">
-        <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-[#3a3a3a] text-slate-500 dark:text-zinc-400 flex items-center justify-center text-[10px] font-semibold shrink-0 mt-0.5">
-          {((comment.userName || "U")[0] ?? "U").toUpperCase()}
-        </div>
-        <div className="absolute right-1 top-1">
-          <CommentMenu
-            commentId={comment.id}
-            isAuthor={currentUserId === comment.userId}
-            openMenuId={commentMenuId}
-            onToggle={(id) => onToggleMenu(commentMenuId === id ? null : id)}
-            onDelete={() => { /* TODO: delete comment */ }}
-            onEdit={() => { /* TODO: edit comment */ }}
-            onReport={() => { /* TODO: report comment */ }}
-          />
-        </div>
-        <div className="absolute right-2 bottom-2">
-          <button
-            className={`flex items-center gap-1 transition-colors cursor-pointer text-[11px] ${
-              hasLikedComment
-                ? "text-red-500 font-semibold"
-                : "text-slate-400 dark:text-zinc-500 hover:text-red-500"
-            }`}
-            onClick={() => onLike(comment.id)}
-          >
-            <FontAwesomeIcon icon={hasLikedComment ? faHeartSolid : faHeartRegular} className="text-[9px]" />
-            <span>{commentLikes}</span>
-          </button>
+      <div className="flex gap-2.5 py-2.5 text-xs" onTouchEnd={() => handleDoubleTap(comment.id)}>
+        <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-[#3a3a3a] text-slate-500 dark:text-zinc-400 flex items-center justify-center text-[10px] font-semibold shrink-0 mt-0.5 overflow-hidden">
+          {comment.userProfilePictureUrl ? <img src={comment.userProfilePictureUrl} alt="" className="w-full h-full object-cover" /> : ((comment.userName || "U")[0] ?? "U").toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{comment.userName || "Anonymous"}</span>
+          <span className="font-medium text-slate-700 dark:text-zinc-300 truncate flex items-center gap-1">
+            {comment.userName || "Anonymous"}
+            {comment.userRole === "admin" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#eab308" stroke="#eab308" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M2 4l3 12h14l3-12-5 4-5-6-5 6-3-4z"/><path d="M5 16h14v3H5z"/></svg>}
+            {comment.userRole === "moderator" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
+            {comment.userVerified && comment.userRole !== "admin" && comment.userRole !== "moderator" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#3b82f6" stroke="none"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+          </span>
           <p className="text-slate-600 dark:text-zinc-400 mt-0.5">{comment.text}</p>
           <div className="flex items-center gap-2 mt-1.5">
             <span className="text-[10px] text-slate-400 dark:text-zinc-500">{getTimeSince(comment.createdAt)}</span>
@@ -80,6 +77,27 @@ export default function CommentItem({ comment, replies, currentUserId, commentMe
               onClick={() => { setReplyingTo(!replyingTo); setReplyText(`@${comment.userName || "Anonymous"} `); }}
             >
               Reply
+            </button>
+            <CommentMenu
+              commentId={comment.id}
+              isAuthor={currentUserId === comment.userId}
+              isAdmin={isAdmin}
+              openMenuId={commentMenuId}
+              onToggle={(id) => onToggleMenu(commentMenuId === id ? null : id)}
+              onDelete={() => onDelete(comment.id)}
+              onEdit={() => { /* TODO: edit comment */ }}
+              onReport={() => { /* TODO: report comment */ }}
+            />
+            <button
+              className={`ml-auto flex items-center gap-1 transition-colors cursor-pointer text-[11px] ${
+                hasLikedComment
+                  ? "text-red-500 font-semibold"
+                  : "text-slate-400 dark:text-zinc-500 hover:text-red-500"
+              }`}
+              onClick={() => onLike(comment.id)}
+            >
+              <FontAwesomeIcon icon={hasLikedComment ? faHeartSolid : faHeartRegular} className="text-[9px]" />
+              {commentLikes > 0 && <span>{commentLikes}</span>}
             </button>
           </div>
         </div>
@@ -92,36 +110,17 @@ export default function CommentItem({ comment, replies, currentUserId, commentMe
               const replyLikes = (reply.likers || []).length;
               const hasLikedReply = currentUserId && (reply.likers || []).includes(currentUserId);
               return (
-                <div key={reply.id} className="relative flex gap-2.5 py-2.5 text-xs">
-                  <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-[#3a3a3a] text-slate-500 dark:text-zinc-400 flex items-center justify-center text-[9px] font-semibold shrink-0 mt-0.5">
-                    {((reply.userName || "U")[0] ?? "U").toUpperCase()}
-                  </div>
-                  <div className="absolute right-1 top-1">
-                    <CommentMenu
-                      commentId={reply.id}
-                      isAuthor={currentUserId === reply.userId}
-                      openMenuId={commentMenuId}
-                      onToggle={(id) => onToggleMenu(commentMenuId === id ? null : id)}
-                      onDelete={() => { /* TODO: delete reply */ }}
-                      onEdit={() => { /* TODO: edit reply */ }}
-                      onReport={() => { /* TODO: report reply */ }}
-                    />
-                  </div>
-                  <div className="absolute right-2 bottom-2">
-                    <button
-                      className={`flex items-center gap-1 transition-colors cursor-pointer text-[11px] ${
-                        hasLikedReply
-                          ? "text-red-500 font-semibold"
-                          : "text-slate-400 dark:text-zinc-500 hover:text-red-500"
-                      }`}
-                      onClick={() => onLike(reply.id)}
-                    >
-                      <FontAwesomeIcon icon={hasLikedReply ? faHeartSolid : faHeartRegular} className="text-[9px]" />
-                      <span>{replyLikes}</span>
-                    </button>
+                <div key={reply.id} className="flex gap-2.5 py-2.5 text-xs" onTouchEnd={() => handleDoubleTap(reply.id)}>
+                  <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-[#3a3a3a] text-slate-500 dark:text-zinc-400 flex items-center justify-center text-[9px] font-semibold shrink-0 mt-0.5 overflow-hidden">
+                    {reply.userProfilePictureUrl ? <img src={reply.userProfilePictureUrl} alt="" className="w-full h-full object-cover" /> : ((reply.userName || "U")[0] ?? "U").toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="font-medium text-slate-700 dark:text-zinc-300 truncate">{reply.userName || "Anonymous"}</span>
+                    <span className="font-medium text-slate-700 dark:text-zinc-300 truncate flex items-center gap-1">
+                      {reply.userName || "Anonymous"}
+                      {reply.userRole === "admin" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#eab308" stroke="#eab308" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M2 4l3 12h14l3-12-5 4-5-6-5 6-3-4z"/><path d="M5 16h14v3H5z"/></svg>}
+                      {reply.userRole === "moderator" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}
+                      {reply.userVerified && reply.userRole !== "admin" && reply.userRole !== "moderator" && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#3b82f6" stroke="none"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11.5 14.5 16 9.5" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    </span>
                     <p className="text-slate-600 dark:text-zinc-400 mt-0.5">{formatCommentText(reply.text)}</p>
                     <div className="flex items-center gap-2 mt-1.5">
                       <span className="text-[10px] text-slate-400 dark:text-zinc-500">{getTimeSince(reply.createdAt)}</span>
@@ -130,6 +129,27 @@ export default function CommentItem({ comment, replies, currentUserId, commentMe
                         onClick={() => { setReplyingTo(!replyingTo); setReplyText(`@${reply.userName || "Anonymous"} `); }}
                       >
                         Reply
+                      </button>
+                      <CommentMenu
+                        commentId={reply.id}
+                        isAuthor={currentUserId === reply.userId}
+                        isAdmin={isAdmin}
+                        openMenuId={commentMenuId}
+                        onToggle={(id) => onToggleMenu(commentMenuId === id ? null : id)}
+                        onDelete={() => onDelete(reply.id)}
+                        onEdit={() => { /* TODO: edit reply */ }}
+                        onReport={() => { /* TODO: report reply */ }}
+                      />
+                      <button
+                        className={`ml-auto flex items-center gap-1 transition-colors cursor-pointer text-[11px] ${
+                          hasLikedReply
+                            ? "text-red-500 font-semibold"
+                            : "text-slate-400 dark:text-zinc-500 hover:text-red-500"
+                        }`}
+                        onClick={() => onLike(reply.id)}
+                      >
+                        <FontAwesomeIcon icon={hasLikedReply ? faHeartSolid : faHeartRegular} className="text-[9px]" />
+                        {replyLikes > 0 && <span>{replyLikes}</span>}
                       </button>
                     </div>
                   </div>
@@ -184,9 +204,10 @@ export default function CommentItem({ comment, replies, currentUserId, commentMe
   );
 }
 
-function CommentMenu({ commentId, isAuthor, openMenuId, onToggle, onDelete, onEdit, onReport }: {
+function CommentMenu({ commentId, isAuthor, isAdmin, openMenuId, onToggle, onDelete, onEdit, onReport }: {
   commentId: string;
   isAuthor: boolean;
+  isAdmin?: boolean;
   openMenuId: string | null;
   onToggle: (id: string) => void;
   onDelete: () => void;
@@ -222,22 +243,23 @@ function CommentMenu({ commentId, isAuthor, openMenuId, onToggle, onDelete, onEd
           className="absolute right-0 top-full mt-1 w-28 bg-white dark:bg-[#272727] border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden origin-top-right animate-[fadeScale_150ms_ease]"
           style={{ animation: "fadeScale 150ms ease" }}
         >
-          {isAuthor ? (
-            <>
-              <button
-                className="w-full text-left px-3 py-2 text-[12px] text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333] cursor-pointer transition-colors"
-                onClick={() => { onToggle(commentId); onEdit(); }}
-              >
-                Edit
-              </button>
-              <button
-                className="w-full text-left px-3 py-2 text-[12px] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors"
-                onClick={() => { onToggle(commentId); onDelete(); }}
-              >
-                Delete
-              </button>
-            </>
-          ) : (
+          {isAuthor && (
+            <button
+              className="w-full text-left px-3 py-2 text-[12px] text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333] cursor-pointer transition-colors"
+              onClick={() => { onToggle(commentId); onEdit(); }}
+            >
+              Edit
+            </button>
+          )}
+          {(isAuthor || isAdmin) && (
+            <button
+              className="w-full text-left px-3 py-2 text-[12px] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors"
+              onClick={() => { onToggle(commentId); onDelete(); }}
+            >
+              Delete
+            </button>
+          )}
+          {!isAuthor && (
             <button
               className="w-full text-left px-3 py-2 text-[12px] text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#333] cursor-pointer transition-colors"
               onClick={() => { onToggle(commentId); onReport(); }}

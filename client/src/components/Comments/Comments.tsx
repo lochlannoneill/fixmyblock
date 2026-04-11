@@ -7,10 +7,12 @@ interface CommentsProps {
   comments: Comment[];
   onAddComment: (requestId: string, text: string, parentId?: string) => void;
   onLikeComment: (requestId: string, commentId: string) => void;
+  onDeleteComment: (requestId: string, commentId: string) => void;
   currentUserId?: string;
+  isAdmin?: boolean;
 }
 
-export default function Comments({ requestId, comments, onAddComment, onLikeComment, currentUserId }: CommentsProps) {
+export default function Comments({ requestId, comments, onAddComment, onLikeComment, onDeleteComment, currentUserId, isAdmin }: CommentsProps) {
   const [commentText, setCommentText] = useState("");
   const [commentMenuId, setCommentMenuId] = useState<string | null>(null);
   const COMMENT_PAGE = 5;
@@ -83,10 +85,12 @@ export default function Comments({ requestId, comments, onAddComment, onLikeComm
               comment={comment}
               replies={getReplies(comment.id)}
               currentUserId={currentUserId}
+              isAdmin={isAdmin}
               commentMenuId={commentMenuId}
               onToggleMenu={setCommentMenuId}
               onLike={(commentId) => onLikeComment(requestId, commentId)}
               onReply={(parentId, text) => onAddComment(requestId, text, parentId)}
+              onDelete={(commentId) => onDeleteComment(requestId, commentId)}
             />
           ))}
           {visibleComments < topLevelComments.length && (

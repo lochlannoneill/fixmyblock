@@ -11,6 +11,7 @@ interface HeaderProps {
   onProfileClick: () => void;
   onSettingsClick: () => void;
   onFeedbackClick: () => void;
+  sidebarOpen?: boolean;
 }
 
 interface GeoSuggestion {
@@ -19,7 +20,7 @@ interface GeoSuggestion {
   lon: string;
 }
 
-export default function Header({ user, profile, onLocationSelect, onLoginClick, onLogout, onProfileClick, onSettingsClick, onFeedbackClick }: HeaderProps) {
+export default function Header({ user, profile, onLocationSelect, onLoginClick, onLogout, onProfileClick, onSettingsClick, onFeedbackClick, sidebarOpen }: HeaderProps) {
   const headerName = profile?.firstName || user?.userDetails || "";
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(false);
@@ -91,7 +92,7 @@ export default function Header({ user, profile, onLocationSelect, onLoginClick, 
   }, [dropdownOpen]);
 
   return (
-    <header className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 md:px-4 h-14 md:h-16 text-slate-800 dark:text-zinc-200 z-[9999] pointer-events-none">
+    <header className={`absolute top-0 left-0 right-0 flex items-center justify-between px-3 md:px-4 h-14 md:h-16 text-slate-800 dark:text-zinc-200 z-[9999] pointer-events-none md:transition-[left] md:duration-300 md:ease-in-out ${sidebarOpen ? 'md:left-[440px]' : ''}`}>
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.25), transparent)' }} />
       <div className="relative pointer-events-auto">
         <h1 className="m-0 flex items-center cursor-pointer rounded-full bg-white/50 dark:bg-black/30 backdrop-blur-md shadow-sm hover:bg-white/60 dark:hover:bg-black/40 transition-colors p-2 md:p-3" onClick={() => window.location.reload()}>
