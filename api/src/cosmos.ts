@@ -178,6 +178,23 @@ export async function deleteRequest(id: string): Promise<boolean> {
   }
 }
 
+export async function deleteComment(requestId: string, commentId: string): Promise<RequestDoc | null> {
+  const existing = await getRequestById(requestId);
+  if (!existing) return null;
+
+  const before = existing.comments.length;
+  existing.comments = existing.comments.filter(
+    (c) => c.id !== commentId && c.parentId !== commentId
+  );
+  // Also remove standalone replies targeting that comment
+  if (existing.comments.length === before) return null; // comment not found
+
+  const { resource } = await getContainer()
+    .item(requestId, requestId)
+    .replace<RequestDoc>(existing);
+  return resource ?? null;
+}
+
 export async function updateRequestStatus(
   id: string,
   status: string,

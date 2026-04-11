@@ -19,7 +19,7 @@ import "./App.css";
 
 export default function App() {
   const { darkMode, toggleTheme } = useTheme();
-  const { requests, loading, selectedRequest, selectRequest, like, remove, create, addComment, likeComment, save, updateStatus } = useRequests();
+  const { requests, loading, selectedRequest, selectRequest, like, remove, create, addComment, likeComment, removeComment, save, updateStatus } = useRequests();
   const { user, profile, login, logout, setProfile } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [resolutionRequest, setResolutionRequest] = useState<Request | null>(null);
@@ -357,6 +357,7 @@ export default function App() {
               onLike={(id: string) => { if (!user) { setShowAuthModal(true); return; } like(id); }}
               onAddComment={(id: string, text: string, parentId?: string) => { if (!user) { setShowAuthModal(true); return; } addComment(id, text, parentId); }}
               onLikeComment={(requestId: string, commentId: string) => { if (!user) { setShowAuthModal(true); return; } likeComment(requestId, commentId); }}
+              onDeleteComment={(requestId: string, commentId: string) => { if (!user) { setShowAuthModal(true); return; } removeComment(requestId, commentId); }}
               onSave={(id: string) => { if (!user) { setShowAuthModal(true); return; } save(id); }}
               onDelete={(id: string) => { remove(id); setSidebarView("list"); }}
               onUpdateStatus={(id, status, note) => updateStatus(id, status, note)}

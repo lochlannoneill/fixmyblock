@@ -14,6 +14,7 @@ import {
   toggleCommentLike,
   addComment as addCommentDoc,
   deleteRequest as deleteRequestDoc,
+  deleteComment as deleteCommentDoc,
   updateRequestStatus,
   RequestDoc,
   getUserById,
@@ -221,7 +222,8 @@ async function like(
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
   invalidatePostsCache();
-  return { status: 200, jsonBody: updated };
+  const [enriched] = await enrichWithUserProfiles([updated]);
+  return { status: 200, jsonBody: enriched };
 }
 
 // POST /api/posts/{id}/comments
@@ -268,7 +270,8 @@ async function postComment(
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
   invalidatePostsCache();
-  return { status: 201, jsonBody: updated };
+  const [enriched] = await enrichWithUserProfiles([updated]);
+  return { status: 201, jsonBody: enriched };
 }
 
 // DELETE /api/posts/{id}
@@ -278,6 +281,28 @@ async function removeRequest(
 ): Promise<HttpResponseInit> {
   const id = req.params.id;
   if (!id) return { status: 400, jsonBody: { error: "Missing id" } };
+
+  const principal = req.headers.get("x-ms-client-principal");
+  if (!principal) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  let userId: string;
+  try {
+    const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
+    userId = decoded.userId;
+  } catch {
+    return { status: 401, jsonBody: { error: "Invalid auth token" } };
+  }
+  if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
+
+  // Check ownership or admin/mod role
+  const post = await getRequestById(id);
+  if (!post) return { status: 404, jsonBody: { error: "Not found" } };
+
+  const userProfile = await getUserById(userId);
+  const isAdminOrMod = userProfile?.role === "admin" || userProfile?.role === "moderator";
+  if (post.userId !== userId && !isAdminOrMod) {
+    return { status: 403, jsonBody: { error: "Not authorized" } };
+  }
 
   const deleted = await deleteRequestDoc(id);
   if (!deleted) return { status: 404, jsonBody: { error: "Not found" } };
@@ -310,7 +335,8 @@ async function saveRequest(
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
   invalidatePostsCache();
-  return { status: 200, jsonBody: updated };
+  const [enriched] = await enrichWithUserProfiles([updated]);
+  return { status: 200, jsonBody: enriched };
 }
 
 // Register routes
@@ -388,7 +414,8 @@ async function likeComment(
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
   invalidatePostsCache();
-  return { status: 200, jsonBody: updated };
+  const [enriched] = await enrichWithUserProfiles([updated]);
+  return { status: 200, jsonBody: enriched };
 }
 
 app.http("likeComment", {
@@ -446,7 +473,8 @@ async function patchStatus(
   if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
 
   invalidatePostsCache();
-  return { status: 200, jsonBody: updated };
+  const [enriched] = await enrichWithUserProfiles([updated]);
+  return { status: 200, jsonBody: enriched };
 }
 
 app.http("patchStatus", {
@@ -454,4 +482,53 @@ app.http("patchStatus", {
   authLevel: "anonymous",
   route: "posts/{id}/status",
   handler: patchStatus,
+});
+
+// DELETE /api/posts/{id}/comments/{commentId}
+async function removeComment(
+  req: HttpRequest,
+  _ctx: InvocationContext
+): Promise<HttpResponseInit> {
+  const id = req.params.id;
+  const commentId = req.params.commentId;
+  if (!id || !commentId) return { status: 400, jsonBody: { error: "Missing id" } };
+
+  const principal = req.headers.get("x-ms-client-principal");
+  if (!principal) return { status: 401, jsonBody: { error: "Not authenticated" } };
+
+  let userId: string;
+  try {
+    const decoded = JSON.parse(Buffer.from(principal, "base64").toString("utf8"));
+    userId = decoded.userId;
+  } catch {
+    return { status: 401, jsonBody: { error: "Invalid auth token" } };
+  }
+  if (!userId) return { status: 401, jsonBody: { error: "Missing user identity" } };
+
+  // Check ownership or admin/mod role
+  const post = await getRequestById(id);
+  if (!post) return { status: 404, jsonBody: { error: "Not found" } };
+
+  const comment = post.comments.find((c) => c.id === commentId);
+  if (!comment) return { status: 404, jsonBody: { error: "Comment not found" } };
+
+  const userProfile = await getUserById(userId);
+  const isAdminOrMod = userProfile?.role === "admin" || userProfile?.role === "moderator";
+  if (comment.userId !== userId && !isAdminOrMod) {
+    return { status: 403, jsonBody: { error: "Not authorized" } };
+  }
+
+  const updated = await deleteCommentDoc(id, commentId);
+  if (!updated) return { status: 404, jsonBody: { error: "Not found" } };
+
+  invalidatePostsCache();
+  const [enriched] = await enrichWithUserProfiles([updated]);
+  return { status: 200, jsonBody: enriched };
+}
+
+app.http("deleteComment", {
+  methods: ["DELETE"],
+  authLevel: "anonymous",
+  route: "posts/{id}/comments/{commentId}",
+  handler: removeComment,
 });

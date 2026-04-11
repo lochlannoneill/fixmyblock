@@ -52,6 +52,15 @@ export async function deleteRequest(id: string): Promise<void> {
   if (!res.ok) throw new Error("Failed to delete request");
 }
 
+export async function deleteComment(requestId: string, commentId: string): Promise<Request> {
+  const res = await fetch(
+    `${API_BASE}/posts/${encodeURIComponent(requestId)}/comments/${encodeURIComponent(commentId)}`,
+    { method: "DELETE" }
+  );
+  if (!res.ok) throw new Error("Failed to delete comment");
+  return res.json();
+}
+
 export async function addComment(id: string, text: string, parentId?: string): Promise<Request> {
   const res = await fetch(
     `${API_BASE}/posts/${encodeURIComponent(id)}/comments`,

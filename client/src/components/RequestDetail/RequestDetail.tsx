@@ -20,6 +20,7 @@ interface RequestDetailProps {
   onLike: (id: string) => void;
   onAddComment: (id: string, text: string, parentId?: string) => void;
   onLikeComment: (requestId: string, commentId: string) => void;
+  onDeleteComment: (requestId: string, commentId: string) => void;
   onSave: (id: string) => void;
   onDelete: (id: string) => void;
   onUpdateStatus?: (id: string, status: RequestStatus, note?: string) => void;
@@ -33,6 +34,7 @@ export default function RequestDetail({
   onLike,
   onAddComment,
   onLikeComment,
+  onDeleteComment,
   onSave,
   onDelete,
   onUpdateStatus,
@@ -429,7 +431,9 @@ export default function RequestDetail({
             comments={comments}
             onAddComment={onAddComment}
             onLikeComment={onLikeComment}
+            onDeleteComment={onDeleteComment}
             currentUserId={currentUserId}
+            isAdmin={isAdmin}
           />
         </div>
       </div>

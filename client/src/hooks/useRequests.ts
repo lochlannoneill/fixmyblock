@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Request, NewRequest, RequestStatus } from "../types/request";
-import { fetchRequests, createRequest, likeRequest, deleteRequest, addComment as addCommentApi, likeComment as likeCommentApi, saveRequest as saveRequestApi, updateRequestStatus as updateRequestStatusApi } from "../services/api";
+import { fetchRequests, createRequest, likeRequest, deleteRequest, addComment as addCommentApi, likeComment as likeCommentApi, deleteComment as deleteCommentApi, saveRequest as saveRequestApi, updateRequestStatus as updateRequestStatusApi } from "../services/api";
 
 export function useRequests() {
   const [requests, setRequests] = useState<Request[]>([]);
@@ -88,6 +88,20 @@ export function useRequests() {
     }
   }, []);
 
+  const removeComment = useCallback(async (requestId: string, commentId: string) => {
+    try {
+      const updated = await deleteCommentApi(requestId, commentId);
+      setRequests((prev) =>
+        prev.map((c) => (c.id === updated.id ? updated : c))
+      );
+      setSelectedRequest((prev) =>
+        prev?.id === updated.id ? updated : prev
+      );
+    } catch {
+      console.error("Failed to delete comment");
+    }
+  }, []);
+
   const save = useCallback(async (id: string) => {
     try {
       const updated = await saveRequestApi(id);
@@ -116,5 +130,5 @@ export function useRequests() {
     }
   }, []);
 
-  return { requests, loading, selectedRequest, selectRequest, like, remove, create, addComment, likeComment, save, updateStatus };
+  return { requests, loading, selectedRequest, selectRequest, like, remove, create, addComment, likeComment, removeComment, save, updateStatus };
 }
