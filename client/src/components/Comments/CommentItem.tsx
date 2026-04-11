@@ -38,13 +38,27 @@ function formatCommentText(text: string) {
 export default function CommentItem({ comment, replies, currentUserId, isAdmin, commentMenuId, onToggleMenu, onLike, onReply, onDelete }: CommentItemProps) {
   const [replyingTo, setReplyingTo] = useState(false);
   const [replyText, setReplyText] = useState("");
+  const lastTapRef = useRef<{ id: string; time: number }>({ id: "", time: 0 });
+
+  const handleDoubleTap = (id: string) => {
+    const now = Date.now();
+    if (lastTapRef.current.id === id && now - lastTapRef.current.time < 300) {
+      const allComments = [comment, ...replies];
+      const target = allComments.find(c => c.id === id);
+      const alreadyLiked = currentUserId && (target?.likers || []).includes(currentUserId);
+      if (!alreadyLiked) onLike(id);
+      lastTapRef.current = { id: "", time: 0 };
+    } else {
+      lastTapRef.current = { id, time: now };
+    }
+  };
 
   const commentLikes = (comment.likers || []).length;
   const hasLikedComment = currentUserId && (comment.likers || []).includes(currentUserId);
 
   return (
     <div>
-      <div className="flex gap-2.5 py-2.5 text-xs">
+      <div className="flex gap-2.5 py-2.5 text-xs" onTouchEnd={() => handleDoubleTap(comment.id)}>
         <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-[#3a3a3a] text-slate-500 dark:text-zinc-400 flex items-center justify-center text-[10px] font-semibold shrink-0 mt-0.5 overflow-hidden">
           {comment.userProfilePictureUrl ? <img src={comment.userProfilePictureUrl} alt="" className="w-full h-full object-cover" /> : ((comment.userName || "U")[0] ?? "U").toUpperCase()}
         </div>
@@ -96,7 +110,7 @@ export default function CommentItem({ comment, replies, currentUserId, isAdmin, 
               const replyLikes = (reply.likers || []).length;
               const hasLikedReply = currentUserId && (reply.likers || []).includes(currentUserId);
               return (
-                <div key={reply.id} className="flex gap-2.5 py-2.5 text-xs">
+                <div key={reply.id} className="flex gap-2.5 py-2.5 text-xs" onTouchEnd={() => handleDoubleTap(reply.id)}>
                   <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-[#3a3a3a] text-slate-500 dark:text-zinc-400 flex items-center justify-center text-[9px] font-semibold shrink-0 mt-0.5 overflow-hidden">
                     {reply.userProfilePictureUrl ? <img src={reply.userProfilePictureUrl} alt="" className="w-full h-full object-cover" /> : ((reply.userName || "U")[0] ?? "U").toUpperCase()}
                   </div>

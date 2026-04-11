@@ -55,6 +55,7 @@ export default function RequestDetail({
 
   const [showBackToTop, setShowBackToTop] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const lastTapRef = useRef(0);
 
   const isOwner = currentUserId && currentUserId === request.userId;
 
@@ -129,6 +130,15 @@ export default function RequestDetail({
         className="flex-1 overflow-y-auto relative"
         ref={scrollRef}
         onScroll={() => { if (scrollRef.current) setShowBackToTop(scrollRef.current.scrollTop > 150); }}
+        onTouchEnd={() => {
+          const now = Date.now();
+          if (now - lastTapRef.current < 300) {
+            if (!hasLiked) onLike(request.id);
+            lastTapRef.current = 0;
+          } else {
+            lastTapRef.current = now;
+          }
+        }}
       >
         {showBackToTop && (
           <button
